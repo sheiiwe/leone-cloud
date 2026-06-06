@@ -1,0 +1,79 @@
+{
+  "name": "leone-consulting",
+  "version": "1.5.3",
+  "description": "Gestionale \u2014 Leone Consulting di Leonardo Angelucci",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --mac --universal",
+    "build-win": "electron-builder --win --x64",
+    "build-dir": "electron-builder --mac --dir"
+  },
+  "build": {
+    "appId": "it.leoneconsulting.gestionale",
+    "productName": "Leone Consulting",
+    "copyright": "\u00a9 2025 Leone Consulting di Leonardo Angelucci",
+    "mac": {
+      "category": "public.app-category.business",
+      "icon": "assets/icon.png",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "darkModeSupport": true
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "dmg": {
+      "title": "Leone Consulting Gestionale",
+      "icon": "assets/icon.png"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "email-server.js",
+      "ipc-handlers.js",
+      "compila_pdf.py",
+      "fill_pdf_form_with_annotations.py",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "asarUnpack": [
+      "compila_pdf.py",
+      "fill_pdf_form_with_annotations.py",
+      "assets/templates/**",
+      "assets/fields/**"
+    ],
+    "asar": true,
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.png",
+      "uninstallerIcon": "assets/icon.png",
+      "installerHeaderIcon": "assets/icon.png",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Leone Consulting"
+    }
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.13"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}

@@ -1,0 +1,1103 @@
+{
+  "pages": [
+    {
+      "page_number": 1,
+      "pdf_width": 595.2756,
+      "pdf_height": 841.8898
+    }
+  ],
+  "form_fields": [
+    {
+      "page_number": 1,
+      "description": "Nome",
+      "field_label": "NOME",
+      "label_bounding_box": [
+        27,
+        185.8,
+        28,
+        186.8
+      ],
+      "entry_bounding_box": [
+        32,
+        190.8,
+        265,
+        201.8
+      ],
+      "entry_text": {
+        "text": "{{nome}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "CF",
+      "field_label": "CF",
+      "label_bounding_box": [
+        269,
+        185.8,
+        270,
+        186.8
+      ],
+      "entry_bounding_box": [
+        274,
+        190.8,
+        428,
+        201.8
+      ],
+      "entry_text": {
+        "text": "{{cf}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "Nascita",
+      "field_label": "NAC",
+      "label_bounding_box": [
+        430,
+        185.8,
+        431,
+        186.8
+      ],
+      "entry_bounding_box": [
+        435,
+        190.8,
+        565,
+        201.8
+      ],
+      "entry_text": {
+        "text": "{{nascita}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "Indirizzo",
+      "field_label": "IND",
+      "label_bounding_box": [
+        27,
+        211.3,
+        28,
+        212.3
+      ],
+      "entry_bounding_box": [
+        32,
+        216.3,
+        215,
+        227.3
+      ],
+      "entry_text": {
+        "text": "{{indirizzo}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "Citta",
+      "field_label": "CIT",
+      "label_bounding_box": [
+        215,
+        211.3,
+        216,
+        212.3
+      ],
+      "entry_bounding_box": [
+        220,
+        216.3,
+        400,
+        227.3
+      ],
+      "entry_text": {
+        "text": "{{citta}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "Tel",
+      "field_label": "TEL",
+      "label_bounding_box": [
+        403,
+        211.3,
+        404,
+        212.3
+      ],
+      "entry_bounding_box": [
+        408,
+        216.3,
+        565,
+        227.3
+      ],
+      "entry_text": {
+        "text": "{{tel_email}}",
+        "font_size": 7.5
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "DocIdentita",
+      "field_label": "DOCUMENTO IDENTITA",
+      "label_bounding_box": [
+        27,
+        236.8,
+        28,
+        237.8
+      ],
+      "entry_bounding_box": [
+        32,
+        241.8,
+        265,
+        252.8
+      ],
+      "entry_text": {
+        "text": "{{doc_identita}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "RilasciatoDa",
+      "field_label": "RILASCIATO DA",
+      "label_bounding_box": [
+        269,
+        236.8,
+        270,
+        237.8
+      ],
+      "entry_bounding_box": [
+        274,
+        241.8,
+        428,
+        252.8
+      ],
+      "entry_text": {
+        "text": "{{doc_rilasciato}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "DocScadenza",
+      "field_label": "DATA SCADENZA",
+      "label_bounding_box": [
+        430,
+        236.8,
+        431,
+        237.8
+      ],
+      "entry_bounding_box": [
+        435,
+        241.8,
+        565,
+        252.8
+      ],
+      "entry_text": {
+        "text": "{{doc_scadenza}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "NContr",
+      "field_label": "NCT",
+      "label_bounding_box": [
+        27,
+        279.3,
+        28,
+        280.3
+      ],
+      "entry_bounding_box": [
+        32,
+        284.3,
+        160,
+        295.3
+      ],
+      "entry_text": {
+        "text": "{{n_contratto}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "DInizio",
+      "field_label": "DI",
+      "label_bounding_box": [
+        161,
+        279.3,
+        162,
+        280.3
+      ],
+      "entry_bounding_box": [
+        166,
+        284.3,
+        298,
+        295.3
+      ],
+      "entry_text": {
+        "text": "{{data_inizio}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "DFine",
+      "field_label": "DF",
+      "label_bounding_box": [
+        295,
+        279.3,
+        296,
+        280.3
+      ],
+      "entry_bounding_box": [
+        300,
+        284.3,
+        428,
+        295.3
+      ],
+      "entry_text": {
+        "text": "{{data_fine}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "Zona",
+      "field_label": "ZN",
+      "label_bounding_box": [
+        430,
+        279.3,
+        431,
+        280.3
+      ],
+      "entry_bounding_box": [
+        435,
+        284.3,
+        565,
+        295.3
+      ],
+      "entry_text": {
+        "text": "{{zona}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "Prodotto",
+      "field_label": "PR",
+      "label_bounding_box": [
+        27,
+        304.8,
+        28,
+        305.8
+      ],
+      "entry_bounding_box": [
+        32,
+        309.8,
+        268,
+        320.8
+      ],
+      "entry_text": {
+        "text": "{{prodotto}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "PctBase",
+      "field_label": "PB",
+      "label_bounding_box": [
+        269,
+        304.8,
+        270,
+        305.8
+      ],
+      "entry_bounding_box": [
+        274,
+        309.8,
+        428,
+        320.8
+      ],
+      "entry_text": {
+        "text": "{{prov_pct}}%",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "Mese",
+      "field_label": "MS",
+      "label_bounding_box": [
+        27,
+        330.4,
+        28,
+        331.4
+      ],
+      "entry_bounding_box": [
+        32,
+        335.4,
+        160,
+        346.4
+      ],
+      "entry_text": {
+        "text": "{{mese}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "Anno",
+      "field_label": "AN",
+      "label_bounding_box": [
+        161,
+        330.4,
+        162,
+        331.4
+      ],
+      "entry_bounding_box": [
+        166,
+        335.4,
+        298,
+        346.4
+      ],
+      "entry_text": {
+        "text": "{{anno}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "DataEm",
+      "field_label": "DE",
+      "label_bounding_box": [
+        295,
+        330.4,
+        296,
+        331.4
+      ],
+      "entry_bounding_box": [
+        300,
+        335.4,
+        428,
+        346.4
+      ],
+      "entry_text": {
+        "text": "{{data_em}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "NProsp",
+      "field_label": "NP",
+      "label_bounding_box": [
+        430,
+        330.4,
+        431,
+        331.4
+      ],
+      "entry_bounding_box": [
+        435,
+        335.4,
+        565,
+        346.4
+      ],
+      "entry_text": {
+        "text": "{{n_prosp}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "cl1",
+      "field_label": "CL1",
+      "label_bounding_box": [
+        45,
+        435.9,
+        46,
+        436.9
+      ],
+      "entry_bounding_box": [
+        50,
+        440.9,
+        183,
+        452.9
+      ],
+      "entry_text": {
+        "text": "{{cl1}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "desc1",
+      "field_label": "D1",
+      "label_bounding_box": [
+        235,
+        435.9,
+        236,
+        436.9
+      ],
+      "entry_bounding_box": [
+        240,
+        440.9,
+        438,
+        452.9
+      ],
+      "entry_text": {
+        "text": "{{desc1}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "pct1",
+      "field_label": "P1",
+      "label_bounding_box": [
+        455,
+        435.9,
+        456,
+        436.9
+      ],
+      "entry_bounding_box": [
+        460,
+        440.9,
+        490,
+        452.9
+      ],
+      "entry_text": {
+        "text": "{{pct1}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "val1",
+      "field_label": "V1",
+      "label_bounding_box": [
+        500,
+        435.9,
+        501,
+        436.9
+      ],
+      "entry_bounding_box": [
+        505,
+        440.9,
+        562,
+        452.9
+      ],
+      "entry_text": {
+        "text": "{{val1}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "cl2",
+      "field_label": "CL2",
+      "label_bounding_box": [
+        45,
+        419.0,
+        46,
+        420.0
+      ],
+      "entry_bounding_box": [
+        50,
+        424.0,
+        183,
+        436.0
+      ],
+      "entry_text": {
+        "text": "{{cl2}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "desc2",
+      "field_label": "D2",
+      "label_bounding_box": [
+        235,
+        419.0,
+        236,
+        420.0
+      ],
+      "entry_bounding_box": [
+        240,
+        424.0,
+        438,
+        436.0
+      ],
+      "entry_text": {
+        "text": "{{desc2}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "pct2",
+      "field_label": "P2",
+      "label_bounding_box": [
+        455,
+        419.0,
+        456,
+        420.0
+      ],
+      "entry_bounding_box": [
+        460,
+        424.0,
+        490,
+        436.0
+      ],
+      "entry_text": {
+        "text": "{{pct2}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "val2",
+      "field_label": "V2",
+      "label_bounding_box": [
+        500,
+        419.0,
+        501,
+        420.0
+      ],
+      "entry_bounding_box": [
+        505,
+        424.0,
+        562,
+        436.0
+      ],
+      "entry_text": {
+        "text": "{{val2}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "cl3",
+      "field_label": "CL3",
+      "label_bounding_box": [
+        45,
+        402.2,
+        46,
+        403.2
+      ],
+      "entry_bounding_box": [
+        50,
+        407.2,
+        183,
+        419.2
+      ],
+      "entry_text": {
+        "text": "{{cl3}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "desc3",
+      "field_label": "D3",
+      "label_bounding_box": [
+        235,
+        402.2,
+        236,
+        403.2
+      ],
+      "entry_bounding_box": [
+        240,
+        407.2,
+        438,
+        419.2
+      ],
+      "entry_text": {
+        "text": "{{desc3}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "pct3",
+      "field_label": "P3",
+      "label_bounding_box": [
+        455,
+        402.2,
+        456,
+        403.2
+      ],
+      "entry_bounding_box": [
+        460,
+        407.2,
+        490,
+        419.2
+      ],
+      "entry_text": {
+        "text": "{{pct3}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "val3",
+      "field_label": "V3",
+      "label_bounding_box": [
+        500,
+        402.2,
+        501,
+        403.2
+      ],
+      "entry_bounding_box": [
+        505,
+        407.2,
+        562,
+        419.2
+      ],
+      "entry_text": {
+        "text": "{{val3}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "cl4",
+      "field_label": "CL4",
+      "label_bounding_box": [
+        45,
+        385.4,
+        46,
+        386.4
+      ],
+      "entry_bounding_box": [
+        50,
+        390.4,
+        183,
+        402.4
+      ],
+      "entry_text": {
+        "text": "{{cl4}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "desc4",
+      "field_label": "D4",
+      "label_bounding_box": [
+        235,
+        385.4,
+        236,
+        386.4
+      ],
+      "entry_bounding_box": [
+        240,
+        390.4,
+        438,
+        402.4
+      ],
+      "entry_text": {
+        "text": "{{desc4}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "pct4",
+      "field_label": "P4",
+      "label_bounding_box": [
+        455,
+        385.4,
+        456,
+        386.4
+      ],
+      "entry_bounding_box": [
+        460,
+        390.4,
+        490,
+        402.4
+      ],
+      "entry_text": {
+        "text": "{{pct4}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "val4",
+      "field_label": "V4",
+      "label_bounding_box": [
+        500,
+        385.4,
+        501,
+        386.4
+      ],
+      "entry_bounding_box": [
+        505,
+        390.4,
+        562,
+        402.4
+      ],
+      "entry_text": {
+        "text": "{{val4}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "cl5",
+      "field_label": "CL5",
+      "label_bounding_box": [
+        45,
+        368.5,
+        46,
+        369.5
+      ],
+      "entry_bounding_box": [
+        50,
+        373.5,
+        183,
+        385.5
+      ],
+      "entry_text": {
+        "text": "{{cl5}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "desc5",
+      "field_label": "D5",
+      "label_bounding_box": [
+        235,
+        368.5,
+        236,
+        369.5
+      ],
+      "entry_bounding_box": [
+        240,
+        373.5,
+        438,
+        385.5
+      ],
+      "entry_text": {
+        "text": "{{desc5}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "pct5",
+      "field_label": "P5",
+      "label_bounding_box": [
+        455,
+        368.5,
+        456,
+        369.5
+      ],
+      "entry_bounding_box": [
+        460,
+        373.5,
+        490,
+        385.5
+      ],
+      "entry_text": {
+        "text": "{{pct5}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "val5",
+      "field_label": "V5",
+      "label_bounding_box": [
+        500,
+        368.5,
+        501,
+        369.5
+      ],
+      "entry_bounding_box": [
+        505,
+        373.5,
+        562,
+        385.5
+      ],
+      "entry_text": {
+        "text": "{{val5}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "cl6",
+      "field_label": "CL6",
+      "label_bounding_box": [
+        45,
+        351.7,
+        46,
+        352.7
+      ],
+      "entry_bounding_box": [
+        50,
+        356.7,
+        183,
+        368.7
+      ],
+      "entry_text": {
+        "text": "{{cl6}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "desc6",
+      "field_label": "D6",
+      "label_bounding_box": [
+        235,
+        351.7,
+        236,
+        352.7
+      ],
+      "entry_bounding_box": [
+        240,
+        356.7,
+        438,
+        368.7
+      ],
+      "entry_text": {
+        "text": "{{desc6}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "pct6",
+      "field_label": "P6",
+      "label_bounding_box": [
+        455,
+        351.7,
+        456,
+        352.7
+      ],
+      "entry_bounding_box": [
+        460,
+        356.7,
+        490,
+        368.7
+      ],
+      "entry_text": {
+        "text": "{{pct6}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "val6",
+      "field_label": "V6",
+      "label_bounding_box": [
+        500,
+        351.7,
+        501,
+        352.7
+      ],
+      "entry_bounding_box": [
+        505,
+        356.7,
+        562,
+        368.7
+      ],
+      "entry_text": {
+        "text": "{{val6}}",
+        "font_size": 8
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "Totale",
+      "field_label": "TOT",
+      "label_bounding_box": [
+        503,
+        481,
+        504,
+        482
+      ],
+      "entry_bounding_box": [
+        508,
+        486,
+        568,
+        498
+      ],
+      "entry_text": {
+        "text": "{{totale}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "calc0",
+      "field_label": "C0",
+      "label_bounding_box": [
+        348,
+        531.7,
+        349,
+        532.7
+      ],
+      "entry_bounding_box": [
+        353,
+        536.7,
+        430,
+        548.7
+      ],
+      "entry_text": {
+        "text": "{{c_lordo}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "calc1",
+      "field_label": "C1",
+      "label_bounding_box": [
+        348,
+        551.6,
+        349,
+        552.6
+      ],
+      "entry_bounding_box": [
+        353,
+        556.6,
+        430,
+        568.6
+      ],
+      "entry_text": {
+        "text": "{{c_rimb}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "calc2",
+      "field_label": "C2",
+      "label_bounding_box": [
+        348,
+        571.4,
+        349,
+        572.4
+      ],
+      "entry_bounding_box": [
+        353,
+        576.4,
+        430,
+        588.4
+      ],
+      "entry_text": {
+        "text": "{{c_base}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "calc3",
+      "field_label": "C3",
+      "label_bounding_box": [
+        348,
+        591.2,
+        349,
+        592.2
+      ],
+      "entry_bounding_box": [
+        353,
+        596.2,
+        430,
+        608.2
+      ],
+      "entry_text": {
+        "text": "{{c_rit}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "calc4",
+      "field_label": "C4",
+      "label_bounding_box": [
+        348,
+        611.1,
+        349,
+        612.1
+      ],
+      "entry_bounding_box": [
+        353,
+        616.1,
+        430,
+        628.1
+      ],
+      "entry_text": {
+        "text": "{{c_bollo}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "calc5",
+      "field_label": "C5",
+      "label_bounding_box": [
+        348,
+        630.9,
+        349,
+        631.9
+      ],
+      "entry_bounding_box": [
+        353,
+        635.9,
+        430,
+        647.9
+      ],
+      "entry_text": {
+        "text": "{{c_netto}}",
+        "font_size": 9.5
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "DataPag",
+      "field_label": "DP",
+      "label_bounding_box": [
+        162,
+        677,
+        163,
+        678
+      ],
+      "entry_bounding_box": [
+        167,
+        682,
+        295,
+        692
+      ],
+      "entry_text": {
+        "text": "{{data_pag}}",
+        "font_size": 9
+      }
+    },
+    {
+      "page_number": 1,
+      "description": "IBAN",
+      "field_label": "IB",
+      "label_bounding_box": [
+        297,
+        677,
+        298,
+        678
+      ],
+      "entry_bounding_box": [
+        302,
+        682,
+        565,
+        692
+      ],
+      "entry_text": {
+        "text": "{{iban}}",
+        "font_size": 9
+      }
+    }
+  ]
+}

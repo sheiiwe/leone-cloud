@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Firma contratto — Leone Consulting</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;background:#f5f5f0;color:#1a1a18;min-height:100vh}
+.header{background:#185FA5;padding:20px 24px;text-align:center}
+.header h1{color:#fff;font-size:20px;font-weight:700;margin:0}
+.header p{color:rgba(255,255,255,.8);font-size:12px;margin:4px 0 0}
+.container{max-width:700px;margin:24px auto;padding:0 16px 60px}
+.card{background:#fff;border:0.5px solid rgba(0,0,0,.10);border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.card h2{font-size:15px;font-weight:600;margin-bottom:12px;color:#1a1a18}
+.info-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #f0efe9;font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-lbl{color:#6b6b66}
+.info-val{font-weight:500;color:#1a1a18;text-align:right}
+/* PDF viewer */
+.pdf-wrap{border:1px solid #d0d0c8;border-radius:8px;overflow:hidden;margin-bottom:12px;background:#525659}
+.pdf-toolbar{background:#3d3d3d;padding:8px 12px;display:flex;align-items:center;gap:10px;font-size:12px;color:#fff}
+.pdf-toolbar button{background:rgba(255,255,255,.15);border:none;color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px}
+.pdf-toolbar button:hover{background:rgba(255,255,255,.25)}
+#pdf-canvas-wrap{overflow-y:auto;max-height:500px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px}
+#pdf-canvas-wrap canvas{max-width:100%;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.pdf-loading{text-align:center;padding:40px;color:#ccc;font-size:13px}
+/* Firma */
+.sign-box{border:1.5px solid #185FA5;border-radius:8px;overflow:hidden;margin-bottom:12px;background:#f8faff}
+.sign-box canvas{display:block;touch-action:none;cursor:crosshair;width:100%;height:160px}
+.sign-label{font-size:11px;color:#6b6b66;text-align:center;padding:5px;border-top:0.5px solid #e0e9f7;background:#f0f5fc}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;font-size:13.5px;font-weight:600;border:none;border-radius:8px;cursor:pointer;font-family:inherit;transition:all .15s;width:100%}
+.btn-p{background:#185FA5;color:#fff}.btn-p:hover{background:#0C447C}.btn-p:disabled{background:#9e9e98;cursor:not-allowed}
+.btn-ghost{background:none;color:#6b6b66;border:0.5px solid rgba(0,0,0,.15);margin-top:8px;width:auto;padding:7px 14px;font-size:12px}
+.btn-ghost:hover{background:#f0efe9}
+.spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stato-ok{text-align:center;padding:32px 16px}
+.stato-ok .icon{font-size:52px;margin-bottom:12px}
+.stato-ok h2{font-size:19px;font-weight:700;color:#3B6D11;margin-bottom:6px}
+.stato-ok p{font-size:13px;color:#6b6b66;line-height:1.5}
+.stato-err{text-align:center;padding:32px 16px}
+.stato-err .icon{font-size:52px;margin-bottom:12px}
+.stato-err h2{font-size:19px;font-weight:700;color:#A32D2D;margin-bottom:6px}
+.stato-err p{font-size:13px;color:#6b6b66;line-height:1.5}
+.loading{text-align:center;padding:50px}
+.spin-big{width:38px;height:38px;border:3px solid #d0e6f7;border-top-color:#185FA5;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+.loading p{color:#6b6b66;font-size:13px}
+.checkbox-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;font-size:12.5px;line-height:1.5;color:#1a1a18;cursor:pointer;border-bottom:0.5px solid #f0efe9}
+.checkbox-row:last-of-type{border-bottom:none}
+.checkbox-row input{margin-top:2px;width:16px;height:16px;accent-color:#185FA5;flex-shrink:0}
+.footer{text-align:center;font-size:11px;color:#9e9e98;margin-top:20px;line-height:1.6}
+.badge-wait{display:inline-flex;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500;background:#FAEEDA;color:#854F0B}
+.badge-done{display:inline-flex;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500;background:#EAF3DE;color:#3B6D11}
+.scroll-hint{font-size:11px;color:#854F0B;background:#FAEEDA;padding:7px 12px;border-radius:6px;margin-bottom:10px;text-align:center}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Leone Consulting</h1>
+  <p>di Leonardo Angelucci · Firma contratto digitale</p>
+</div>
+
+<div class="container">
+  <div id="stato-loading" class="card loading">
+    <div class="spin-big"></div>
+    <p>Caricamento contratto...</p>
+  </div>
+  <div id="stato-errore" class="card stato-err" style="display:none">
+    <div class="icon">⚠️</div>
+    <h2>Link non valido</h2>
+    <p>Il link non è valido o è scaduto.<br>Contatta Leone Consulting per un nuovo link.</p>
+    <p style="margin-top:10px"><a href="mailto:amministrazione@leoneconsultingitalia.it" style="color:#185FA5">amministrazione@leoneconsultingitalia.it</a></p>
+  </div>
+  <div id="stato-gia-firmato" class="card stato-ok" style="display:none">
+    <div class="icon">✅</div>
+    <h2>Contratto già firmato</h2>
+    <p>Questo contratto è già stato firmato.<br>Grazie per la collaborazione con Leone Consulting!</p>
+  </div>
+  <div id="stato-completato" class="card stato-ok" style="display:none">
+    <div class="icon">🎉</div>
+    <h2>Contratto firmato con successo!</h2>
+    <p>La firma è stata registrata. Riceverai una copia via email. Grazie!</p>
+    <p style="margin-top:10px;font-size:11px;color:#9e9e98" id="timestamp-firma"></p>
+  </div>
+
+  <div id="stato-firma" style="display:none">
+    <!-- Info contratto -->
+    <div class="card">
+      <h2>📄 Dettaglio contratto</h2>
+      <div class="info-row"><span class="info-lbl">Destinatario</span><span class="info-val" id="inf-nome">—</span></div>
+      <div class="info-row"><span class="info-lbl">Tipo contratto</span><span class="info-val" id="inf-tipo">—</span></div>
+      <div class="info-row"><span class="info-lbl">Emesso da</span><span class="info-val">Leone Consulting di Leonardo Angelucci</span></div>
+      <div class="info-row"><span class="info-lbl">Data invio</span><span class="info-val" id="inf-data">—</span></div>
+      <div class="info-row"><span class="info-lbl">Stato</span><span class="info-val"><span class="badge-wait">In attesa firma</span></span></div>
+    </div>
+
+    <!-- PDF viewer -->
+    <div class="card">
+      <h2>📑 Leggi il contratto completo</h2>
+      <p style="font-size:12px;color:#6b6b66;margin-bottom:10px">Scorri e leggi tutte le pagine prima di firmare.</p>
+      <div class="pdf-wrap">
+        <div class="pdf-toolbar">
+          <span id="pdf-info" style="flex:1">Caricamento PDF...</span>
+          <button onclick="cambiaZoom(-0.2)">−</button>
+          <span id="zoom-label">100%</span>
+          <button onclick="cambiaZoom(+0.2)">+</button>
+        </div>
+        <div id="pdf-canvas-wrap">
+          <div class="pdf-loading">⏳ Caricamento documento...</div>
+        </div>
+      </div>
+      <div class="scroll-hint" id="scroll-hint">📜 Scorri fino in fondo per poter firmare</div>
+    </div>
+
+    <!-- Firma -->
+    <div class="card" id="card-firma" style="opacity:.4;pointer-events:none">
+      <h2>✍️ Firma qui sotto</h2>
+      <p style="font-size:12px;color:#6b6b66;margin-bottom:10px">Disegna la tua firma con il dito o il mouse nel riquadro.</p>
+      <div class="sign-box">
+        <canvas id="sign-canvas" width="900" height="200"></canvas>
+        <div class="sign-label">Area firma — trascina per firmare</div>
+      </div>
+      <button class="btn-ghost" onclick="cancellaFirma()">↺ Cancella e rifai</button>
+
+      <div style="margin-top:14px">
+        <label class="checkbox-row">
+          <input type="checkbox" id="chk-consenso">
+          Dichiaro di aver letto integralmente il contratto <strong id="chk-tipo-ct"></strong> e di accettarne il contenuto, apponendo la mia firma digitale consapevolmente.
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="chk-privacy">
+          Accetto il trattamento dei miei dati personali ai sensi del GDPR (Reg. UE 2016/679) per le finalità contrattuali e amministrative indicate nell'informativa allegata.
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="chk-vessatorie">
+          Ai sensi degli artt. 1341 e 1342 c.c., approvo specificamente le clausole di cui agli Art. 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13 del contratto.
+        </label>
+      </div>
+
+      <button class="btn btn-p" id="btn-firma" onclick="firmaContratto()" style="margin-top:16px">
+        ✍️ Firma e conferma contratto
+      </button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Leone Consulting di Leonardo Angelucci<br>
+    Via Pia 42, 00049 Velletri (RM) · P.IVA 18231181001<br>
+    <a href="mailto:amministrazione@leoneconsultingitalia.it" style="color:#9e9e98">amministrazione@leoneconsultingitalia.it</a>
+  </div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+
+const SUPA_URL = 'https://uljdbdbkiulbcquuhfwd.supabase.co'
+const SUPA_KEY = 'sb_publishable_f2I0NBiYOi_1aWm5ACybhA_gFYsWpAB'
+const { createClient } = supabase
+const db = createClient(SUPA_URL, SUPA_KEY)
+const dbAdmin = db
+
+// URL pubblico del contratto su Supabase Storage
+const PDF_URL = SUPA_URL + '/storage/v1/object/public/contratti/contratto_procacciatori_con_privacy.pdf'
+
+const params = new URLSearchParams(window.location.search)
+const token = params.get('token')
+let contratto = null
+let pdfZoom = 1.0
+let pdfDoc = null
+let hasScrolledToBottom = false
+
+// ── INIT ──────────────────────────────────────────────────────
+async function init() {
+  if (!token) { mostra('stato-errore'); return }
+  try {
+    const { data, error } = await db.from('contratti_firme').select('*')
+    if (error) throw error
+    const row = (data || []).find(r => (r.data || r).signToken === token)
+    if (!row) { mostra('stato-errore'); return }
+    contratto = row.data || row
+    contratto._id = row.id
+    if (contratto.statoFirma === 'Firmato') { mostra('stato-gia-firmato'); return }
+    document.getElementById('inf-nome').textContent = contratto.nomeDestinatario || '—'
+    document.getElementById('inf-tipo').textContent = contratto.tipoContratto || '—'
+    document.getElementById('inf-data').textContent = contratto.dataInvio || '—'
+    document.getElementById('chk-tipo-ct').textContent = '"' + (contratto.tipoContratto || '') + '"'
+    mostra('stato-firma')
+    initCanvas()
+    caricaPDF()
+    setupScrollWatch()
+  } catch(e) { console.error(e); mostra('stato-errore') }
+}
+
+function mostra(id) {
+  ['stato-loading','stato-errore','stato-gia-firmato','stato-completato','stato-firma'].forEach(s => {
+    const el = document.getElementById(s)
+    if (el) el.style.display = 'none'
+  })
+  const el = document.getElementById(id)
+  if (el) el.style.display = 'block'
+}
+
+// ── PDF ───────────────────────────────────────────────────────
+async function caricaPDF() {
+  try {
+    pdfDoc = await pdfjsLib.getDocument(PDF_URL).promise
+    document.getElementById('pdf-info').textContent = `${pdfDoc.numPages} pagine`
+    await renderAllPages()
+  } catch(e) {
+    document.getElementById('pdf-canvas-wrap').innerHTML = 
+      '<div class="pdf-loading" style="color:#f77">⚠️ Impossibile caricare il PDF.<br>Controlla la connessione.</div>'
+    // Se PDF non carica, sblocca firma comunque dopo 3s
+    setTimeout(sbloccaFirma, 3000)
+  }
+}
+
+async function renderAllPages() {
+  const wrap = document.getElementById('pdf-canvas-wrap')
+  wrap.innerHTML = ''
+  for (let i = 1; i <= pdfDoc.numPages; i++) {
+    const page = await pdfDoc.getPage(i)
+    const scale = pdfZoom * (wrap.clientWidth > 0 ? (wrap.clientWidth - 24) / page.getViewport({scale:1}).width : 1)
+    const vp = page.getViewport({ scale })
+    const canvas = document.createElement('canvas')
+    canvas.width = vp.width
+    canvas.height = vp.height
+    canvas.style.maxWidth = '100%'
+    wrap.appendChild(canvas)
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise
+  }
+}
+
+function cambiaZoom(delta) {
+  pdfZoom = Math.max(0.6, Math.min(2.0, pdfZoom + delta))
+  document.getElementById('zoom-label').textContent = Math.round(pdfZoom * 100) + '%'
+  renderAllPages()
+}
+
+// ── SCROLL WATCH ──────────────────────────────────────────────
+function setupScrollWatch() {
+  const wrap = document.getElementById('pdf-canvas-wrap')
+  wrap.addEventListener('scroll', () => {
+    const scrolled = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 50
+    if (scrolled && !hasScrolledToBottom) {
+      hasScrolledToBottom = true
+      sbloccaFirma()
+    }
+  })
+  // Se il PDF è corto (non scrollabile), sblocca dopo render
+  setTimeout(() => {
+    if (!hasScrolledToBottom) {
+      const wrap = document.getElementById('pdf-canvas-wrap')
+      if (wrap.scrollHeight <= wrap.clientHeight + 10) sbloccaFirma()
+    }
+  }, 4000)
+}
+
+function sbloccaFirma() {
+  hasScrolledToBottom = true
+  document.getElementById('scroll-hint').style.display = 'none'
+  const card = document.getElementById('card-firma')
+  card.style.opacity = '1'
+  card.style.pointerEvents = 'auto'
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+// ── CANVAS FIRMA ──────────────────────────────────────────────
+let drawing = false, hasFirma = false
+
+function initCanvas() {
+  const canvas = document.getElementById('sign-canvas')
+  const ctx = canvas.getContext('2d')
+  ctx.strokeStyle = '#1a1a18'
+  ctx.lineWidth = 2.5
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect()
+    const sx = canvas.width / rect.width, sy = canvas.height / rect.height
+    if (e.touches) return { x: (e.touches[0].clientX - rect.left)*sx, y: (e.touches[0].clientY - rect.top)*sy }
+    return { x: (e.clientX - rect.left)*sx, y: (e.clientY - rect.top)*sy }
+  }
+  let lastX, lastY
+  function start(e) { e.preventDefault(); drawing=true; const p=getPos(e); lastX=p.x; lastY=p.y; ctx.beginPath(); ctx.moveTo(lastX,lastY) }
+  function draw(e) { if(!drawing) return; e.preventDefault(); const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); lastX=p.x; lastY=p.y; hasFirma=true }
+  function stop() { drawing=false }
+  canvas.addEventListener('mousedown',start); canvas.addEventListener('mousemove',draw); canvas.addEventListener('mouseup',stop); canvas.addEventListener('mouseleave',stop)
+  canvas.addEventListener('touchstart',start,{passive:false}); canvas.addEventListener('touchmove',draw,{passive:false}); canvas.addEventListener('touchend',stop)
+}
+
+function cancellaFirma() {
+  const canvas = document.getElementById('sign-canvas')
+  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height)
+  hasFirma = false
+}
+
+// ── FIRMA ─────────────────────────────────────────────────────
+async function firmaContratto() {
+  if (!hasFirma) { alert('Per favore disegna la tua firma nel riquadro.'); return }
+  if (!document.getElementById('chk-consenso').checked) { alert('Devi confermare di aver letto il contratto.'); return }
+  if (!document.getElementById('chk-privacy').checked) { alert('Devi accettare il trattamento dei dati.'); return }
+  if (!document.getElementById('chk-vessatorie').checked) { alert('Devi approvare le clausole specifiche (art. 1341 c.c.).'); return }
+
+  const btn = document.getElementById('btn-firma')
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Salvataggio...'
+
+  try {
+    const firmaBase64 = document.getElementById('sign-canvas').toDataURL('image/png')
+    const now = new Date()
+    const dataFirma = now.toLocaleDateString('it-IT') + ' ' + now.toLocaleTimeString('it-IT')
+    let ip = '—'
+    try { const r = await fetch('https://api.ipify.org?format=json'); ip = (await r.json()).ip } catch(e) {}
+
+    const datiAggiornati = { ...contratto, statoFirma:'Firmato', dataFirma, firmaBase64, ipFirma:ip, timestampFirma:now.toISOString() }
+
+    const { error } = await db.from('contratti_firme').update({
+      data: datiAggiornati
+    }).eq('id', contratto._id)
+
+    if (error) throw error
+
+    // ── Email conferma al firmatario ──────────────────────────
+    await inviaEmailConferma(datiAggiornati, dataFirma)
+
+    // ── Email notifica admin ──────────────────────────────────
+    await inviaEmailAdmin(datiAggiornati, dataFirma)
+
+    document.getElementById('timestamp-firma').textContent = 'Firmato il ' + dataFirma + ' · IP: ' + ip
+    mostra('stato-completato')
+  } catch(e) {
+    alert('Errore: ' + e.message)
+    btn.disabled = false; btn.innerHTML = '✍️ Firma e conferma contratto'
+  }
+}
+
+// ── EMAIL TRAMITE ARUBA SMTP via Supabase Edge Proxy ─────────
+// Usiamo un endpoint SMTP-to-HTTP per mandare email da browser
+async function inviaEmailAruba(to, subject, html) {
+  try {
+    const { error } = await dbAdmin.from('email_queue').insert({
+      data: { to, subject, html, sentAt: null, createdAt: new Date().toISOString() }
+    })
+    if(error) console.error('Email queue insert error:', error)
+    else console.log('Email in coda per:', to)
+  } catch(e) { console.error('Email queue:', e) }
+}
+
+async function inviaEmailConferma(d, dataFirma) {
+  const to = d.emailDestinatario
+  const nome = d.nomeDestinatario || 'Procacciatore'
+  const tipo = d.tipoContratto || 'Contratto'
+  if(!to) return
+  await inviaEmailAruba(to,
+    `✅ Conferma firma — ${tipo}`,
+    `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto">
+      <div style="background:#185FA5;padding:24px;text-align:center">
+        <h2 style="color:#fff;margin:0">✅ Contratto firmato con successo!</h2>
+      </div>
+      <div style="padding:28px;background:#fff">
+        <p>Gentile <strong>${nome}</strong>,</p>
+        <p>La informiamo che la firma del <strong>${tipo}</strong> con Leone Consulting di Leonardo Angelucci è stata registrata correttamente.</p>
+        <div style="background:#f5f5f0;border-radius:8px;padding:16px;margin:20px 0;font-size:13px">
+          <p style="margin:4px 0"><strong>Data firma:</strong> ${dataFirma}</p>
+          <p style="margin:4px 0"><strong>Contratto:</strong> ${tipo}</p>
+          <p style="margin:4px 0"><strong>Firmatario:</strong> ${nome}</p>
+        </div>
+        <p style="font-size:13px;color:#666">Per qualsiasi informazione contatti: <a href="mailto:amministrazione@leoneconsultingitalia.it">amministrazione@leoneconsultingitalia.it</a></p>
+      </div>
+      <div style="background:#f5f5f0;padding:14px;text-align:center;font-size:11px;color:#888">
+        Leone Consulting di Leonardo Angelucci · Via Pia 42, 00049 Velletri (RM) · P.IVA 18231181001
+      </div>
+    </div>`
+  )
+}
+
+async function inviaEmailAdmin(d, dataFirma) {
+  const emailAdmin = 'amministrazione@leoneconsultingitalia.it'
+  await inviaEmailAruba(emailAdmin,
+    `✅ Nuova firma ricevuta — ${d.nomeDestinatario||''}`,
+    `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto">
+      <div style="background:#185FA5;padding:24px;text-align:center">
+        <h2 style="color:#fff;margin:0">✅ Nuova firma ricevuta!</h2>
+      </div>
+      <div style="padding:28px;background:#fff">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <tr style="border-bottom:1px solid #eee"><td style="padding:10px 0;color:#666;width:35%">Procacciatore</td><td style="padding:10px 0;font-weight:600">${d.nomeDestinatario||'—'}</td></tr>
+          <tr style="border-bottom:1px solid #eee"><td style="padding:10px 0;color:#666">Email</td><td style="padding:10px 0">${d.emailDestinatario||'—'}</td></tr>
+          <tr style="border-bottom:1px solid #eee"><td style="padding:10px 0;color:#666">Contratto</td><td style="padding:10px 0">${d.tipoContratto||'—'}</td></tr>
+          <tr style="border-bottom:1px solid #eee"><td style="padding:10px 0;color:#666">Data firma</td><td style="padding:10px 0">${dataFirma}</td></tr>
+          <tr><td style="padding:10px 0;color:#666">IP</td><td style="padding:10px 0;font-size:11px;color:#999">${d.ipFirma||'—'}</td></tr>
+        </table>
+      </div>
+      <div style="background:#f5f5f0;padding:14px;text-align:center;font-size:11px;color:#888">
+        Leone Consulting di Leonardo Angelucci · Via Pia 42, 00049 Velletri (RM)
+      </div>
+    </div>`
+  )
+}
+
+init()
+</script>
+</body>
+</html>
