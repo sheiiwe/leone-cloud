@@ -91,7 +91,44 @@ tr:last-child td{border-bottom:none}
       <div class="fg"><label>Password</label><input id="li-pass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn" id="li-btn" onclick="eseguiLogin()">Entra</button>
       <div style="text-align:center;margin-top:12px"><a href="#" onclick="resetPassword();return false" style="color:#F22015;font-size:12.5px;text-decoration:none">Password dimenticata?</a></div>
-      <p class="hint">L'accesso viene creato da Leone Consulting.<br>Per problemi: <a href="mailto:amministrazione@leoneconsultingitalia.it" style="color:#F22015">amministrazione@leoneconsultingitalia.it</a></p>
+      <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:0.5px solid #eee;font-size:12.5px;color:#6b6b66">Non hai ancora un accesso?<br><a href="#" onclick="mostra('v-signup');return false" style="color:#F22015;font-weight:600;text-decoration:none">Crea un account</a></div>
+      <p class="hint">L'accesso va approvato da Leone Consulting.<br>Per problemi: <a href="mailto:amministrazione@leoneconsultingitalia.it" style="color:#F22015">amministrazione@leoneconsultingitalia.it</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- CREA ACCOUNT (registrazione) -->
+<div id="v-signup" class="login-wrap" style="display:none">
+  <div class="login-card">
+    <div class="login-top">
+      <img class="logo-img js-logo" alt="Leone Consulting">
+      <h1>Crea un account</h1>
+      <p>Richiedi l'accesso al portale</p>
+    </div>
+    <div class="login-body">
+      <div class="err" id="su-err"></div>
+      <div class="fg"><label>Nome e cognome</label><input id="su-nome" type="text" placeholder="Mario Rossi"></div>
+      <div class="fg"><label>Email</label><input id="su-email" type="email" autocomplete="username" placeholder="latua@email.it"></div>
+      <div class="fg"><label>Password</label><input id="su-pass" type="password" autocomplete="new-password" placeholder="almeno 8 caratteri"></div>
+      <div class="fg"><label>Ripeti password</label><input id="su-pass2" type="password" autocomplete="new-password" placeholder="ripeti"></div>
+      <button class="btn" id="su-btn" onclick="richiediAccesso()">Richiedi accesso</button>
+      <div style="text-align:center;margin-top:12px"><a href="#" onclick="mostra('v-login');return false" style="color:#6b6b66;font-size:12.5px;text-decoration:none">← Torna al login</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- RICHIESTA INVIATA -->
+<div id="v-signup-done" class="login-wrap" style="display:none">
+  <div class="login-card">
+    <div class="login-top">
+      <img class="logo-img js-logo" alt="Leone Consulting">
+      <p>Portale Procacciatori</p>
+    </div>
+    <div class="login-body" style="text-align:center">
+      <div style="font-size:46px;margin-bottom:10px">✅</div>
+      <h1 style="font-size:18px;color:#3B6D11;margin-bottom:8px">Richiesta inviata!</h1>
+      <p style="font-size:13px;color:#6b6b66;line-height:1.55">La tua richiesta è stata inviata a Leone Consulting.<br>Riceverai l'accesso dopo l'approvazione. Se ti viene chiesto, conferma prima la tua email.</p>
+      <button class="btn" style="margin-top:18px" onclick="mostra('v-login')">Torna al login</button>
     </div>
   </div>
 </div>
@@ -188,7 +225,7 @@ document.querySelectorAll('.js-logo').forEach(i=>{ i.src=LOGO })
 let inviteFlow = false
 
 function mostra(id){
-  ['v-loading','v-login','v-setpass','v-admin','v-app'].forEach(v=>{ const el=document.getElementById(v); if(el) el.style.display='none' })
+  ['v-loading','v-login','v-signup','v-signup-done','v-setpass','v-admin','v-app'].forEach(v=>{ const el=document.getElementById(v); if(el) el.style.display='none' })
   const el=document.getElementById(id); if(el) el.style.display=''
 }
 
@@ -236,6 +273,32 @@ async function resetPassword(){
   }catch(e){ err.textContent='Errore di connessione.' }
 }
 
+async function richiediAccesso(){
+  const nome=(document.getElementById('su-nome').value||'').trim()
+  const email=(document.getElementById('su-email').value||'').trim().toLowerCase()
+  const p1=document.getElementById('su-pass').value||''
+  const p2=document.getElementById('su-pass2').value||''
+  const err=document.getElementById('su-err'); err.style.color=''; err.textContent=''
+  if(!nome){ err.textContent='Inserisci nome e cognome.'; return }
+  if(!email || !email.includes('@')){ err.textContent='Inserisci una email valida.'; return }
+  if(p1.length < 8){ err.textContent='La password deve avere almeno 8 caratteri.'; return }
+  if(p1 !== p2){ err.textContent='Le due password non coincidono.'; return }
+  const btn=document.getElementById('su-btn'); btn.disabled=true; btn.innerHTML='<div class="spinner"></div>'
+  try{
+    const { error } = await db.auth.signUp({ email, password:p1 })
+    if(error){
+      err.textContent = /registered|exists|already/i.test(error.message)
+        ? 'Esiste già un account con questa email. Prova ad accedere o usa Password dimenticata.'
+        : ('Errore: '+error.message)
+      btn.disabled=false; btn.textContent='Richiedi accesso'; return
+    }
+    try{
+      await db.from('portale_accessi').upsert({ email, nome, stato:'in_attesa', approvato:false }, { onConflict:'email', ignoreDuplicates:true })
+    }catch(e){ console.error('richiesta accesso:', e) }
+    mostra('v-signup-done')
+  }catch(e){ err.textContent='Errore di connessione.'; btn.disabled=false; btn.textContent='Richiedi accesso' }
+}
+
 async function impostaPassword(){
   const p1=document.getElementById('sp-pass').value||''
   const p2=document.getElementById('sp-pass2').value||''
@@ -271,8 +334,14 @@ async function avvia(session){
     const righe = pr.data || []
     if(!righe.length){
       document.getElementById('who-nome').textContent = email
-      document.getElementById('np-email').textContent = email
-      document.getElementById('no-profile').style.display = 'block'
+      // Distinguo: richiesta in attesa vs accesso non collegato a una scheda
+      let inAttesa = false
+      try{ const a = await db.from('portale_accessi').select('*'); inAttesa = (a.data||[]).some(r => r.approvato !== true) }catch(e){}
+      const box = document.getElementById('no-profile')
+      box.querySelector('.notice').innerHTML = inAttesa
+        ? 'Il tuo accesso è <strong>in attesa di approvazione</strong> da parte di Leone Consulting. Riceverai conferma a breve.'
+        : 'Il tuo accesso non risulta ancora collegato a una scheda procacciatore. Contatta Leone Consulting indicando l\u0027email con cui hai effettuato l\u0027accesso: <strong>' + email + '</strong>'
+      box.style.display = 'block'
       return
     }
     const p = righe[0].data || righe[0]
@@ -352,6 +421,7 @@ function renderVendite(vendite){
 document.addEventListener('keydown', e=>{
   if(e.key!=='Enter') return
   if(document.getElementById('v-login').style.display==='block') eseguiLogin()
+  else if(document.getElementById('v-signup').style.display==='block') richiediAccesso()
   else if(document.getElementById('v-setpass').style.display==='block') impostaPassword()
 })
 
