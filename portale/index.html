@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<title>Portale Procacciatori — Leone Consulting</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;background:#f5f5f0;color:#1a1a18;min-height:100vh}
+.header{background:#185FA5;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.header .brand h1{color:#fff;font-size:17px;font-weight:700;margin:0}
+.header .brand p{color:rgba(255,255,255,.8);font-size:11px;margin:2px 0 0}
+.header .who{color:rgba(255,255,255,.9);font-size:11px;text-align:right;line-height:1.4}
+.logout{background:rgba(255,255,255,.15);border:none;color:#fff;font-size:11px;padding:6px 12px;border-radius:6px;cursor:pointer;margin-top:4px}
+.logout:hover{background:rgba(255,255,255,.28)}
+.container{max-width:760px;margin:0 auto;padding:18px 16px 60px}
+.card{background:#fff;border:0.5px solid rgba(0,0,0,.10);border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.card h2{font-size:14px;font-weight:600;margin-bottom:12px;color:#1a1a18;display:flex;align-items:center;gap:7px}
+.info-row{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:0.5px solid #f0efe9;font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-lbl{color:#6b6b66;flex-shrink:0}
+.info-val{font-weight:500;color:#1a1a18;text-align:right;word-break:break-word}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tab{flex:1;padding:10px;text-align:center;font-size:12.5px;font-weight:600;border:0.5px solid rgba(0,0,0,.12);border-radius:9px;background:#fff;color:#6b6b66;cursor:pointer}
+.tab.active{background:#185FA5;color:#fff;border-color:#185FA5}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stat{background:#fff;border:0.5px solid rgba(0,0,0,.10);border-radius:11px;padding:14px 12px;text-align:center}
+.stat .v{font-size:18px;font-weight:700;color:#1a1a18}
+.stat .l{font-size:10.5px;color:#6b6b66;margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+.stat.green .v{color:#3B6D11}
+.stat.amber .v{color:#854F0B}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;color:#6b6b66;font-weight:600;font-size:10.5px;text-transform:uppercase;padding:8px 6px;border-bottom:1px solid #ece9e0}
+td{padding:9px 6px;border-bottom:0.5px solid #f3f1ea;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+.b-ok{background:#EAF3DE;color:#3B6D11}
+.b-wait{background:#FAEEDA;color:#854F0B}
+.b-off{background:#eee;color:#888}
+.b-att{background:#EAF3DE;color:#3B6D11}
+.empty{text-align:center;color:#9e9e98;font-size:13px;padding:26px 10px}
+/* login */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.10);width:100%;max-width:380px;overflow:hidden}
+.login-top{background:#185FA5;padding:26px 24px;text-align:center}
+.login-top h1{color:#fff;font-size:19px;font-weight:700}
+.login-top p{color:rgba(255,255,255,.82);font-size:12px;margin-top:4px}
+.login-body{padding:24px}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:6px}
+.fg input{width:100%;padding:12px 13px;font-size:14px;border:0.5px solid rgba(0,0,0,.2);border-radius:9px;font-family:inherit;background:#fff;color:#1a1a18}
+.fg input:focus{outline:none;border-color:#185FA5}
+.btn{width:100%;padding:13px;font-size:14px;font-weight:600;border:none;border-radius:9px;cursor:pointer;font-family:inherit;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{background:#0C447C}
+.btn:disabled{background:#9e9e98;cursor:not-allowed}
+.err{color:#A32D2D;font-size:12.5px;margin-bottom:12px;min-height:16px}
+.hint{font-size:11px;color:#9e9e98;text-align:center;margin-top:14px;line-height:1.5}
+.spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.spin-big{width:36px;height:36px;border:3px solid #d0e6f7;border-top-color:#185FA5;border-radius:50%;animation:spin .8s linear infinite}
+.loading p{color:#6b6b66;font-size:13px}
+.notice{background:#FAEEDA;color:#854F0B;border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.5}
+.footer{text-align:center;font-size:11px;color:#9e9e98;margin-top:18px;line-height:1.6}
+@media(max-width:520px){.stat .v{font-size:16px}.header .brand h1{font-size:15px}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="v-loading" class="loading">
+  <div class="spin-big"></div>
+  <p>Caricamento…</p>
+</div>
+
+<!-- LOGIN -->
+<div id="v-login" class="login-wrap" style="display:none">
+  <div class="login-card">
+    <div class="login-top">
+      <h1>Leone Consulting</h1>
+      <p>Portale Procacciatori</p>
+    </div>
+    <div class="login-body">
+      <div class="err" id="login-err"></div>
+      <div class="fg"><label>Email</label><input id="li-email" type="email" autocomplete="username" placeholder="latua@email.it"></div>
+      <div class="fg"><label>Password</label><input id="li-pass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+      <button class="btn" id="li-btn" onclick="eseguiLogin()">Entra</button>
+      <p class="hint">L'accesso viene creato da Leone Consulting.<br>Per problemi: <a href="mailto:amministrazione@leoneconsultingitalia.it" style="color:#185FA5">amministrazione@leoneconsultingitalia.it</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- IMPOSTA PASSWORD (invito / recupero) -->
+<div id="v-setpass" class="login-wrap" style="display:none">
+  <div class="login-card">
+    <div class="login-top">
+      <h1>Imposta la password</h1>
+      <p>Scegli la password per il tuo accesso</p>
+    </div>
+    <div class="login-body">
+      <div class="err" id="sp-err"></div>
+      <div class="fg"><label>Nuova password</label><input id="sp-pass" type="password" autocomplete="new-password" placeholder="almeno 8 caratteri"></div>
+      <div class="fg"><label>Ripeti password</label><input id="sp-pass2" type="password" autocomplete="new-password" placeholder="ripeti"></div>
+      <button class="btn" id="sp-btn" onclick="impostaPassword()">Salva e accedi</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="v-admin" style="display:none">
+  <div class="header"><div class="brand"><h1>Leone Consulting</h1><p>Portale Procacciatori</p></div><div class="who"><span id="adm-email"></span><br><button class="logout" onclick="logout()">Esci</button></div></div>
+  <div class="container">
+    <div class="card"><div class="notice">Sei collegato come <strong>amministratore</strong>. Questo portale è la vista del singolo procacciatore. La gestione completa è nell'app desktop. (Lo specchio admin completo arriverà in un prossimo aggiornamento.)</div></div>
+  </div>
+</div>
+
+<!-- APP PROCACCIATORE -->
+<div id="v-app" style="display:none">
+  <div class="header">
+    <div class="brand"><h1>Leone Consulting</h1><p>Portale Procacciatori</p></div>
+    <div class="who"><span id="who-nome">—</span><br><button class="logout" onclick="logout()">Esci</button></div>
+  </div>
+  <div class="container">
+    <div id="no-profile" class="card" style="display:none">
+      <div class="notice">Il tuo accesso non risulta ancora collegato a una scheda procacciatore. Contatta Leone Consulting indicando l'email con cui hai effettuato l'accesso: <strong id="np-email"></strong></div>
+    </div>
+
+    <div id="app-content" style="display:none">
+      <div class="tabs">
+        <div class="tab active" id="tab-prov" onclick="vai('prov')">💰 Provvigioni</div>
+        <div class="tab" id="tab-profilo" onclick="vai('profilo')">👤 Profilo</div>
+      </div>
+
+      <!-- PROVVIGIONI -->
+      <div id="pane-prov">
+        <div class="stat-grid">
+          <div class="stat"><div class="v" id="st-maturato">€0</div><div class="l">Maturato</div></div>
+          <div class="stat green"><div class="v" id="st-incassato">€0</div><div class="l">Incassato</div></div>
+          <div class="stat amber"><div class="v" id="st-attesa">€0</div><div class="l">Da incassare</div></div>
+        </div>
+        <div class="card">
+          <h2>📊 Le tue vendite</h2>
+          <div id="vendite-box"><div class="empty">Caricamento…</div></div>
+        </div>
+      </div>
+
+      <!-- PROFILO -->
+      <div id="pane-profilo" style="display:none">
+        <div class="card">
+          <h2>👤 Dati anagrafici</h2>
+          <div id="profilo-anag"></div>
+        </div>
+        <div class="card">
+          <h2>💳 Dati fiscali e di pagamento</h2>
+          <div id="profilo-fisc"></div>
+        </div>
+        <div class="card">
+          <h2>📄 Contratto</h2>
+          <div id="profilo-contr"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Leone Consulting di Leonardo Angelucci<br>
+      Via Pia 42, 00049 Velletri (RM) · P.IVA 18231181001
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://uljdbdbkiulbcquuhfwd.supabase.co'
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsamRiZGJraXVsYmNxdXVoZndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1Nzk3NjcsImV4cCI6MjA5NjE1NTc2N30.TsTSIwUqawsT6M_pwUXjRutCSHToJdVfGF3FxqG3TUA'
+const ADMIN_EMAIL = 'amministrazione@leoneconsultingitalia.it'
+const { createClient } = supabase
+const db = createClient(SUPA_URL, SUPA_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } })
+
+let inviteFlow = false
+
+function mostra(id){
+  ['v-loading','v-login','v-setpass','v-admin','v-app'].forEach(v=>{ const el=document.getElementById(v); if(el) el.style.display='none' })
+  const el=document.getElementById(id); if(el) el.style.display='block'
+}
+
+// Invito / recupero password: Supabase mette il token nell'hash dell'URL
+db.auth.onAuthStateChange((event)=>{
+  if(event === 'PASSWORD_RECOVERY' || event === 'USER_UPDATED'){
+    if(event === 'PASSWORD_RECOVERY'){ inviteFlow = true; mostra('v-setpass') }
+  }
+})
+
+async function init(){
+  const hash = window.location.hash || ''
+  const isInvite = hash.includes('type=invite') || hash.includes('type=recovery')
+  // piccolo ritardo: lascia a supabase-js il tempo di leggere l'hash
+  await new Promise(r=>setTimeout(r, isInvite ? 350 : 0))
+  if(isInvite){ inviteFlow = true; mostra('v-setpass'); return }
+
+  const { data } = await db.auth.getSession()
+  if(data && data.session){ await avvia(data.session) }
+  else { mostra('v-login'); setTimeout(()=>document.getElementById('li-email')?.focus(), 100) }
+}
+
+async function eseguiLogin(){
+  const email=(document.getElementById('li-email').value||'').trim().toLowerCase()
+  const pass=document.getElementById('li-pass').value||''
+  const err=document.getElementById('login-err'); err.textContent=''
+  if(!email || !pass){ err.textContent='Inserisci email e password.'; return }
+  const btn=document.getElementById('li-btn'); btn.disabled=true; btn.innerHTML='<div class="spinner"></div>'
+  try{
+    const { data, error } = await db.auth.signInWithPassword({ email, password: pass })
+    if(error){ err.textContent='Email o password non corretti.'; btn.disabled=false; btn.textContent='Entra'; return }
+    await avvia(data.session)
+  }catch(e){ err.textContent='Errore di connessione.'; btn.disabled=false; btn.textContent='Entra' }
+}
+
+async function impostaPassword(){
+  const p1=document.getElementById('sp-pass').value||''
+  const p2=document.getElementById('sp-pass2').value||''
+  const err=document.getElementById('sp-err'); err.textContent=''
+  if(p1.length < 8){ err.textContent='La password deve avere almeno 8 caratteri.'; return }
+  if(p1 !== p2){ err.textContent='Le due password non coincidono.'; return }
+  const btn=document.getElementById('sp-btn'); btn.disabled=true; btn.innerHTML='<div class="spinner"></div>'
+  try{
+    const { error } = await db.auth.updateUser({ password: p1 })
+    if(error){ err.textContent='Errore: '+error.message; btn.disabled=false; btn.textContent='Salva e accedi'; return }
+    history.replaceState(null, '', window.location.pathname)
+    const { data } = await db.auth.getSession()
+    await avvia(data.session)
+  }catch(e){ err.textContent='Errore di connessione.'; btn.disabled=false; btn.textContent='Salva e accedi' }
+}
+
+async function logout(){
+  try{ await db.auth.signOut() }catch(e){}
+  location.reload()
+}
+
+async function avvia(session){
+  mostra('v-loading')
+  const email = (session?.user?.email || '').toLowerCase()
+  if(email === ADMIN_EMAIL){
+    document.getElementById('adm-email').textContent = email
+    mostra('v-admin'); return
+  }
+  mostra('v-app')
+  try{
+    // Grazie all'RLS, queste query restituiscono SOLO i dati di chi è loggato
+    const pr = await db.from('procacciatori').select('*')
+    const righe = pr.data || []
+    if(!righe.length){
+      document.getElementById('who-nome').textContent = email
+      document.getElementById('np-email').textContent = email
+      document.getElementById('no-profile').style.display = 'block'
+      return
+    }
+    const p = righe[0].data || righe[0]
+    p._id = righe[0].id
+    renderProfilo(p)
+    document.getElementById('who-nome').textContent = p.nome || email
+
+    const vd = await db.from('vendite').select('*')
+    const vendite = (vd.data || []).map(r => r.data || r)
+    renderVendite(vendite)
+
+    document.getElementById('app-content').style.display = 'block'
+  }catch(e){
+    document.getElementById('who-nome').textContent = email
+    document.getElementById('no-profile').style.display = 'block'
+    document.getElementById('np-email').textContent = email
+    console.error(e)
+  }
+}
+
+function vai(t){
+  document.getElementById('tab-prov').classList.toggle('active', t==='prov')
+  document.getElementById('tab-profilo').classList.toggle('active', t==='profilo')
+  document.getElementById('pane-prov').style.display = t==='prov' ? 'block' : 'none'
+  document.getElementById('pane-profilo').style.display = t==='profilo' ? 'block' : 'none'
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function eur(n){ const x=Number(n)||0; return '€' + x.toLocaleString('it-IT', {minimumFractionDigits:0, maximumFractionDigits:2}) }
+function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function row(lbl, val){ if(val==null || val==='') return ''; return '<div class="info-row"><span class="info-lbl">'+lbl+'</span><span class="info-val">'+esc(val)+'</span></div>' }
+
+function renderProfilo(p){
+  const regimeLbl = p.regime==='piva' ? 'Partita IVA' : 'Ritenuta d\u0027acconto'
+  const contoLbl = {bancario:'Conto corrente bancario', postale:'Conto corrente postale', estero:'Conto estero'}[p.tipo_conto] || '—'
+  const indirizzo = [p.indirizzo, p.cap, p.citta, p.prov].filter(Boolean).join(' ')
+  document.getElementById('profilo-anag').innerHTML =
+    row('Nome', p.nome) + row('Email', p.email) + row('Telefono', p.tel) +
+    row('Indirizzo', indirizzo) + row('Zona', p.zona) +
+    row('Data di nascita', p.nascita) + row('Luogo di nascita', p.luogonascita) || '<div class="empty">Nessun dato.</div>'
+  document.getElementById('profilo-fisc').innerHTML =
+    row('Regime fiscale', regimeLbl) + row(p.regime==='piva'?'Partita IVA':'Codice fiscale', p.cf) +
+    row('Codice ATECO', p.ateco) + row('Tipo di conto', contoLbl) + row('IBAN', p.iban) || '<div class="empty">Nessun dato.</div>'
+  const statoB = p.stato==='Attivo' ? '<span class="badge b-att">Attivo</span>' : '<span class="badge b-off">'+esc(p.stato||'—')+'</span>'
+  document.getElementById('profilo-contr').innerHTML =
+    row('N. contratto', p.nContratto) + row('Inizio', p.inizio) + row('Scadenza', p.fine) +
+    '<div class="info-row"><span class="info-lbl">Stato</span><span class="info-val">'+statoB+'</span></div>'
+}
+
+function renderVendite(vendite){
+  const box = document.getElementById('vendite-box')
+  const valide = vendite.filter(v => (v.stato||'') !== 'Annullato')
+  const maturato = valide.reduce((s,v)=> s + (Number(v.prov)||0), 0)
+  const incassato = valide.filter(v=>v.stato==='Incassato').reduce((s,v)=> s + (Number(v.prov)||0), 0)
+  const attesa = maturato - incassato
+  document.getElementById('st-maturato').textContent = eur(maturato)
+  document.getElementById('st-incassato').textContent = eur(incassato)
+  document.getElementById('st-attesa').textContent = eur(attesa)
+
+  if(!vendite.length){ box.innerHTML = '<div class="empty">Non risultano ancora vendite registrate.</div>'; return }
+  const ordinate = [...vendite].sort((a,b)=> (b.data||'').localeCompare(a.data||''))
+  const badge = s => s==='Incassato' ? '<span class="badge b-ok">Incassato</span>'
+                   : s==='Annullato' ? '<span class="badge b-off">Annullato</span>'
+                   : '<span class="badge b-wait">'+esc(s||'In attesa')+'</span>'
+  box.innerHTML =
+    '<table><thead><tr><th>Data</th><th>Prodotto / Cliente</th><th class="num">Provv.</th><th>Stato</th></tr></thead><tbody>' +
+    ordinate.map(v =>
+      '<tr><td style="white-space:nowrap;color:#6b6b66">'+esc(v.data||'')+'</td>' +
+      '<td><strong>'+esc(v.prod||'—')+'</strong>'+(v.cliente?'<br><span style="color:#9e9e98;font-size:11px">'+esc(v.cliente)+'</span>':'')+'</td>' +
+      '<td class="num"><strong>'+eur(v.prov)+'</strong></td>' +
+      '<td>'+badge(v.stato)+'</td></tr>'
+    ).join('') +
+    '</tbody></table>'
+}
+
+// invio con Enter
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Enter') return
+  if(document.getElementById('v-login').style.display==='block') eseguiLogin()
+  else if(document.getElementById('v-setpass').style.display==='block') impostaPassword()
+})
+
+init()
+</script>
+</body>
+</html>
