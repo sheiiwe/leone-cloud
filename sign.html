@@ -6,6 +6,7 @@
 <title>Firma contratto — Leone Consulting</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;background:#f5f5f0;color:#1a1a18;min-height:100vh}
@@ -205,8 +206,12 @@ const { createClient } = supabase
 const db = createClient(SUPA_URL, SUPA_KEY)
 const dbAdmin = db
 
-// URL pubblico del contratto su Supabase Storage
-const PDF_URL = SUPA_URL + '/storage/v1/object/public/contratti/contratto_procacciatori_con_privacy.pdf'
+// URL del PDF: se il contratto ha un documento configurato lo usa, altrimenti fallback al PDF standard
+const PDF_FALLBACK = SUPA_URL + '/storage/v1/object/public/contratti/contratto_procacciatori_con_privacy.pdf'
+function urlPdfContratto(){
+  if (contratto && contratto.pdfPath) return SUPA_URL + '/storage/v1/object/public/contratti/' + contratto.pdfPath
+  return PDF_FALLBACK
+}
 
 const params = new URLSearchParams(window.location.search)
 const token = params.get('token')
@@ -249,7 +254,7 @@ function mostra(id) {
 // ── PDF ───────────────────────────────────────────────────────
 async function caricaPDF() {
   try {
-    pdfDoc = await pdfjsLib.getDocument(PDF_URL).promise
+    pdfDoc = await pdfjsLib.getDocument(urlPdfContratto()).promise
     document.getElementById('pdf-info').textContent = `${pdfDoc.numPages} pagine`
     await renderAllPages()
   } catch(e) {
@@ -341,6 +346,64 @@ function cancellaFirma() {
   hasFirma = false
 }
 
+// ── GENERA PDF FIRMATO ────────────────────────────────────────
+// Timbra sul PDF del contratto: immagine firma (segnaposto "Firma"/data_firma),
+// data (segnaposto "Data"), e X su Conto/Regime/Privacy/Documenti scelti.
+// Usa gli stessi offset di compilaPdfBytes nell'app, così la calibrazione coincide.
+async function generaPdfFirmato(firmaPngDataUrl, tipoConto, regime) {
+  if (typeof PDFLib === 'undefined') { console.warn('pdf-lib non caricata'); return null }
+  if (!contratto || !contratto.pdfPath || !Array.isArray(contratto.coords) || !contratto.coords.length) return null
+  const url = urlPdfContratto()
+  const resp = await fetch(url)
+  if (!resp.ok) throw new Error('PDF non scaricabile (' + resp.status + ')')
+  const bytes = await resp.arrayBuffer()
+  const pdfDoc = await PDFLib.PDFDocument.load(bytes)
+  const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica)
+  const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold)
+  const pngImg = await pdfDoc.embedPng(firmaPngDataUrl)
+  const pages = pdfDoc.getPages()
+  const dateOnly = new Date().toLocaleDateString('it-IT')
+  const hasFile = id => !!(document.getElementById(id) && document.getElementById(id).files && document.getElementById(id).files[0])
+
+  contratto.coords.forEach(m => {
+    const pg = pages[(m.page || 1) - 1]; if (!pg) return
+    const pw = pg.getSize().width, ph = pg.getSize().height
+    const x = (m.x_pct / 100) * pw
+    const yTop = (m.y_pct / 100) * ph
+    const t = m.tipo
+
+    if (t === 'data_firma') {
+      const w = 130
+      const h = w * (pngImg.height / pngImg.width)
+      pg.drawImage(pngImg, { x: x, y: ph - yTop - h, width: w, height: h })
+      return
+    }
+
+    let testo = null, spunta = false
+    if (t === 'data') testo = dateOnly
+    else if (t === 'nome') testo = contratto.nomeDestinatario || ''
+    else if (t === 'email') testo = contratto.emailDestinatario || ''
+    else if (t === 'conto_bancario') spunta = (tipoConto === 'bancario')
+    else if (t === 'conto_postale')  spunta = (tipoConto === 'postale')
+    else if (t === 'conto_estero')   spunta = (tipoConto === 'estero')
+    else if (t === 'regime_piva')        spunta = (regime === 'piva')
+    else if (t === 'regime_occasionale') spunta = (regime === 'ritenuta')
+    else if (t === 'privacy_contr' || t === 'privacy_fisc') spunta = true
+    else if (t === 'chk_doc_identita') spunta = hasFile('up-identita')
+    else if (t === 'chk_doc_cf')       spunta = hasFile('up-cf')
+    else if (t === 'chk_doc_visura')   spunta = hasFile('up-visura')
+    else return
+
+    if (spunta) {
+      pg.drawText('X', { x: x - 4, y: ph - yTop - 5, size: 12, font: fontBold, color: PDFLib.rgb(0,0,0) })
+    } else if (testo) {
+      pg.drawText(testo.toString(), { x: x, y: ph - yTop - 4, size: 10, font, color: PDFLib.rgb(0.05,0.05,0.05) })
+    }
+  })
+
+  return await pdfDoc.save()
+}
+
 // ── FIRMA ─────────────────────────────────────────────────────
 async function firmaContratto() {
   if (!hasFirma) { alert('Per favore disegna la tua firma nel riquadro.'); return }
@@ -380,10 +443,21 @@ async function firmaContratto() {
     await caricaDoc('up-cf','codice_fiscale')
     await caricaDoc('up-visura','visura_camerale')
 
+    // ── Genera il PDF firmato (firma + data + spunte) e lo carica ──
+    let pdfFirmatoPath = null
+    try {
+      const out = await generaPdfFirmato(firmaBase64, tipoConto, regimeScelto)
+      if (out) {
+        pdfFirmatoPath = 'firme/' + (contratto.signToken || contratto._id) + '_firmato.pdf'
+        const upF = await db.storage.from('contratti').upload(pdfFirmatoPath, new Blob([out], {type:'application/pdf'}), { upsert:true, contentType:'application/pdf' })
+        if (upF.error) { console.error('Upload PDF firmato:', upF.error); pdfFirmatoPath = null }
+      }
+    } catch(e) { console.error('Generazione PDF firmato:', e) }
+
     const datiAggiornati = { ...contratto, statoFirma:'Firmato', dataFirma, firmaBase64, ipFirma:ip, timestampFirma:now.toISOString(),
       tipoConto, regimeScelto,
       lettoIntegralmente:true, clausoleApprovate:true, privacyFiscale:true, privacyContrattuale:true, privacyGdpr:true,
-      documentiCaricati }
+      documentiCaricati, pdfFirmatoPath }
 
     const { error } = await db.from('contratti_firme').update({
       data: datiAggiornati
