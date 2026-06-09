@@ -173,6 +173,7 @@ tr:last-child td{border-bottom:none}
       <div class="tabs">
         <div class="tab active" id="tab-prov" onclick="vai('prov')">💰 Provvigioni</div>
         <div class="tab" id="tab-profilo" onclick="vai('profilo')">👤 Profilo</div>
+        <div class="tab" id="tab-doc" onclick="vai('doc')">📄 Documenti</div>
       </div>
 
       <!-- PROVVIGIONI -->
@@ -201,6 +202,14 @@ tr:last-child td{border-bottom:none}
         <div class="card">
           <h2>📄 Contratto</h2>
           <div id="profilo-contr"></div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTI -->
+      <div id="pane-doc" style="display:none">
+        <div class="card">
+          <h2>📄 I tuoi documenti</h2>
+          <div id="documenti-box"><div class="empty">Caricamento…</div></div>
         </div>
       </div>
     </div>
@@ -353,6 +362,11 @@ async function avvia(session){
     const vendite = (vd.data || []).map(r => r.data || r)
     renderVendite(vendite)
 
+    try{
+      const dd = await db.from('portale_documenti').select('*').order('created_at',{ascending:false})
+      renderDocumenti(dd.data || [])
+    }catch(e){ renderDocumenti([]) }
+
     document.getElementById('app-content').style.display = 'block'
   }catch(e){
     document.getElementById('who-nome').textContent = email
@@ -365,8 +379,10 @@ async function avvia(session){
 function vai(t){
   document.getElementById('tab-prov').classList.toggle('active', t==='prov')
   document.getElementById('tab-profilo').classList.toggle('active', t==='profilo')
+  document.getElementById('tab-doc').classList.toggle('active', t==='doc')
   document.getElementById('pane-prov').style.display = t==='prov' ? 'block' : 'none'
   document.getElementById('pane-profilo').style.display = t==='profilo' ? 'block' : 'none'
+  document.getElementById('pane-doc').style.display = t==='doc' ? 'block' : 'none'
 }
 
 // ── RENDER ────────────────────────────────────────────────────
@@ -417,7 +433,22 @@ function renderVendite(vendite){
     '</tbody></table>'
 }
 
-// invio con Enter
+function renderDocumenti(docs){
+  const box = document.getElementById('documenti-box')
+  if(!box) return
+  if(!docs.length){ box.innerHTML = '<div class="empty">Non hai ancora documenti disponibili.</div>'; return }
+  box.innerHTML =
+    '<table><thead><tr><th>Documento</th><th>Tipo</th><th></th></tr></thead><tbody>' +
+    docs.map(r => {
+      const d = r || {}
+      const data = (d.created_at||'').slice(0,10)
+      const link = d.url ? '<a class="badge b-ok" style="text-decoration:none" href="'+esc(d.url)+'" target="_blank" rel="noopener">Scarica</a>' : '<span class="badge b-off">non disponibile</span>'
+      return '<tr><td><strong>'+esc(d.nome||'Documento')+'</strong>'+(data?'<br><span style="color:#9e9e98;font-size:11px">'+esc(data)+'</span>':'')+'</td>' +
+             '<td><span style="color:#6b6b66;font-size:12px">'+esc(d.tipo||'')+'</span></td>' +
+             '<td style="text-align:right">'+link+'</td></tr>'
+    }).join('') +
+    '</tbody></table>'
+}
 document.addEventListener('keydown', e=>{
   if(e.key!=='Enter') return
   if(document.getElementById('v-login').style.display==='block') eseguiLogin()
