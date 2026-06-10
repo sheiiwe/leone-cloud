@@ -173,6 +173,7 @@ tr:last-child td{border-bottom:none}
       <div class="tabs">
         <div class="tab active" id="tab-prov" onclick="vai('prov')">💰 Provvigioni</div>
         <div class="tab" id="tab-bacheca" onclick="vai('bacheca')">📣 Bacheca</div>
+        <div class="tab" id="tab-listino" onclick="vai('listino')">💶 Listino</div>
         <div class="tab" id="tab-lead" onclick="vai('lead')">📋 I miei Lead</div>
         <div class="tab" id="tab-profilo" onclick="vai('profilo')">👤 Profilo</div>
         <div class="tab" id="tab-doc" onclick="vai('doc')">📄 Documenti</div>
@@ -181,6 +182,15 @@ tr:last-child td{border-bottom:none}
       <!-- BACHECA -->
       <div id="pane-bacheca" style="display:none">
         <div id="bacheca-lista"></div>
+      </div>
+
+      <!-- LISTINO -->
+      <div id="pane-listino" style="display:none">
+        <div class="card" style="margin-bottom:14px">
+          <div style="font-size:13px;color:#6b6b66;margin-bottom:10px">Prezzi al pubblico dei servizi e corsi. Usali per dare un preventivo al cliente.</div>
+          <input id="listino-search" type="text" placeholder="🔍 Cerca prodotto o categoria..." oninput="renderListinoPortale(null, this.value)" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box">
+        </div>
+        <div id="listino-lista"></div>
       </div>
 
       <!-- PROVVIGIONI -->
@@ -436,6 +446,12 @@ async function avvia(session){
       renderBacheca(bc.data || [])
     }catch(e){ renderBacheca([]) }
 
+    try{
+      const r = await db.from('listino').select('*').limit(1)
+      const items = (r.data && r.data[0] && r.data[0].data && r.data[0].data.items) || []
+      renderListinoPortale(items)
+    }catch(e){ renderListinoPortale([]) }
+
     // Aggiornamento dal vivo: se l'amministrazione aggiunge una vendita/lead, si aggiorna da solo
     try{
       try{ if(session?.access_token) db.realtime.setAuth(session.access_token) }catch(e){}
@@ -444,6 +460,7 @@ async function avvia(session){
         .on('postgres_changes',{event:'*',schema:'public',table:'vendite'}, ricaricaDati)
         .on('postgres_changes',{event:'*',schema:'public',table:'leads'},   ricaricaDati)
         .on('postgres_changes',{event:'*',schema:'public',table:'bacheca'}, ricaricaBacheca)
+        .on('postgres_changes',{event:'*',schema:'public',table:'listino'}, ricaricaListino)
         .subscribe()
     }catch(e){ console.error('realtime:', e) }
 
@@ -459,11 +476,13 @@ async function avvia(session){
 function vai(t){
   document.getElementById('tab-prov').classList.toggle('active', t==='prov')
   document.getElementById('tab-bacheca').classList.toggle('active', t==='bacheca')
+  document.getElementById('tab-listino').classList.toggle('active', t==='listino')
   document.getElementById('tab-lead').classList.toggle('active', t==='lead')
   document.getElementById('tab-profilo').classList.toggle('active', t==='profilo')
   document.getElementById('tab-doc').classList.toggle('active', t==='doc')
   document.getElementById('pane-prov').style.display = t==='prov' ? 'block' : 'none'
   document.getElementById('pane-bacheca').style.display = t==='bacheca' ? 'block' : 'none'
+  document.getElementById('pane-listino').style.display = t==='listino' ? 'block' : 'none'
   document.getElementById('pane-lead').style.display = t==='lead' ? 'block' : 'none'
   document.getElementById('pane-profilo').style.display = t==='profilo' ? 'block' : 'none'
   document.getElementById('pane-doc').style.display = t==='doc' ? 'block' : 'none'
@@ -473,6 +492,32 @@ function vai(t){
 function eur(n){ const x=Number(n)||0; return '€' + x.toLocaleString('it-IT', {minimumFractionDigits:0, maximumFractionDigits:2}) }
 function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 function row(lbl, val){ if(val==null || val==='') return ''; return '<div class="info-row"><span class="info-lbl">'+lbl+'</span><span class="info-val">'+esc(val)+'</span></div>' }
+
+let LISTINO_PORTALE = []
+function renderListinoPortale(items, filtro){
+  if(items!=null) LISTINO_PORTALE = items
+  const box=document.getElementById('listino-lista'); if(!box) return
+  const q=(filtro||'').toLowerCase().trim()
+  let list=LISTINO_PORTALE||[]
+  if(q) list=list.filter(p=>(p.nome||'').toLowerCase().includes(q)||(p.cat||'').toLowerCase().includes(q))
+  if(!list.length){ box.innerHTML='<div class="empty">Nessun prodotto trovato.</div>'; return }
+  const cats={}
+  list.forEach(p=>{ const c=p.cat||'Altro'; (cats[c]=cats[c]||[]).push(p) })
+  box.innerHTML = Object.keys(cats).map(cat=>{
+    const rows=cats[cat].map(p=>{
+      const prezzo=(p.prezzo!=null && p.prezzo!=='') ? eur(p.prezzo) : '<span style="color:#9e9e98;font-weight:400">su richiesta</span>'
+      return '<tr><td>'+esc(p.nome||'')+'</td><td style="text-align:right;font-weight:700;color:#3B6D11;white-space:nowrap">'+prezzo+'</td></tr>'
+    }).join('')
+    return '<div class="card"><h2 style="margin:0 0 8px">'+esc(cat)+'</h2><table><tbody>'+rows+'</tbody></table></div>'
+  }).join('')
+}
+async function ricaricaListino(){
+  try{
+    const r=await db.from('listino').select('*').limit(1)
+    const items=(r.data && r.data[0] && r.data[0].data && r.data[0].data.items) || []
+    renderListinoPortale(items, document.getElementById('listino-search')?.value || '')
+  }catch(e){ console.error('listino:', e) }
+}
 
 async function ricaricaBacheca(){
   try{ const bc = await db.from('bacheca').select('*').order('created_at',{ascending:false}); renderBacheca(bc.data||[]) }
