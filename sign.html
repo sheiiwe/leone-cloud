@@ -127,8 +127,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
     <div class="card" id="card-dati">
       <h2>📋 I tuoi dati e documenti</h2>
       <div style="margin-bottom:16px">
-        <div style="font-size:12.5px;font-weight:600;margin-bottom:6px">Qual è il tuo conto?</div>
-        <select id="sel-tipo-conto" class="sel">
+        <div style="font-size:12.5px;font-weight:600;margin-bottom:6px">Qual è il tuo conto? <span style="color:#c0392b">(obbligatorio)</span></div>
+        <select id="sel-tipo-conto" class="sel" onchange="aggiornaFirmaPronta()">
           <option value="">Seleziona...</option>
           <option value="bancario">Conto corrente bancario</option>
           <option value="postale">Conto corrente postale (Poste Italiane)</option>
@@ -136,8 +136,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
         </select>
       </div>
       <div style="margin-bottom:16px">
-        <div style="font-size:12.5px;font-weight:600;margin-bottom:6px">Qual è il tuo regime fiscale?</div>
-        <select id="sel-regime" class="sel">
+        <div style="font-size:12.5px;font-weight:600;margin-bottom:6px">Qual è il tuo regime fiscale? <span style="color:#c0392b">(obbligatorio)</span></div>
+        <select id="sel-regime" class="sel" onchange="aggiornaFirmaPronta()">
           <option value="">Seleziona...</option>
           <option value="piva">Titolare di Partita IVA</option>
           <option value="ritenuta">Prestazione occasionale</option>
@@ -145,9 +145,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
       </div>
       <div>
         <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">Allega i tuoi documenti</div>
-        <label class="up-row">Carta d'identità <input type="file" id="up-identita" accept="image/*,application/pdf"></label>
-        <label class="up-row">Codice fiscale / Tessera sanitaria <input type="file" id="up-cf" accept="image/*,application/pdf"></label>
-        <label class="up-row">Visura camerale o documento equivalente (solo se P.IVA) <input type="file" id="up-visura" accept="image/*,application/pdf"></label>
+        <label class="up-row">Carta d'identità <span style="color:#c0392b">(obbligatorio)</span> <input type="file" id="up-identita" accept="image/*,application/pdf" onchange="aggiornaFirmaPronta()"></label>
+        <label class="up-row">Codice fiscale / Tessera sanitaria <span style="color:#c0392b">(obbligatorio)</span> <input type="file" id="up-cf" accept="image/*,application/pdf" onchange="aggiornaFirmaPronta()"></label>
+        <label class="up-row">Visura camerale o documento equivalente <span style="color:#7a7a72">(obbligatorio solo se Partita IVA)</span> <input type="file" id="up-visura" accept="image/*,application/pdf" onchange="aggiornaFirmaPronta()"></label>
       </div>
     </div>
 
@@ -161,30 +161,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
       </div>
       <button class="btn-ghost" onclick="cancellaFirma()">↺ Cancella e rifai</button>
 
+      <div style="margin-top:14px;font-size:12px;color:#7a3030;background:#fdecea;border:1px solid #f5c6cb;border-radius:8px;padding:9px 11px">⚠️ Per poter firmare devi spuntare <strong>tutte</strong> le caselle qui sotto e aver compilato conto, regime e documenti qui sopra.</div>
+
       <div style="margin-top:14px">
         <label class="checkbox-row">
-          <input type="checkbox" id="chk-consenso">
+          <input type="checkbox" id="chk-consenso" onchange="aggiornaFirmaPronta()">
           Dichiaro di aver letto integralmente il contratto <strong id="chk-tipo-ct"></strong> e di accettarne il contenuto, apponendo la mia firma digitale consapevolmente.
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" id="chk-vessatorie">
+          <input type="checkbox" id="chk-vessatorie" onchange="aggiornaFirmaPronta()">
           Ai sensi degli artt. 1341 e 1342 c.c., approvo specificamente le clausole di cui agli Art. 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13 del contratto.
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" id="chk-privacy-fisc">
+          <input type="checkbox" id="chk-privacy-fisc" onchange="aggiornaFirmaPronta()">
           Acconsento al trattamento dei miei dati per le finalità fiscali e contabili (fatturazione, ritenute e adempimenti di legge).
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" id="chk-contrattuali">
+          <input type="checkbox" id="chk-contrattuali" onchange="aggiornaFirmaPronta()">
           Acconsento al trattamento dei miei dati per le finalità contrattuali e amministrative.
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" id="chk-privacy">
+          <input type="checkbox" id="chk-privacy" onchange="aggiornaFirmaPronta()">
           Acconsento al trattamento dei miei dati personali ai sensi del GDPR (Reg. UE 2016/679), secondo l'informativa privacy allegata.
         </label>
       </div>
 
-      <button class="btn btn-p" id="btn-firma" onclick="firmaContratto()" style="margin-top:16px">
+      <div id="firma-mancanze" style="display:none;margin-top:14px;font-size:12px;color:#c0392b;background:#fdecea;border:1px solid #f5c6cb;border-radius:8px;padding:9px 11px"></div>
+      <button class="btn btn-p" id="btn-firma" onclick="firmaContratto()" style="margin-top:14px">
         ✍️ Firma e conferma contratto
       </button>
     </div>
@@ -237,6 +240,7 @@ async function init() {
     document.getElementById('chk-tipo-ct').textContent = '"' + (contratto.tipoContratto || '') + '"'
     mostra('stato-firma')
     initCanvas()
+    wireFirmaChecks()
     caricaPDF()
     setupScrollWatch()
   } catch(e) { console.error(e); mostra('stato-errore') }
@@ -334,7 +338,7 @@ function initCanvas() {
   }
   let lastX, lastY
   function start(e) { e.preventDefault(); drawing=true; const p=getPos(e); lastX=p.x; lastY=p.y; ctx.beginPath(); ctx.moveTo(lastX,lastY) }
-  function draw(e) { if(!drawing) return; e.preventDefault(); const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); lastX=p.x; lastY=p.y; hasFirma=true }
+  function draw(e) { if(!drawing) return; e.preventDefault(); const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); lastX=p.x; lastY=p.y; if(!hasFirma){ hasFirma=true; aggiornaFirmaPronta() } }
   function stop() { drawing=false }
   canvas.addEventListener('mousedown',start); canvas.addEventListener('mousemove',draw); canvas.addEventListener('mouseup',stop); canvas.addEventListener('mouseleave',stop)
   canvas.addEventListener('touchstart',start,{passive:false}); canvas.addEventListener('touchmove',draw,{passive:false}); canvas.addEventListener('touchend',stop)
@@ -344,6 +348,36 @@ function cancellaFirma() {
   const canvas = document.getElementById('sign-canvas')
   canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height)
   hasFirma = false
+  aggiornaFirmaPronta()
+}
+
+// Abilita il tasto Firma solo quando TUTTO è a posto; mostra cosa manca
+function aggiornaFirmaPronta(){
+  const miss=[]
+  if(!document.getElementById('sel-tipo-conto').value) miss.push('seleziona il conto')
+  const reg=document.getElementById('sel-regime').value
+  if(!reg) miss.push('seleziona il regime fiscale')
+  if(!document.getElementById('up-identita')?.files?.[0]) miss.push('allega la carta d\u0027identità')
+  if(!document.getElementById('up-cf')?.files?.[0]) miss.push('allega il codice fiscale')
+  if(reg==='piva' && !document.getElementById('up-visura')?.files?.[0]) miss.push('allega la visura camerale (P.IVA)')
+  const tutteSpunte=['chk-consenso','chk-vessatorie','chk-privacy-fisc','chk-contrattuali','chk-privacy'].every(id=>document.getElementById(id)?.checked)
+  if(!tutteSpunte) miss.push('spunta tutte le dichiarazioni')
+  if(!hasFirma) miss.push('disegna la tua firma')
+  const btn=document.getElementById('btn-firma'); const box=document.getElementById('firma-mancanze')
+  if(!btn) return
+  if(miss.length){
+    btn.disabled=true; btn.style.opacity='.5'; btn.style.cursor='not-allowed'
+    if(box){ box.style.display='block'; box.innerHTML='⚠️ Manca ancora: '+miss.join(' · ')+'.' }
+  } else {
+    btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'
+    if(box) box.style.display='none'
+  }
+}
+function wireFirmaChecks(){
+  ['sel-tipo-conto','sel-regime','up-identita','up-cf','up-visura','chk-consenso','chk-vessatorie','chk-privacy-fisc','chk-contrattuali','chk-privacy'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.addEventListener('change', aggiornaFirmaPronta)
+  })
+  aggiornaFirmaPronta()
 }
 
 // ── GENERA PDF FIRMATO ────────────────────────────────────────
@@ -416,6 +450,9 @@ async function firmaContratto() {
   if (!tipoConto) { alert('Seleziona il tuo conto.'); return }
   const regimeScelto = document.getElementById('sel-regime').value
   if (!regimeScelto) { alert('Seleziona il tuo regime fiscale.'); return }
+  if (!document.getElementById('up-identita')?.files?.[0]) { alert('Allega la tua Carta d\u0027identità.'); return }
+  if (!document.getElementById('up-cf')?.files?.[0]) { alert('Allega il tuo Codice fiscale / Tessera sanitaria.'); return }
+  if (regimeScelto === 'piva' && !document.getElementById('up-visura')?.files?.[0]) { alert('Hai scelto Partita IVA: devi allegare la Visura camerale (o documento equivalente).'); return }
 
   const btn = document.getElementById('btn-firma')
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Salvataggio...'
