@@ -425,6 +425,16 @@ async function avvia(session){
       renderDocumenti(dd.data || [])
     }catch(e){ renderDocumenti([]) }
 
+    // Aggiornamento dal vivo: se l'amministrazione aggiunge una vendita/lead, si aggiorna da solo
+    try{
+      try{ if(session?.access_token) db.realtime.setAuth(session.access_token) }catch(e){}
+      if(window._canaleRt){ try{ db.removeChannel(window._canaleRt) }catch(e){} }
+      window._canaleRt = db.channel('portale-rt')
+        .on('postgres_changes',{event:'*',schema:'public',table:'vendite'}, ricaricaDati)
+        .on('postgres_changes',{event:'*',schema:'public',table:'leads'},   ricaricaDati)
+        .subscribe()
+    }catch(e){ console.error('realtime:', e) }
+
     document.getElementById('app-content').style.display = 'block'
   }catch(e){
     document.getElementById('who-nome').textContent = email
@@ -449,6 +459,20 @@ function vai(t){
 function eur(n){ const x=Number(n)||0; return '€' + x.toLocaleString('it-IT', {minimumFractionDigits:0, maximumFractionDigits:2}) }
 function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 function row(lbl, val){ if(val==null || val==='') return ''; return '<div class="info-row"><span class="info-lbl">'+lbl+'</span><span class="info-val">'+esc(val)+'</span></div>' }
+
+async function ricaricaDati(){
+  try{
+    const vd = await db.from('vendite').select('*')
+    const vendite = (vd.data || []).map(r => r.data || r)
+    renderVendite(vendite)
+    renderLivello(vendite)
+  }catch(e){ console.error('ricaricaDati vendite:', e) }
+  try{
+    const ld = await db.from('leads').select('*')
+    const mieiLead = (ld.data || []).map(r => ({ _id:r.id, ...(r.data || r) }))
+    renderLeadPortale(mieiLead)
+  }catch(e){ console.error('ricaricaDati leads:', e) }
+}
 
 function mostraAvatar(url, nome){
   const img=document.getElementById('avatar-img'), ini=document.getElementById('avatar-ini')
