@@ -409,7 +409,7 @@ async function avvia(session){
     }
     const p = righe[0].data || righe[0]
     p._id = righe[0].id
-    MIO = { email: (p.email||email||'').trim().toLowerCase(), pid: p._id, pnome: p.nome || '' }
+    MIO = { email: (email || p.email || '').trim().toLowerCase(), pid: p._id, pnome: p.nome || '' }
     renderProfilo(p)
     document.getElementById('who-nome').textContent = p.nome || email
 
@@ -566,7 +566,10 @@ async function salvaNuovoLead(){
     stato: 'Nuovo',
     note: document.getElementById('nl-note').value.trim(),
     data: new Date().toLocaleDateString('it-IT'),
-    // collegamento al procacciatore: l'app desktop legge pid/pnome, l'RLS usa procEmail
+    // collegamento al procacciatore:
+    //  - proc_email  -> usato dall'RLS (policy leads_self / insert)
+    //  - pid / pnome -> usati dall'app desktop per mostrare il lead col nome giusto
+    proc_email: MIO.email,
     procEmail: MIO.email,
     pid: MIO.pid,
     pnome: MIO.pnome,
