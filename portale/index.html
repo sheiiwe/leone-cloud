@@ -154,7 +154,15 @@ tr:last-child td{border-bottom:none}
 <div id="v-admin" style="display:none">
   <div class="header"><div class="brand"><img class="logo-sm js-logo" alt="LC"><div><h1>Leone Consulting</h1><p>Portale Procacciatori</p></div></div><div class="who"><span id="adm-email"></span><br><button class="logout" onclick="logout()">Esci</button></div></div>
   <div class="container">
-    <div class="card"><div class="notice">Sei collegato come <strong>amministratore</strong>. Questo portale è la vista del singolo procacciatore. La gestione completa è nell'app desktop. (Lo specchio admin completo arriverà in un prossimo aggiornamento.)</div></div>
+    <div class="card" style="margin-bottom:14px">
+      <h2 style="margin:0 0 10px">📣 Pubblica una comunicazione</h2>
+      <input id="adm-post-titolo" type="text" placeholder="Titolo (facoltativo)" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box;margin-bottom:8px">
+      <textarea id="adm-post-testo" rows="4" placeholder="Testo della comunicazione..." style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box;resize:vertical"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6b6b66;margin-top:8px;cursor:pointer"><input id="adm-post-pin" type="checkbox" style="width:16px;height:16px"> 📌 Metti in evidenza</label>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px"><button onclick="pubblicaPostAdmin()" style="background:#F22015;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Pubblica</button></div>
+    </div>
+    <div class="card" style="margin-bottom:14px"><div class="notice">Sei collegato come <strong>amministratore</strong>. Qui pubblichi le comunicazioni e vedi i post dei procacciatori. La gestione completa (provvigioni, listino, ecc.) è nell'app desktop.</div></div>
+    <div id="bacheca-lista-admin"></div>
   </div>
 </div>
 
@@ -181,6 +189,10 @@ tr:last-child td{border-bottom:none}
 
       <!-- BACHECA -->
       <div id="pane-bacheca" style="display:none">
+        <div class="card" style="margin-bottom:14px">
+          <textarea id="post-testo" rows="3" placeholder="Condividi qualcosa con la rete..." style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box;resize:vertical"></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px"><button id="btn-post" onclick="pubblicaPost()" style="background:#3B6D11;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Pubblica</button></div>
+        </div>
         <div id="bacheca-lista"></div>
       </div>
 
@@ -295,7 +307,7 @@ const LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAA
 document.querySelectorAll('.js-logo').forEach(i=>{ i.src=LOGO })
 
 let inviteFlow = false
-let MIO_PID = '', MIO_NOME = '', MIO_P = null
+let MIO_PID = '', MIO_NOME = '', MIO_P = null, MIO_EMAIL = ''
 
 function mostra(id){
   ['v-loading','v-login','v-signup','v-signup-done','v-setpass','v-admin','v-app'].forEach(v=>{ const el=document.getElementById(v); if(el) el.style.display='none' })
@@ -397,8 +409,16 @@ async function avvia(session){
   mostra('v-loading')
   const email = (session?.user?.email || '').toLowerCase()
   if(email === ADMIN_EMAIL){
+    MIO_EMAIL = email
     document.getElementById('adm-email').textContent = email
-    mostra('v-admin'); return
+    mostra('v-admin')
+    try{ const bc = await db.from('bacheca').select('*').order('created_at',{ascending:false}); renderBacheca(bc.data||[], 'bacheca-lista-admin') }catch(e){ renderBacheca([], 'bacheca-lista-admin') }
+    try{
+      if(session?.access_token) db.realtime.setAuth(session.access_token)
+      if(window._canaleRt){ try{ db.removeChannel(window._canaleRt) }catch(e){} }
+      window._canaleRt = db.channel('portale-rt-admin').on('postgres_changes',{event:'*',schema:'public',table:'bacheca'}, ricaricaBacheca).subscribe()
+    }catch(e){ console.error('realtime admin:', e) }
+    return
   }
   mostra('v-app')
   try{
@@ -419,7 +439,7 @@ async function avvia(session){
     }
     const p = righe[0].data || righe[0]
     p._id = righe[0].id
-    MIO_PID = p._id; MIO_NOME = p.nome || ''; MIO_P = p
+    MIO_PID = p._id; MIO_NOME = p.nome || ''; MIO_P = p; MIO_EMAIL = email
     renderProfilo(p)
     mostraAvatar(p.foto || '', p.nome || email)
     document.getElementById('who-nome').textContent = p.nome || email
@@ -524,24 +544,65 @@ async function ricaricaListino(){
 }
 
 async function ricaricaBacheca(){
-  try{ const bc = await db.from('bacheca').select('*').order('created_at',{ascending:false}); renderBacheca(bc.data||[]) }
-  catch(e){ console.error('bacheca:', e) }
+  try{
+    const bc = await db.from('bacheca').select('*').order('created_at',{ascending:false})
+    renderBacheca(bc.data||[])
+    renderBacheca(bc.data||[], 'bacheca-lista-admin')
+  }catch(e){ console.error('bacheca:', e) }
 }
-function renderBacheca(rows){
-  const box=document.getElementById('bacheca-lista'); if(!box) return
+function renderBacheca(rows, targetId){
+  const box=document.getElementById(targetId||'bacheca-lista'); if(!box) return
   const posts=(rows||[]).map(r=>({ _id:r.id, created:r.created_at, ...(r.data||r) }))
   posts.sort((a,b)=> (b.pin?1:0)-(a.pin?1:0))
   if(!posts.length){ box.innerHTML='<div class="empty">Nessuna comunicazione al momento.</div>'; return }
   box.innerHTML = posts.map(p=>{
     const d = p.data || (p.created ? new Date(p.created).toLocaleDateString('it-IT') : '')
-    return '<div class="card" style="border-left:3px solid #F22015">'+
-      (p.pin?'<div style="font-size:11px;color:#F22015;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">📌 In evidenza</div>':'')+
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">'+
-        '<h2 style="margin:0">'+esc(p.titolo||'Comunicazione')+'</h2>'+
-        '<span style="font-size:12px;color:#9e9e98;white-space:nowrap">'+esc(d)+'</span></div>'+
-      '<div style="margin-top:8px;color:#444;white-space:pre-wrap;line-height:1.5">'+esc(p.testo||'')+'</div>'+
+    const isAdm = !!p.isAdmin
+    const autore = isAdm ? 'Leone Consulting' : (p.autoreNome||'Procacciatore')
+    const ini = (autore||'').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase()||'LC'
+    const col = isAdm ? '#F22015' : '#3B6D11'
+    const mioPost = p.autoreEmail && MIO_EMAIL && p.autoreEmail.toLowerCase()===MIO_EMAIL.toLowerCase()
+    const canDelete = (MIO_EMAIL===ADMIN_EMAIL) || mioPost
+    return '<div class="card" style="border-left:3px solid '+col+'">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
+        '<div style="width:36px;height:36px;border-radius:50%;background:'+col+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">'+ini+'</div>'+
+        '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px">'+esc(autore)+(isAdm?' <span title="Comunicazione ufficiale">📣</span>':'')+(p.pin?' 📌':'')+'</div>'+
+        '<div style="font-size:11px;color:#9e9e98">'+esc(d)+'</div></div>'+
+        (canDelete?'<button onclick="eliminaPostPortale(\''+p._id+'\')" title="Elimina" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:14px">🗑</button>':'')+
+      '</div>'+
+      (p.titolo?'<div style="font-weight:700;margin-bottom:4px">'+esc(p.titolo)+'</div>':'')+
+      '<div style="color:#444;white-space:pre-wrap;line-height:1.5">'+esc(p.testo||'')+'</div>'+
     '</div>'
   }).join('')
+}
+async function pubblicaPost(){
+  const testo=(document.getElementById('post-testo').value||'').trim()
+  if(!testo) return
+  const btn=document.getElementById('btn-post'); if(btn) btn.disabled=true
+  try{
+    const { error } = await db.from('bacheca').insert({data:{testo, autoreNome:MIO_NOME, autoreEmail:MIO_EMAIL, autorePid:MIO_PID, isAdmin:false, data:new Date().toLocaleDateString('it-IT')}})
+    if(error) throw error
+    document.getElementById('post-testo').value=''
+    await ricaricaBacheca()
+  }catch(e){ alert('Non sono riuscito a pubblicare: '+(e.message||e)) }
+  finally{ if(btn) btn.disabled=false }
+}
+async function pubblicaPostAdmin(){
+  const titolo=(document.getElementById('adm-post-titolo').value||'').trim()
+  const testo=(document.getElementById('adm-post-testo').value||'').trim()
+  const pin=document.getElementById('adm-post-pin').checked
+  if(!titolo&&!testo) return alert('Scrivi un titolo o un testo.')
+  try{
+    const { error } = await db.from('bacheca').insert({data:{titolo,testo,pin,isAdmin:true,autoreNome:'Leone Consulting',autoreEmail:ADMIN_EMAIL,data:new Date().toLocaleDateString('it-IT')}})
+    if(error) throw error
+    document.getElementById('adm-post-titolo').value=''; document.getElementById('adm-post-testo').value=''; document.getElementById('adm-post-pin').checked=false
+    await ricaricaBacheca()
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+}
+async function eliminaPostPortale(id){
+  if(!confirm('Eliminare questo post?')) return
+  try{ const { error } = await db.from('bacheca').delete().eq('id',id); if(error) throw error; await ricaricaBacheca() }
+  catch(e){ alert('Non sono riuscito a eliminare: '+(e.message||e)) }
 }
 
 async function ricaricaDati(){
