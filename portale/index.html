@@ -200,15 +200,22 @@ tr:last-child td{border-bottom:none}
           <h2>➕ Segnala una nuova lead</h2>
           <div id="nl-msg" style="display:none;margin-bottom:12px;padding:11px 13px;border-radius:8px;font-size:13px"></div>
           <div style="display:grid;gap:10px">
-            <input id="nl-nome" type="text" placeholder="Nome e cognome del contatto *" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box">
+            <input id="nl-nome" type="text" placeholder="NOME E COGNOME DEL CONTATTO *" oninput="this.value=this.value.toUpperCase()" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box;text-transform:uppercase">
             <input id="nl-tel" type="tel" inputmode="tel" placeholder="Telefono *" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box">
             <input id="nl-email" type="email" inputmode="email" placeholder="Email" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box">
             <select id="nl-cat" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box">
               <option value="">Area di interesse *</option>
               <option value="Energia (Luce e Gas)">Energia (Luce e Gas)</option>
-              <option value="Telefonia / Internet">Telefonia / Internet</option>
-              <option value="Assicurazioni">Assicurazioni</option>
-              <option value="Formazione / Certificazioni">Formazione / Certificazioni</option>
+              <option value="Telefonia / Internet / Fibra">Telefonia / Internet / Fibra</option>
+              <option value="Pay TV (Sky)">Pay TV (Sky)</option>
+              <option value="Assicurazioni">Assicurazioni (RCA, ecc.)</option>
+              <option value="Antifurto / Allarmi">Antifurto / Allarmi</option>
+              <option value="Mutui / Prestiti / Cessione del quinto">Mutui / Prestiti / Cessione del quinto</option>
+              <option value="Noleggio a lungo termine">Noleggio a lungo termine</option>
+              <option value="Corsi e Certificazioni">Corsi e Certificazioni (EIPASS, lingue)</option>
+              <option value="Corsi professionali / Sicurezza lavoro">Corsi professionali / Sicurezza sul lavoro</option>
+              <option value="Lauree e Università">Lauree e Università</option>
+              <option value="Recupero anni scolastici">Recupero anni scolastici</option>
               <option value="Altro">Altro</option>
             </select>
             <textarea id="nl-note" placeholder="Note (orari per ricontattare, dettagli…)" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box;min-height:70px;resize:vertical"></textarea>
@@ -401,8 +408,8 @@ async function avvia(session){
       const ld = await db.from('leads').select('*')
       const mieiLead = (ld.data || []).map(r => ({ _id:r.id, ...(r.data || r) }))
       renderLeadPortale(mieiLead)
-      renderLivello(mieiLead, vendite)
-    }catch(e){ renderLeadPortale([]); renderLivello([], vendite); console.error(e) }
+      renderLivello(vendite)
+    }catch(e){ renderLeadPortale([]); renderLivello(vendite); console.error(e) }
 
     try{
       const dd = await db.from('portale_documenti').select('*').order('created_at',{ascending:false})
@@ -493,34 +500,39 @@ function renderDocumenti(docs){
     }).join('') +
     '</tbody></table>'
 }
-const LIVELLI = [
-  {min:0,  nome:'Novizio',  emoji:'🌱', col:'#6b6b66'},
-  {min:3,  nome:'Bronzo',   emoji:'🥉', col:'#854F0B'},
-  {min:10, nome:'Argento',  emoji:'🥈', col:'#7a7a7a'},
-  {min:25, nome:'Oro',      emoji:'🥇', col:'#C9A24B'},
-  {min:50, nome:'Platino',  emoji:'💎', col:'#3B6D11'}
+const QUALIFICHE = [
+  {min:0,     nome:'Agente Base',               perc:'8%',  col:'#854F0B', emoji:'🥉'},
+  {min:10001, nome:'Team Leader',               perc:'10%', col:'#7a7a7a', emoji:'🥈'},
+  {min:25001, nome:'Area Manager',              perc:'11%', col:'#C9A24B', emoji:'🥇'},
+  {min:40001, nome:'Senior Partner / Director', perc:'12%', col:'#3B6D11', emoji:'💎'}
 ]
-function renderLivello(lead, vendite){
-  const n = lead.length
-  let idx = 0
-  for(let i=0;i<LIVELLI.length;i++){ if(n >= LIVELLI[i].min) idx = i }
-  const liv = LIVELLI[idx], next = LIVELLI[idx+1]
-  const box = document.getElementById('livello-box')
+function fatturatoMese(vendite){
+  const now=new Date()
+  const mm=String(now.getMonth()+1).padStart(2,'0'), yyyy=String(now.getFullYear())
+  return (vendite||[]).filter(v=>(v.stato||'')!=='Annullato').filter(v=>{
+    const p=(v.data||'').split('/'); return p.length===3 && p[1]===mm && p[2]===yyyy
+  }).reduce((s,v)=>s+(Number(v.val)||0),0)
+}
+function renderLivello(vendite){
+  const fatt = fatturatoMese(vendite)
+  let idx=0; for(let i=0;i<QUALIFICHE.length;i++){ if(fatt>=QUALIFICHE[i].min) idx=i }
+  const q=QUALIFICHE[idx], next=QUALIFICHE[idx+1]
+  const box=document.getElementById('livello-box')
   let prog
   if(next){
-    const pct = Math.max(0, Math.min(100, Math.round((n-liv.min)/(next.min-liv.min)*100)))
-    const mancano = next.min - n
-    prog = '<div style="margin-top:12px"><div style="height:10px;background:#ece9e0;border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+liv.col+';border-radius:6px;transition:width .4s"></div></div>'+
-      '<div style="font-size:12px;color:#6b6b66;margin-top:6px">Ti '+(mancano===1?'manca':'mancano')+' <strong>'+mancano+'</strong> lead per il livello <strong>'+next.emoji+' '+next.nome+'</strong></div></div>'
+    const pct=Math.max(0,Math.min(100,Math.round((fatt-q.min)/(next.min-q.min)*100)))
+    const mancano=next.min-fatt
+    prog='<div style="margin-top:12px"><div style="height:10px;background:#ece9e0;border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+q.col+';border-radius:6px;transition:width .4s"></div></div>'+
+      '<div style="font-size:12px;color:#6b6b66;margin-top:6px">Ti '+(mancano===1?'manca':'mancano')+' <strong>'+eur(mancano)+'</strong> di fatturato questo mese per <strong>'+next.emoji+' '+next.nome+'</strong></div></div>'
   } else {
-    prog = '<div style="font-size:12px;color:#6b6b66;margin-top:12px">Hai raggiunto il livello massimo. Continua così! 🚀</div>'
+    prog='<div style="font-size:12px;color:#6b6b66;margin-top:12px">Hai raggiunto la qualifica massima. Complimenti! 🚀</div>'
   }
-  box.innerHTML =
+  box.innerHTML=
     '<div style="display:flex;align-items:center;gap:14px">'+
-      '<div style="width:58px;height:58px;border-radius:50%;background:'+liv.col+'22;display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0">'+liv.emoji+'</div>'+
-      '<div><div style="font-size:11px;color:#9e9e98;text-transform:uppercase;letter-spacing:.5px">Livello '+(idx+1)+'</div>'+
-      '<div style="font-size:20px;font-weight:700;color:'+liv.col+'">'+liv.nome+'</div>'+
-      '<div style="font-size:12px;color:#6b6b66">'+n+' lead segnalat'+(n===1?'a':'e')+'</div></div></div>'+prog
+      '<div style="width:58px;height:58px;border-radius:50%;background:'+q.col+'22;display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0">'+q.emoji+'</div>'+
+      '<div><div style="font-size:11px;color:#9e9e98;text-transform:uppercase;letter-spacing:.5px">Qualifica · provvigione '+q.perc+'</div>'+
+      '<div style="font-size:20px;font-weight:700;color:'+q.col+'">'+q.nome+'</div>'+
+      '<div style="font-size:12px;color:#6b6b66">Fatturato del mese: '+eur(fatt)+'</div></div></div>'+prog
 }
 
 function renderLeadPortale(lista){
@@ -564,7 +576,7 @@ async function inviaNuovaLead(){
     document.getElementById('nl-cat').value=''
     const ld = await db.from('leads').select('*')
     const mieiLead = (ld.data || []).map(r => ({ _id:r.id, ...(r.data || r) }))
-    renderLeadPortale(mieiLead); renderLivello(mieiLead, [])
+    renderLeadPortale(mieiLead)
   }catch(e){ setMsg('Errore nell\u0027invio: '+(e.message||e),true) }
   btn.disabled=false; btn.textContent='Invia lead'
 }
