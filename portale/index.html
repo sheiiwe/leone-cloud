@@ -24,8 +24,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
 .info-row:last-child{border-bottom:none}
 .info-lbl{color:#6b6b66;flex-shrink:0}
 .info-val{font-weight:500;color:#1a1a18;text-align:right;word-break:break-word}
-.tabs{display:flex;gap:6px;margin-bottom:14px}
-.tab{flex:1;padding:10px;text-align:center;font-size:12.5px;font-weight:600;border:0.5px solid rgba(0,0,0,.12);border-radius:9px;background:#fff;color:#6b6b66;cursor:pointer}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tab{flex:1 1 calc(50% - 3px);padding:10px;text-align:center;font-size:12.5px;font-weight:600;border:0.5px solid rgba(0,0,0,.12);border-radius:9px;background:#fff;color:#6b6b66;cursor:pointer}
 .tab.active{background:#F22015;color:#fff;border-color:#F22015}
 .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .stat{background:#fff;border:0.5px solid rgba(0,0,0,.10);border-radius:11px;padding:14px 12px;text-align:center}
@@ -44,6 +44,25 @@ tr:last-child td{border-bottom:none}
 .b-off{background:#eee;color:#888}
 .b-att{background:#EAF3DE;color:#3B6D11}
 .empty{text-align:center;color:#9e9e98;font-size:13px;padding:26px 10px}
+.b-new{background:#E9EFFA;color:#234E94}
+/* modal lead */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:20px;overflow-y:auto}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:440px;padding:20px;margin:auto;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.modal h2{font-size:16px;font-weight:700;margin-bottom:16px;color:#1a1a18}
+.fg select,.fg textarea{width:100%;padding:12px 13px;font-size:14px;border:0.5px solid rgba(0,0,0,.2);border-radius:9px;font-family:inherit;background:#fff;color:#1a1a18}
+.fg select:focus,.fg textarea:focus{outline:none;border-color:#F22015}
+.fg textarea{resize:vertical;min-height:64px}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn-add{display:inline-flex;align-items:center;gap:7px;background:#F22015;color:#fff;border:none;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;width:auto}
+.btn-add:hover{background:#C81A11}
+.btn-add:disabled{background:#9e9e98;cursor:not-allowed}
+.btn-ghost{background:#f0efe9;color:#444}
+.btn-ghost:hover{background:#e4e2da}
+.row-actions{display:flex;gap:10px;margin-top:6px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
+.card-head h2{margin-bottom:0}
+@media(max-width:520px){.fr2{grid-template-columns:1fr}}
 /* login */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.10);width:100%;max-width:380px;overflow:hidden}
@@ -172,6 +191,7 @@ tr:last-child td{border-bottom:none}
     <div id="app-content" style="display:none">
       <div class="tabs">
         <div class="tab active" id="tab-prov" onclick="vai('prov')">💰 Provvigioni</div>
+        <div class="tab" id="tab-lead" onclick="vai('lead')">🎯 Lead</div>
         <div class="tab" id="tab-profilo" onclick="vai('profilo')">👤 Profilo</div>
         <div class="tab" id="tab-doc" onclick="vai('doc')">📄 Documenti</div>
       </div>
@@ -186,6 +206,17 @@ tr:last-child td{border-bottom:none}
         <div class="card">
           <h2>📊 Le tue vendite</h2>
           <div id="vendite-box"><div class="empty">Caricamento…</div></div>
+        </div>
+      </div>
+
+      <!-- LEAD -->
+      <div id="pane-lead" style="display:none">
+        <div class="card">
+          <div class="card-head">
+            <h2>🎯 I tuoi lead</h2>
+            <button class="btn-add" onclick="apriNuovoLead()">＋ Nuovo lead</button>
+          </div>
+          <div id="lead-box"><div class="empty">Caricamento…</div></div>
         </div>
       </div>
 
@@ -221,6 +252,27 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- MODAL NUOVO LEAD -->
+<div id="modal-lead" class="modal-bg">
+  <div class="modal">
+    <h2>🎯 Nuovo lead</h2>
+    <div class="err" id="lead-err"></div>
+    <div class="fr2">
+      <div class="fg"><label>Nome contatto *</label><input id="nl-nome" type="text" placeholder="Anna Bianchi"></div>
+      <div class="fg"><label>Azienda</label><input id="nl-az" type="text" placeholder="Azienda Srl"></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label>Telefono</label><input id="nl-tel" type="tel" placeholder="+39 06 0000000"></div>
+      <div class="fg"><label>Interesse</label><select id="nl-cat"></select></div>
+    </div>
+    <div class="fg"><label>Note</label><textarea id="nl-note" placeholder="Dettagli, orari per richiamare, ecc."></textarea></div>
+    <div class="row-actions">
+      <button class="btn btn-ghost" style="flex:0 0 auto;width:auto;padding-left:18px;padding-right:18px" onclick="chiudiNuovoLead()">Annulla</button>
+      <button class="btn btn-add" id="nl-save" style="flex:1;justify-content:center" onclick="salvaNuovoLead()">Salva lead</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPA_URL = 'https://uljdbdbkiulbcquuhfwd.supabase.co'
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsamRiZGJraXVsYmNxdXVoZndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1Nzk3NjcsImV4cCI6MjA5NjE1NTc2N30.TsTSIwUqawsT6M_pwUXjRutCSHToJdVfGF3FxqG3TUA'
@@ -232,6 +284,8 @@ const LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAA
 document.querySelectorAll('.js-logo').forEach(i=>{ i.src=LOGO })
 
 let inviteFlow = false
+let MIO = {}  // { email, pid, pnome } del procacciatore loggato
+const LEAD_CATS = ['Energia & Utenze','Telefonia & Internet','Formazione T.E.','Corsi Professionali U.D.','Corsi Professionisti','Corsi Sicurezza','Corsi Scuola','Certificazioni Linguistiche','Master & Perfezionamenti','Percorsi di Laurea','Recupero Anni Scolastici','Altri servizi']
 
 function mostra(id){
   ['v-loading','v-login','v-signup','v-signup-done','v-setpass','v-admin','v-app'].forEach(v=>{ const el=document.getElementById(v); if(el) el.style.display='none' })
@@ -355,12 +409,15 @@ async function avvia(session){
     }
     const p = righe[0].data || righe[0]
     p._id = righe[0].id
+    MIO = { email: (p.email||email||'').trim().toLowerCase(), pid: p._id, pnome: p.nome || '' }
     renderProfilo(p)
     document.getElementById('who-nome').textContent = p.nome || email
 
     const vd = await db.from('vendite').select('*')
     const vendite = (vd.data || []).map(r => r.data || r)
     renderVendite(vendite)
+
+    caricaLeadPortale()
 
     try{
       const dd = await db.from('portale_documenti').select('*').order('created_at',{ascending:false})
@@ -378,9 +435,11 @@ async function avvia(session){
 
 function vai(t){
   document.getElementById('tab-prov').classList.toggle('active', t==='prov')
+  document.getElementById('tab-lead').classList.toggle('active', t==='lead')
   document.getElementById('tab-profilo').classList.toggle('active', t==='profilo')
   document.getElementById('tab-doc').classList.toggle('active', t==='doc')
   document.getElementById('pane-prov').style.display = t==='prov' ? 'block' : 'none'
+  document.getElementById('pane-lead').style.display = t==='lead' ? 'block' : 'none'
   document.getElementById('pane-profilo').style.display = t==='profilo' ? 'block' : 'none'
   document.getElementById('pane-doc').style.display = t==='doc' ? 'block' : 'none'
 }
@@ -449,6 +508,82 @@ function renderDocumenti(docs){
     }).join('') +
     '</tbody></table>'
 }
+// ── LEAD (portale) ────────────────────────────────────────────
+async function caricaLeadPortale(){
+  const box = document.getElementById('lead-box')
+  try{
+    // Grazie all'RLS la query restituisce SOLO i lead di chi è loggato
+    const r = await db.from('leads').select('*').order('created_at',{ascending:false})
+    const righe = (r.data || []).map(x => ({ _id:x.id, ...(x.data||{}) }))
+    renderLeadPortale(righe)
+  }catch(e){ console.error(e); renderLeadPortale([]) }
+}
+
+function renderLeadPortale(leads){
+  const box = document.getElementById('lead-box')
+  if(!box) return
+  if(!leads.length){ box.innerHTML = '<div class="empty">Non hai ancora inserito lead. Tocca «＋ Nuovo lead» per aggiungerne uno.</div>'; return }
+  const badge = s => {
+    if(s==='Chiuso') return '<span class="badge b-ok">Chiuso</span>'
+    if(s==='Non interessato') return '<span class="badge b-off">Non interessato</span>'
+    if(s==='Nuovo') return '<span class="badge b-new">Nuovo</span>'
+    return '<span class="badge b-wait">'+esc(s||'Nuovo')+'</span>'
+  }
+  box.innerHTML =
+    '<table><thead><tr><th>Contatto</th><th>Interesse</th><th>Stato</th><th>Data</th></tr></thead><tbody>' +
+    leads.map(l =>
+      '<tr><td><strong>'+esc(l.nome||'—')+'</strong>'+(l.az?'<br><span style="color:#9e9e98;font-size:11px">'+esc(l.az)+'</span>':'')+(l.tel?'<br><span style="color:#6b6b66;font-size:11px">'+esc(l.tel)+'</span>':'')+'</td>' +
+      '<td><span style="color:#6b6b66;font-size:12px">'+esc(l.cat||'—')+'</span></td>' +
+      '<td>'+badge(l.stato)+'</td>' +
+      '<td style="white-space:nowrap;color:#9e9e98;font-size:11px">'+esc(l.data||'')+'</td></tr>'
+    ).join('') +
+    '</tbody></table>'
+}
+
+function apriNuovoLead(){
+  const sel = document.getElementById('nl-cat')
+  sel.innerHTML = '<option value="">-- Categoria --</option>' + LEAD_CATS.map(c=>'<option value="'+c+'">'+c+'</option>').join('')
+  document.getElementById('nl-nome').value = ''
+  document.getElementById('nl-az').value = ''
+  document.getElementById('nl-tel').value = ''
+  document.getElementById('nl-note').value = ''
+  document.getElementById('lead-err').textContent = ''
+  document.getElementById('modal-lead').classList.add('show')
+}
+function chiudiNuovoLead(){ document.getElementById('modal-lead').classList.remove('show') }
+
+async function salvaNuovoLead(){
+  const err = document.getElementById('lead-err')
+  const nome = document.getElementById('nl-nome').value.trim()
+  if(!nome){ err.textContent = 'Inserisci almeno il nome del contatto.'; return }
+  const btn = document.getElementById('nl-save')
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>'
+  const obj = {
+    nome,
+    az: document.getElementById('nl-az').value.trim(),
+    tel: document.getElementById('nl-tel').value.trim(),
+    cat: document.getElementById('nl-cat').value,
+    stato: 'Nuovo',
+    note: document.getElementById('nl-note').value.trim(),
+    data: new Date().toLocaleDateString('it-IT'),
+    // collegamento al procacciatore: l'app desktop legge pid/pnome, l'RLS usa procEmail
+    procEmail: MIO.email,
+    pid: MIO.pid,
+    pnome: MIO.pnome,
+    origine: 'portale'
+  }
+  try{
+    const r = await db.from('leads').insert({ data: obj })
+    if(r.error) throw r.error
+    chiudiNuovoLead()
+    caricaLeadPortale()
+  }catch(e){
+    err.textContent = 'Errore nel salvataggio: ' + (e.message || e)
+  }finally{
+    btn.disabled = false; btn.innerHTML = 'Salva lead'
+  }
+}
+
 document.addEventListener('keydown', e=>{
   if(e.key!=='Enter') return
   if(document.getElementById('v-login').style.display==='block') eseguiLogin()
