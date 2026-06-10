@@ -279,7 +279,7 @@ const LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAA
 document.querySelectorAll('.js-logo').forEach(i=>{ i.src=LOGO })
 
 let inviteFlow = false
-let MIO_PID = '', MIO_NOME = ''
+let MIO_PID = '', MIO_NOME = '', MIO_P = null
 
 function mostra(id){
   ['v-loading','v-login','v-signup','v-signup-done','v-setpass','v-admin','v-app'].forEach(v=>{ const el=document.getElementById(v); if(el) el.style.display='none' })
@@ -403,9 +403,9 @@ async function avvia(session){
     }
     const p = righe[0].data || righe[0]
     p._id = righe[0].id
-    MIO_PID = p._id; MIO_NOME = p.nome || ''
+    MIO_PID = p._id; MIO_NOME = p.nome || ''; MIO_P = p
     renderProfilo(p)
-    mostraAvatar(session?.user?.user_metadata?.avatar || '', p.nome || email)
+    mostraAvatar(p.foto || '', p.nome || email)
     document.getElementById('who-nome').textContent = p.nome || email
 
     const vd = await db.from('vendite').select('*')
@@ -498,8 +498,11 @@ async function caricaAvatar(ev){
       ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size)
       const dataUrl=canvas.toDataURL('image/jpeg',0.85)
       try{
-        const { error } = await db.auth.updateUser({ data:{ avatar:dataUrl } })
+        const base = Object.assign({}, MIO_P||{}); delete base._id
+        base.foto = dataUrl
+        const { error } = await db.from('procacciatori').update({ data: base }).eq('id', MIO_PID)
         if(error) throw error
+        MIO_P = Object.assign({}, base, {_id:MIO_PID})
         mostraAvatar(dataUrl, MIO_NOME)
       }catch(e){ alert('Non sono riuscito a salvare la foto: '+(e.message||e)) }
     }
@@ -607,17 +610,23 @@ function renderLeadPortale(lista){
   if(!box) return
   if(!lista.length){ box.innerHTML = '<div class="empty">Non hai ancora segnalato nessuna lead.</div>'; return }
   const ordinate = [...lista].sort((a,b)=> (b.data||'').localeCompare(a.data||''))
+  const conv = lista.filter(l => l.stato==='Acquisito').length
   const badge = s => (s==='Chiuso'||s==='Acquisito') ? '<span class="badge b-ok">'+esc(s)+'</span>'
                   : (s==='Perso'||s==='Annullato') ? '<span class="badge b-off">'+esc(s)+'</span>'
                   : '<span class="badge b-wait">'+esc(s||'Nuovo')+'</span>'
-  box.innerHTML =
+  const intro = '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px;font-size:13px;color:#6b6b66">'+
+    '<span>Totale lead: <strong style="color:#1a1a18">'+lista.length+'</strong></span>'+
+    '<span>✅ Convertite in vendita: <strong style="color:#3B6D11">'+conv+'</strong></span></div>'
+  box.innerHTML = intro +
     '<table><thead><tr><th>Data</th><th>Contatto</th><th>Interesse</th><th>Stato</th></tr></thead><tbody>'+
-    ordinate.map(l =>
-      '<tr><td style="white-space:nowrap;color:#6b6b66">'+esc(l.data||'')+'</td>'+
+    ordinate.map(l => {
+      const ok = l.stato==='Acquisito'
+      const rowStyle = ok ? ' style="background:#f1f6ec;box-shadow:inset 3px 0 0 #3B6D11"' : ''
+      return '<tr'+rowStyle+'><td style="white-space:nowrap;color:#6b6b66">'+esc(l.data||'')+'</td>'+
       '<td><strong>'+esc(l.nome||'—')+'</strong>'+(l.tel?'<br><span style="color:#9e9e98;font-size:11px">'+esc(l.tel)+'</span>':'')+'</td>'+
       '<td><span class="badge" style="background:#f0efe9;color:#6b6b66">'+esc(l.cat||'—')+'</span></td>'+
       '<td>'+badge(l.stato)+'</td></tr>'
-    ).join('') + '</tbody></table>'
+    }).join('') + '</tbody></table>'
 }
 
 async function inviaNuovaLead(){
