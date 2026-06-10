@@ -230,6 +230,14 @@ tr:last-child td{border-bottom:none}
 
       <!-- PROFILO -->
       <div id="pane-profilo" style="display:none">
+        <div class="card" style="text-align:center">
+          <div id="avatar-wrap" style="width:96px;height:96px;border-radius:50%;margin:4px auto 12px;overflow:hidden;background:#F22015;display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;font-weight:700">
+            <span id="avatar-ini">—</span>
+            <img id="avatar-img" style="display:none;width:100%;height:100%;object-fit:cover" alt="">
+          </div>
+          <input id="avatar-file" type="file" accept="image/*" capture="user" style="display:none" onchange="caricaAvatar(event)">
+          <button onclick="document.getElementById('avatar-file').click()" style="background:none;border:1px solid #e0ded6;color:#F22015;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">📷 Cambia foto profilo</button>
+        </div>
         <div class="card">
           <h2>👤 Dati anagrafici</h2>
           <div id="profilo-anag"></div>
@@ -397,6 +405,7 @@ async function avvia(session){
     p._id = righe[0].id
     MIO_PID = p._id; MIO_NOME = p.nome || ''
     renderProfilo(p)
+    mostraAvatar(session?.user?.user_metadata?.avatar || '', p.nome || email)
     document.getElementById('who-nome').textContent = p.nome || email
 
     const vd = await db.from('vendite').select('*')
@@ -440,6 +449,40 @@ function vai(t){
 function eur(n){ const x=Number(n)||0; return '€' + x.toLocaleString('it-IT', {minimumFractionDigits:0, maximumFractionDigits:2}) }
 function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 function row(lbl, val){ if(val==null || val==='') return ''; return '<div class="info-row"><span class="info-lbl">'+lbl+'</span><span class="info-val">'+esc(val)+'</span></div>' }
+
+function mostraAvatar(url, nome){
+  const img=document.getElementById('avatar-img'), ini=document.getElementById('avatar-ini')
+  if(!img||!ini) return
+  if(url){ img.src=url; img.style.display='block'; ini.style.display='none' }
+  else {
+    img.style.display='none'; ini.style.display='block'
+    ini.textContent=(nome||'').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase()||'LC'
+  }
+}
+async function caricaAvatar(ev){
+  const f=ev.target.files && ev.target.files[0]; if(!f) return
+  if(!/^image\//.test(f.type)){ alert('Seleziona un\u0027immagine.'); return }
+  const reader=new FileReader()
+  reader.onload=()=>{
+    const img=new Image()
+    img.onload=async()=>{
+      const size=256
+      const canvas=document.createElement('canvas'); canvas.width=size; canvas.height=size
+      const ctx=canvas.getContext('2d')
+      const min=Math.min(img.width,img.height)
+      const sx=(img.width-min)/2, sy=(img.height-min)/2
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size)
+      const dataUrl=canvas.toDataURL('image/jpeg',0.85)
+      try{
+        const { error } = await db.auth.updateUser({ data:{ avatar:dataUrl } })
+        if(error) throw error
+        mostraAvatar(dataUrl, MIO_NOME)
+      }catch(e){ alert('Non sono riuscito a salvare la foto: '+(e.message||e)) }
+    }
+    img.src=reader.result
+  }
+  reader.readAsDataURL(f)
+}
 
 function renderProfilo(p){
   const regimeLbl = p.regime==='piva' ? 'Partita IVA' : 'Ritenuta d\u0027acconto'
