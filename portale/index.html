@@ -172,9 +172,15 @@ tr:last-child td{border-bottom:none}
     <div id="app-content" style="display:none">
       <div class="tabs">
         <div class="tab active" id="tab-prov" onclick="vai('prov')">💰 Provvigioni</div>
+        <div class="tab" id="tab-bacheca" onclick="vai('bacheca')">📣 Bacheca</div>
         <div class="tab" id="tab-lead" onclick="vai('lead')">📋 I miei Lead</div>
         <div class="tab" id="tab-profilo" onclick="vai('profilo')">👤 Profilo</div>
         <div class="tab" id="tab-doc" onclick="vai('doc')">📄 Documenti</div>
+      </div>
+
+      <!-- BACHECA -->
+      <div id="pane-bacheca" style="display:none">
+        <div id="bacheca-lista"></div>
       </div>
 
       <!-- PROVVIGIONI -->
@@ -425,6 +431,11 @@ async function avvia(session){
       renderDocumenti(dd.data || [])
     }catch(e){ renderDocumenti([]) }
 
+    try{
+      const bc = await db.from('bacheca').select('*').order('created_at',{ascending:false})
+      renderBacheca(bc.data || [])
+    }catch(e){ renderBacheca([]) }
+
     // Aggiornamento dal vivo: se l'amministrazione aggiunge una vendita/lead, si aggiorna da solo
     try{
       try{ if(session?.access_token) db.realtime.setAuth(session.access_token) }catch(e){}
@@ -432,6 +443,7 @@ async function avvia(session){
       window._canaleRt = db.channel('portale-rt')
         .on('postgres_changes',{event:'*',schema:'public',table:'vendite'}, ricaricaDati)
         .on('postgres_changes',{event:'*',schema:'public',table:'leads'},   ricaricaDati)
+        .on('postgres_changes',{event:'*',schema:'public',table:'bacheca'}, ricaricaBacheca)
         .subscribe()
     }catch(e){ console.error('realtime:', e) }
 
@@ -446,10 +458,12 @@ async function avvia(session){
 
 function vai(t){
   document.getElementById('tab-prov').classList.toggle('active', t==='prov')
+  document.getElementById('tab-bacheca').classList.toggle('active', t==='bacheca')
   document.getElementById('tab-lead').classList.toggle('active', t==='lead')
   document.getElementById('tab-profilo').classList.toggle('active', t==='profilo')
   document.getElementById('tab-doc').classList.toggle('active', t==='doc')
   document.getElementById('pane-prov').style.display = t==='prov' ? 'block' : 'none'
+  document.getElementById('pane-bacheca').style.display = t==='bacheca' ? 'block' : 'none'
   document.getElementById('pane-lead').style.display = t==='lead' ? 'block' : 'none'
   document.getElementById('pane-profilo').style.display = t==='profilo' ? 'block' : 'none'
   document.getElementById('pane-doc').style.display = t==='doc' ? 'block' : 'none'
@@ -459,6 +473,27 @@ function vai(t){
 function eur(n){ const x=Number(n)||0; return '€' + x.toLocaleString('it-IT', {minimumFractionDigits:0, maximumFractionDigits:2}) }
 function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 function row(lbl, val){ if(val==null || val==='') return ''; return '<div class="info-row"><span class="info-lbl">'+lbl+'</span><span class="info-val">'+esc(val)+'</span></div>' }
+
+async function ricaricaBacheca(){
+  try{ const bc = await db.from('bacheca').select('*').order('created_at',{ascending:false}); renderBacheca(bc.data||[]) }
+  catch(e){ console.error('bacheca:', e) }
+}
+function renderBacheca(rows){
+  const box=document.getElementById('bacheca-lista'); if(!box) return
+  const posts=(rows||[]).map(r=>({ _id:r.id, created:r.created_at, ...(r.data||r) }))
+  posts.sort((a,b)=> (b.pin?1:0)-(a.pin?1:0))
+  if(!posts.length){ box.innerHTML='<div class="empty">Nessuna comunicazione al momento.</div>'; return }
+  box.innerHTML = posts.map(p=>{
+    const d = p.data || (p.created ? new Date(p.created).toLocaleDateString('it-IT') : '')
+    return '<div class="card" style="border-left:3px solid #F22015">'+
+      (p.pin?'<div style="font-size:11px;color:#F22015;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">📌 In evidenza</div>':'')+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">'+
+        '<h2 style="margin:0">'+esc(p.titolo||'Comunicazione')+'</h2>'+
+        '<span style="font-size:12px;color:#9e9e98;white-space:nowrap">'+esc(d)+'</span></div>'+
+      '<div style="margin-top:8px;color:#444;white-space:pre-wrap;line-height:1.5">'+esc(p.testo||'')+'</div>'+
+    '</div>'
+  }).join('')
+}
 
 async function ricaricaDati(){
   try{
