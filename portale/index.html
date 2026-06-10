@@ -24,8 +24,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
 .info-row:last-child{border-bottom:none}
 .info-lbl{color:#6b6b66;flex-shrink:0}
 .info-val{font-weight:500;color:#1a1a18;text-align:right;word-break:break-word}
-.tabs{display:flex;gap:6px;margin-bottom:14px}
-.tab{flex:1;padding:10px;text-align:center;font-size:12.5px;font-weight:600;border:0.5px solid rgba(0,0,0,.12);border-radius:9px;background:#fff;color:#6b6b66;cursor:pointer}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tab{flex:1 1 92px;padding:10px;text-align:center;font-size:12.5px;font-weight:600;border:0.5px solid rgba(0,0,0,.12);border-radius:9px;background:#fff;color:#6b6b66;cursor:pointer}
 .tab.active{background:#F22015;color:#fff;border-color:#F22015}
 .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .stat{background:#fff;border:0.5px solid rgba(0,0,0,.10);border-radius:11px;padding:14px 12px;text-align:center}
@@ -506,9 +506,13 @@ function renderListinoPortale(items, filtro){
   box.innerHTML = Object.keys(cats).map(cat=>{
     const rows=cats[cat].map(p=>{
       const prezzo=(p.prezzo!=null && p.prezzo!=='') ? eur(p.prezzo) : '<span style="color:#9e9e98;font-weight:400">su richiesta</span>'
-      return '<tr><td>'+esc(p.nome||'')+'</td><td style="text-align:right;font-weight:700;color:#3B6D11;white-space:nowrap">'+prezzo+'</td></tr>'
+      const prov=(p.prov!=null && p.prov!=='') ? (p.tipo==='fisso' ? eur(p.prov) : (p.prov+'%')) : '—'
+      return '<tr><td>'+esc(p.nome||'')+'</td>'+
+        '<td style="text-align:right;white-space:nowrap;font-weight:600">'+prezzo+'</td>'+
+        '<td style="text-align:right;white-space:nowrap;font-weight:700;color:#3B6D11">'+prov+'</td></tr>'
     }).join('')
-    return '<div class="card"><h2 style="margin:0 0 8px">'+esc(cat)+'</h2><table><tbody>'+rows+'</tbody></table></div>'
+    return '<div class="card"><h2 style="margin:0 0 8px">'+esc(cat)+'</h2>'+
+      '<table><thead><tr><th>Prodotto</th><th style="text-align:right">Prezzo</th><th style="text-align:right">La tua provvigione</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
   }).join('')
 }
 async function ricaricaListino(){
