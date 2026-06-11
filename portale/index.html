@@ -606,7 +606,6 @@ async function inviaProposta(){
   try{
     const { error } = await db.from('proposte').insert({data:{autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente,note,items,totale,totProv,stato:'Nuova',data:new Date().toLocaleDateString('it-IT')}})
     if(error) throw error
-    try{ await accodaEmailProposta({cliente,note,items,totale,totProv,autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL}) }catch(e){ console.error('email proposta:',e) }
     CART=[]; renderCarrello()
     await caricaMieProposte()
     alert('Proposta inviata a Leone Consulting! La trovi qui sotto in "Le mie proposte".')
