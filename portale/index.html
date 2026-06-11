@@ -204,11 +204,13 @@ tr:last-child td{border-bottom:none}
 
       <!-- LISTINO -->
       <div id="pane-listino" style="display:none">
+        <div id="cart-box" style="margin-bottom:14px"></div>
         <div class="card" style="margin-bottom:14px">
-          <div style="font-size:13px;color:#6b6b66;margin-bottom:10px">Prezzi al pubblico dei servizi e corsi. Usali per dare un preventivo al cliente.</div>
+          <div style="font-size:13px;color:#6b6b66;margin-bottom:10px">Prezzi al pubblico dei servizi e corsi. Aggiungi i corsi al carrello con <b>+</b> e invia la proposta per un cliente.</div>
           <input id="listino-search" type="text" placeholder="🔍 Cerca prodotto o categoria..." oninput="renderListinoPortale(null, this.value)" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box">
         </div>
         <div id="listino-lista"></div>
+        <div id="mie-proposte" style="margin-top:16px"></div>
       </div>
 
       <!-- PROVVIGIONI -->
@@ -481,6 +483,8 @@ async function avvia(session){
       renderListinoPortale(items)
     }catch(e){ renderListinoPortale([]) }
 
+    try{ await caricaMieProposte() }catch(e){ renderMieProposte() }
+
     // Aggiornamento dal vivo: se l'amministrazione aggiunge una vendita/lead, si aggiorna da solo
     try{
       try{ if(session?.access_token) db.realtime.setAuth(session.access_token) }catch(e){}
@@ -490,6 +494,7 @@ async function avvia(session){
         .on('postgres_changes',{event:'*',schema:'public',table:'leads'},   ricaricaDati)
         .on('postgres_changes',{event:'*',schema:'public',table:'bacheca'}, ricaricaBacheca)
         .on('postgres_changes',{event:'*',schema:'public',table:'listino'}, ricaricaListino)
+        .on('postgres_changes',{event:'*',schema:'public',table:'proposte'}, caricaMieProposte)
         .subscribe()
     }catch(e){ console.error('realtime:', e) }
 
@@ -553,12 +558,89 @@ function renderListinoPortale(items, filtro){
       }
       return '<tr><td>'+esc(p.nome||'')+'</td>'+
         '<td style="text-align:right;white-space:nowrap;font-weight:600">'+prezzo+'</td>'+
-        '<td style="text-align:right;white-space:nowrap;font-weight:700;color:#3B6D11">'+prov+'</td></tr>'
+        '<td style="text-align:right;white-space:nowrap;font-weight:700;color:#3B6D11">'+prov+'</td>'+
+        '<td style="text-align:right;width:34px"><button onclick="addCarrello(\''+p.pid+'\')" title="Aggiungi al carrello" style="background:#F22015;color:#fff;border:none;width:26px;height:26px;border-radius:7px;font-size:16px;line-height:1;cursor:pointer;font-weight:700">+</button></td></tr>'
     }).join('')
     return '<div class="card"><h2 style="margin:0 0 8px">'+esc(cat)+'</h2>'+
-      '<table><thead><tr><th>Prodotto</th><th style="text-align:right">Prezzo</th><th style="text-align:right">La tua provvigione</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      '<table><thead><tr><th>Prodotto</th><th style="text-align:right">Prezzo</th><th style="text-align:right">La tua provvigione</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
   }).join('')
 }
+let CART=[], MIE_PROPOSTE=[]
+function prodById(pid){ return (LISTINO_PORTALE||[]).find(p=>p.pid===pid) }
+function addCarrello(pid){ if(CART.includes(pid))return; CART.push(pid); renderCarrello(); try{document.getElementById('cart-box').scrollIntoView({behavior:'smooth',block:'nearest'})}catch(e){} }
+function removeCarrello(pid){ CART=CART.filter(x=>x!==pid); renderCarrello() }
+function svuotaCarrello(){ CART=[]; renderCarrello() }
+function renderCarrello(){
+  const box=document.getElementById('cart-box'); if(!box) return
+  if(!CART.length){ box.innerHTML=''; return }
+  const items=CART.map(prodById).filter(Boolean)
+  let totPrezzo=0, totProv=0
+  const rows=items.map(p=>{
+    const pr=(p.prezzo!=null&&p.prezzo!=='')?Number(p.prezzo):null
+    if(pr!=null) totPrezzo+=pr
+    if(p.tipo==='fisso'&&p.prov!=null) totProv+=Number(p.prov)||0
+    const prezzoTxt = pr!=null?eur(pr):'<span style="color:#9e9e98">su richiesta</span>'
+    const provTxt = (p.tipo==='fisso'&&p.prov!=null)?eur(p.prov):(p.marginePerc!=null?pctIt(p.marginePerc*p.prov/100)+' del valore':p.prov+'% del margine')
+    return '<tr><td style="padding:6px 0">'+esc(p.nome)+'<div style="font-size:11px;color:#9e9e98">'+prezzoTxt+' · tua provv.: '+provTxt+'</div></td>'+
+      '<td style="text-align:right;width:30px"><button onclick="removeCarrello(\''+p.pid+'\')" title="Togli" style="background:none;border:none;color:#c0392b;font-size:16px;cursor:pointer">✕</button></td></tr>'
+  }).join('')
+  box.innerHTML='<div class="card" style="border:1.5px solid #F22015">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h2 style="margin:0">🛒 Carrello ('+items.length+')</h2><button onclick="svuotaCarrello()" style="background:none;border:none;color:#9e9e98;font-size:12px;cursor:pointer">Svuota</button></div>'+
+    '<table><tbody>'+rows+'</tbody></table>'+
+    '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px"><span>Totale prezzo cliente</span><b>'+eur(totPrezzo)+'</b></div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:13px;color:#3B6D11"><span>La tua provvigione totale</span><b>'+eur(totProv)+'</b></div>'+
+    '<input id="cart-cliente" type="text" placeholder="Nome del cliente" style="width:100%;margin-top:10px;padding:10px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box">'+
+    '<textarea id="cart-note" rows="2" placeholder="Note (telefono, email, dettagli...)" style="width:100%;margin-top:8px;padding:10px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box;resize:vertical"></textarea>'+
+    '<button id="cart-invia" onclick="inviaProposta()" style="width:100%;margin-top:10px;background:#F22015;color:#fff;border:none;padding:12px;border-radius:8px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit">Invia proposta a Leone Consulting</button>'+
+  '</div>'
+}
+async function inviaProposta(){
+  if(!CART.length) return
+  const cliente=(document.getElementById('cart-cliente').value||'').trim()
+  if(!cliente){ alert('Inserisci il nome del cliente.'); return }
+  const note=(document.getElementById('cart-note').value||'').trim()
+  const items=CART.map(prodById).filter(Boolean).map(p=>({pid:p.pid,nome:p.nome,cat:p.cat,prezzo:(p.prezzo!=null&&p.prezzo!=='')?Number(p.prezzo):null,prov:p.prov,tipo:p.tipo,marginePerc:p.marginePerc!=null?p.marginePerc:null}))
+  const totale=items.reduce((s,i)=>s+(i.prezzo||0),0)
+  const totProv=items.reduce((s,i)=>s+((i.tipo==='fisso'&&i.prov!=null)?Number(i.prov):0),0)
+  const btn=document.getElementById('cart-invia'); if(btn) btn.disabled=true
+  try{
+    const { error } = await db.from('proposte').insert({data:{autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente,note,items,totale,totProv,stato:'Nuova',data:new Date().toLocaleDateString('it-IT')}})
+    if(error) throw error
+    CART=[]; renderCarrello()
+    await caricaMieProposte()
+    alert('Proposta inviata a Leone Consulting! La trovi qui sotto in "Le mie proposte".')
+  }catch(e){ alert('Non sono riuscito a inviare: '+(e.message||e)) }
+  finally{ if(btn) btn.disabled=false }
+}
+async function caricaMieProposte(){
+  try{
+    const r=await db.from('proposte').select('*').order('created_at',{ascending:false})
+    MIE_PROPOSTE=(r.data||[]).map(x=>({_id:x.id,created:x.created_at,...(x.data||x)}))
+  }catch(e){ MIE_PROPOSTE=[] }
+  renderMieProposte()
+}
+function renderMieProposte(){
+  const box=document.getElementById('mie-proposte'); if(!box) return
+  if(!MIE_PROPOSTE.length){ box.innerHTML=''; return }
+  const col={Nuova:'#F22015',Gestita:'#3B6D11',Annullata:'#9e9e98'}
+  box.innerHTML='<div class="card"><h2 style="margin:0 0 10px">📋 Le mie proposte</h2>'+
+    MIE_PROPOSTE.map(p=>{
+      const c=col[p.stato]||'#6b6b66'
+      const items=(p.items||[]).map(i=>esc(i.nome)).join(', ')
+      return '<div style="padding:10px 0;border-top:0.5px solid rgba(0,0,0,.07)">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center"><b>'+esc(p.cliente||'—')+'</b><span style="font-size:11px;font-weight:700;color:'+c+'">'+esc(p.stato||'Nuova')+'</span></div>'+
+        '<div style="font-size:12px;color:#6b6b66;margin-top:2px">'+items+'</div>'+
+        '<div style="font-size:12px;color:#9e9e98;margin-top:2px">'+esc(p.data||'')+' · Totale '+eur(p.totale||0)+' · Tua provv. '+eur(p.totProv||0)+
+        (p.stato==='Nuova'?' · <span onclick="eliminaProposta(\''+p._id+'\')" style="color:#c0392b;cursor:pointer">elimina</span>':'')+'</div>'+
+      '</div>'
+    }).join('')+'</div>'
+}
+async function eliminaProposta(id){
+  if(!confirm('Eliminare questa proposta?')) return
+  try{ await db.from('proposte').delete().eq('id',id); await caricaMieProposte() }
+  catch(e){ alert('Non sono riuscito a eliminare: '+(e.message||e)) }
+}
+
 async function ricaricaListino(){
   try{
     const r=await db.from('listino').select('*').limit(1)
