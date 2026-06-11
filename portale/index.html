@@ -501,6 +501,7 @@ async function avvia(session){
     document.getElementById('app-content').style.display = 'block'
     renderHome()
     vai('home')
+    gestisciDeepLink()
   }catch(e){
     document.getElementById('who-nome').textContent = email
     document.getElementById('no-profile').style.display = 'block'
@@ -509,6 +510,22 @@ async function avvia(session){
   }
 }
 
+function gestisciDeepLink(){
+  try{
+    const pid=new URLSearchParams(location.search).get('proposta')
+    if(!pid) return
+    vai('listino')
+    setTimeout(()=>{
+      const el=document.getElementById('prop-'+pid)
+      const target=el||document.getElementById('mie-proposte')
+      if(target) target.scrollIntoView({behavior:'smooth',block:'center'})
+      if(el){
+        el.style.background='rgba(242,32,21,.10)'
+        setTimeout(()=>{ el.style.background='transparent' }, 2800)
+      }
+    }, 400)
+  }catch(e){}
+}
 function vai(t){
   document.getElementById('tab-home').classList.toggle('active', t==='home')
   document.getElementById('tab-prov').classList.toggle('active', t==='prov')
@@ -649,7 +666,7 @@ function renderMieProposte(){
     MIE_PROPOSTE.map(p=>{
       const c=col[p.stato]||'#6b6b66'
       const items=(p.items||[]).map(i=>esc(i.nome)).join(', ')
-      return '<div style="padding:10px 0;border-top:0.5px solid rgba(0,0,0,.07)">'+
+      return '<div id="prop-'+p._id+'" style="padding:10px 0;border-top:0.5px solid rgba(0,0,0,.07);scroll-margin-top:80px;border-radius:8px;transition:background .4s">'+
         '<div style="display:flex;justify-content:space-between;align-items:center"><b>'+esc(p.cliente||'—')+'</b><span style="font-size:11px;font-weight:700;color:'+c+'">'+esc(p.stato||'Nuova')+'</span></div>'+
         '<div style="font-size:12px;color:#6b6b66;margin-top:2px">'+items+'</div>'+
         '<div style="font-size:12px;color:#9e9e98;margin-top:2px">'+esc(p.data||'')+' · Totale '+eur(p.totale||0)+' · Tua provv. '+eur(p.totProv||0)+
