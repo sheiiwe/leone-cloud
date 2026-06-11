@@ -606,11 +606,34 @@ async function inviaProposta(){
   try{
     const { error } = await db.from('proposte').insert({data:{autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente,note,items,totale,totProv,stato:'Nuova',data:new Date().toLocaleDateString('it-IT')}})
     if(error) throw error
+    try{ await accodaEmailProposta({cliente,note,items,totale,totProv,autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL}) }catch(e){ console.error('email proposta:',e) }
     CART=[]; renderCarrello()
     await caricaMieProposte()
     alert('Proposta inviata a Leone Consulting! La trovi qui sotto in "Le mie proposte".')
   }catch(e){ alert('Non sono riuscito a inviare: '+(e.message||e)) }
   finally{ if(btn) btn.disabled=false }
+}
+function emailItemsHtml(items){
+  return '<table style="border-collapse:collapse;width:100%;font-size:14px;margin:8px 0">'+
+    (items||[]).map(i=>'<tr><td style="padding:5px 8px;border-bottom:1px solid #eee">'+esc(i.nome||'')+'</td><td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">'+(i.prezzo!=null?eur(i.prezzo):'su richiesta')+'</td></tr>').join('')+
+    '</table>'
+}
+async function accodaEmailProposta(p){
+  const ADMIN='amministrazione@leoneconsultingitalia.it'
+  const items=emailItemsHtml(p.items)
+  const st='font-family:Arial,Helvetica,sans-serif;color:#1a1a18;font-size:14px;line-height:1.5'
+  const htmlAdmin='<div style="'+st+'"><h2 style="color:#F22015;margin:0 0 8px">Nuova proposta dal portale</h2>'+
+    '<p><b>Cliente:</b> '+esc(p.cliente)+'<br><b>Procacciatore:</b> '+esc(p.autoreNome||'')+' ('+esc(p.autoreEmail||'')+')</p>'+items+
+    '<p><b>Totale cliente:</b> '+eur(p.totale||0)+'<br><b>Provvigione procacciatore:</b> '+eur(p.totProv||0)+'</p>'+
+    (p.note?'<p><b>Note:</b> '+esc(p.note)+'</p>':'')+
+    '<p style="color:#6b6b66;font-size:12px">Apri il gestionale (sezione Proposte) per confermarla e creare le vendite.</p></div>'
+  const htmlProc='<div style="'+st+'"><h2 style="color:#3B6D11;margin:0 0 8px">Riepilogo della tua proposta</h2>'+
+    '<p>Ciao '+esc((p.autoreNome||'').split(' ')[0]||'')+', ecco il riepilogo della proposta inviata a Leone Consulting per il cliente <b>'+esc(p.cliente)+'</b>:</p>'+items+
+    '<p><b>Totale cliente:</b> '+eur(p.totale||0)+'<br><b>La tua provvigione:</b> '+eur(p.totProv||0)+'</p>'+
+    '<p style="color:#6b6b66;font-size:12px">Riceverai conferma quando la proposta verrà elaborata. Grazie!</p></div>'
+  const rows=[{data:{to:ADMIN,subject:'Nuova proposta: '+p.cliente+' (da '+(p.autoreNome||'procacciatore')+')',html:htmlAdmin}}]
+  if(p.autoreEmail) rows.push({data:{to:p.autoreEmail,subject:'Riepilogo proposta per '+p.cliente+' — Leone Consulting',html:htmlProc}})
+  await db.from('email_queue').insert(rows)
 }
 async function caricaMieProposte(){
   try{
