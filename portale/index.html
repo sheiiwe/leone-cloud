@@ -537,6 +537,7 @@ function renderSchedaProposta(p){
     '<div style="display:inline-block;background:'+si.c+';color:#fff;font-weight:700;font-size:12px;padding:6px 14px;border-radius:20px">'+si.t+'</div>'+
     '<h2 style="margin:12px 0 2px">'+esc(p.cliente||'—')+'</h2>'+
     '<div style="color:#9e9e98;font-size:12px;margin-bottom:8px">Proposta del '+esc(p.data||'')+'</div>'+
+    (p.incassata?'<div style="margin:0 0 12px;background:rgba(59,109,17,.10);border:1px solid #3B6D11;border-radius:10px;padding:12px 14px;color:#2c5410;font-weight:700">✅ Vendita seguita correttamente — soldi incassati! Complimenti.</div>':'')+
     (si.d?'<div style="font-size:13px;color:#6b6b66;background:#f6f6f3;border-radius:8px;padding:10px 12px;margin-bottom:14px">'+si.d+'</div>':'')+
     '<table style="border-collapse:collapse;width:100%;font-size:14px">'+items+'</table>'+
     '<div style="margin-top:14px;font-size:14px"><b>Totale cliente:</b> '+eur(p.totale||0)+'<br><b>La tua provvigione:</b> '+eur(p.totProv||0)+'</div>'+
