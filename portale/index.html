@@ -169,7 +169,7 @@ tr:last-child td{border-bottom:none}
 <!-- APP PROCACCIATORE -->
 <div id="v-app" style="display:none">
   <div class="header">
-    <div class="brand"><img class="logo-sm js-logo" alt="LC"><div><h1>Leone Consulting</h1><p>Portale Procacciatori</p></div></div>
+    <div class="brand" onclick="vai('home')" style="cursor:pointer"><img class="logo-sm js-logo" alt="LC"><div><h1>Leone Consulting</h1><p>Portale Procacciatori</p></div></div>
     <div class="who"><span id="who-nome">—</span><br><button class="logout" onclick="logout()">Esci</button></div>
   </div>
   <div class="container">
@@ -179,12 +179,18 @@ tr:last-child td{border-bottom:none}
 
     <div id="app-content" style="display:none">
       <div class="tabs">
-        <div class="tab active" id="tab-prov" onclick="vai('prov')">💰 Provvigioni</div>
+        <div class="tab active" id="tab-home" onclick="vai('home')">🏠 Home</div>
+        <div class="tab" id="tab-prov" onclick="vai('prov')">💰 Provvigioni</div>
         <div class="tab" id="tab-bacheca" onclick="vai('bacheca')">📣 Bacheca</div>
         <div class="tab" id="tab-listino" onclick="vai('listino')">💶 Listino</div>
         <div class="tab" id="tab-lead" onclick="vai('lead')">📋 I miei Lead</div>
         <div class="tab" id="tab-profilo" onclick="vai('profilo')">👤 Profilo</div>
         <div class="tab" id="tab-doc" onclick="vai('doc')">📄 Documenti</div>
+      </div>
+
+      <!-- HOME -->
+      <div id="pane-home" style="display:block">
+        <div id="home-content"></div>
       </div>
 
       <!-- BACHECA -->
@@ -307,7 +313,7 @@ const LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAA
 document.querySelectorAll('.js-logo').forEach(i=>{ i.src=LOGO })
 
 let inviteFlow = false
-let MIO_PID = '', MIO_NOME = '', MIO_P = null, MIO_EMAIL = ''
+let MIO_PID = '', MIO_NOME = '', MIO_P = null, MIO_EMAIL = '', MIE_VENDITE = [], MIEI_LEAD = [], BACHECA_POSTS = []
 
 function mostra(id){
   ['v-loading','v-login','v-signup','v-signup-done','v-setpass','v-admin','v-app'].forEach(v=>{ const el=document.getElementById(v); if(el) el.style.display='none' })
@@ -446,12 +452,14 @@ async function avvia(session){
 
     const vd = await db.from('vendite').select('*')
     const vendite = (vd.data || []).map(r => r.data || r)
+    MIE_VENDITE = vendite
     renderVendite(vendite)
 
     // I miei lead + livello
     try{
       const ld = await db.from('leads').select('*')
       const mieiLead = (ld.data || []).map(r => ({ _id:r.id, ...(r.data || r) }))
+      MIEI_LEAD = mieiLead
       renderLeadPortale(mieiLead)
       renderLivello(vendite)
     }catch(e){ renderLeadPortale([]); renderLivello(vendite); console.error(e) }
@@ -463,6 +471,7 @@ async function avvia(session){
 
     try{
       const bc = await db.from('bacheca').select('*').order('created_at',{ascending:false})
+      BACHECA_POSTS = (bc.data||[]).map(r => ({ _id:r.id, created:r.created_at, ...(r.data||r) }))
       renderBacheca(bc.data || [])
     }catch(e){ renderBacheca([]) }
 
@@ -485,6 +494,8 @@ async function avvia(session){
     }catch(e){ console.error('realtime:', e) }
 
     document.getElementById('app-content').style.display = 'block'
+    renderHome()
+    vai('home')
   }catch(e){
     document.getElementById('who-nome').textContent = email
     document.getElementById('no-profile').style.display = 'block'
@@ -494,12 +505,14 @@ async function avvia(session){
 }
 
 function vai(t){
+  document.getElementById('tab-home').classList.toggle('active', t==='home')
   document.getElementById('tab-prov').classList.toggle('active', t==='prov')
   document.getElementById('tab-bacheca').classList.toggle('active', t==='bacheca')
   document.getElementById('tab-listino').classList.toggle('active', t==='listino')
   document.getElementById('tab-lead').classList.toggle('active', t==='lead')
   document.getElementById('tab-profilo').classList.toggle('active', t==='profilo')
   document.getElementById('tab-doc').classList.toggle('active', t==='doc')
+  document.getElementById('pane-home').style.display = t==='home' ? 'block' : 'none'
   document.getElementById('pane-prov').style.display = t==='prov' ? 'block' : 'none'
   document.getElementById('pane-bacheca').style.display = t==='bacheca' ? 'block' : 'none'
   document.getElementById('pane-listino').style.display = t==='listino' ? 'block' : 'none'
@@ -546,8 +559,10 @@ async function ricaricaListino(){
 async function ricaricaBacheca(){
   try{
     const bc = await db.from('bacheca').select('*').order('created_at',{ascending:false})
+    BACHECA_POSTS = (bc.data||[]).map(r => ({ _id:r.id, created:r.created_at, ...(r.data||r) }))
     renderBacheca(bc.data||[])
     renderBacheca(bc.data||[], 'bacheca-lista-admin')
+    renderHome()
   }catch(e){ console.error('bacheca:', e) }
 }
 function renderBacheca(rows, targetId){
@@ -609,14 +624,53 @@ async function ricaricaDati(){
   try{
     const vd = await db.from('vendite').select('*')
     const vendite = (vd.data || []).map(r => r.data || r)
+    MIE_VENDITE = vendite
     renderVendite(vendite)
     renderLivello(vendite)
   }catch(e){ console.error('ricaricaDati vendite:', e) }
   try{
     const ld = await db.from('leads').select('*')
     const mieiLead = (ld.data || []).map(r => ({ _id:r.id, ...(r.data || r) }))
+    MIEI_LEAD = mieiLead
     renderLeadPortale(mieiLead)
   }catch(e){ console.error('ricaricaDati leads:', e) }
+  renderHome()
+}
+function renderHome(){
+  const box=document.getElementById('home-content'); if(!box) return
+  const vendite=MIE_VENDITE||[], leads=MIEI_LEAD||[]
+  const fatt=fatturatoMese(vendite)
+  let idx=0; for(let i=0;i<QUALIFICHE.length;i++){ if(fatt>=QUALIFICHE[i].min) idx=i }
+  const q=QUALIFICHE[idx]
+  const conv=leads.filter(l=>l.stato==='Acquisito').length
+  const nVend=vendite.filter(v=>(v.stato||'')!=='Annullato').length
+  const posts=(BACHECA_POSTS||[]).slice().sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)).slice(0,3)
+  const stat=(label,val,col)=>'<div style="flex:1 1 110px;background:#fff;border:0.5px solid rgba(0,0,0,.1);border-radius:12px;padding:14px"><div style="font-size:21px;font-weight:800;color:'+(col||'#1a1a18')+'">'+val+'</div><div style="font-size:12px;color:#6b6b66;margin-top:2px">'+label+'</div></div>'
+  let html=''
+  html+='<div style="font-size:20px;font-weight:700;margin-bottom:14px">Ciao, '+esc((MIO_NOME||'').split(' ')[0]||'')+'! 👋</div>'
+  html+='<div class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'+
+    '<div style="width:54px;height:54px;border-radius:50%;background:'+q.col+'22;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">'+q.emoji+'</div>'+
+    '<div><div style="font-size:11px;color:#9e9e98;text-transform:uppercase;letter-spacing:.5px">Qualifica · provvigione '+q.perc+'</div>'+
+    '<div style="font-size:18px;font-weight:700;color:'+q.col+'">'+esc(q.nome)+'</div>'+
+    '<div style="font-size:12px;color:#6b6b66">Fatturato del mese: '+eur(fatt)+'</div></div></div>'
+  html+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">'+
+    stat('Fatturato mese', eur(fatt), '#3B6D11')+
+    stat('Vendite', nVend, '#854F0B')+
+    stat('Lead totali', leads.length, '#1a1a18')+
+    stat('Convertite', conv, '#3B6D11')+
+  '</div>'
+  html+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h2 style="margin:0">📣 Ultime dalla bacheca</h2><button onclick="vai(\u0027bacheca\u0027)" style="background:none;border:none;color:#F22015;font-weight:600;cursor:pointer;font-size:13px">Vedi tutte →</button></div>'
+  if(!posts.length){ html+='<div style="color:#9e9e98;font-size:13px;padding:6px 0">Nessuna comunicazione al momento.</div>' }
+  else {
+    html+=posts.map(p=>{
+      const isAdm=!!p.isAdmin, autore=isAdm?'Leone Consulting':(p.autoreNome||'Procacciatore')
+      const d=p.data||(p.created?new Date(p.created).toLocaleDateString('it-IT'):'')
+      const testo=(p.testo||''); const corto=testo.length>160?testo.slice(0,160)+'…':testo
+      return '<div style="padding:9px 0;border-top:0.5px solid rgba(0,0,0,.07)"><div style="font-size:12px;color:#9e9e98">'+esc(autore)+(isAdm?' 📣':'')+' · '+esc(d)+'</div>'+(p.titolo?'<div style="font-weight:700;margin-top:2px">'+esc(p.titolo)+'</div>':'')+'<div style="font-size:13px;color:#444;white-space:pre-wrap;margin-top:2px">'+esc(corto)+'</div></div>'
+    }).join('')
+  }
+  html+='</div>'
+  box.innerHTML=html
 }
 
 function mostraAvatar(url, nome){
