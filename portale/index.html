@@ -523,6 +523,7 @@ function vai(t){
 
 // ── RENDER ────────────────────────────────────────────────────
 function eur(n){ const x=Number(n)||0; return '€' + x.toLocaleString('it-IT', {minimumFractionDigits:0, maximumFractionDigits:2}) }
+function pctIt(x){ return (Math.round((Number(x)||0)*1000)/1000).toLocaleString('it-IT',{maximumFractionDigits:3})+'%' }
 function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 function row(lbl, val){ if(val==null || val==='') return ''; return '<div class="info-row"><span class="info-lbl">'+lbl+'</span><span class="info-val">'+esc(val)+'</span></div>' }
 
@@ -538,8 +539,18 @@ function renderListinoPortale(items, filtro){
   list.forEach(p=>{ const c=p.cat||'Altro'; (cats[c]=cats[c]||[]).push(p) })
   box.innerHTML = Object.keys(cats).map(cat=>{
     const rows=cats[cat].map(p=>{
-      const prezzo=(p.prezzo!=null && p.prezzo!=='') ? eur(p.prezzo) : '<span style="color:#9e9e98;font-weight:400">su richiesta</span>'
-      const prov=(p.prov!=null && p.prov!=='') ? (p.tipo==='fisso' ? eur(p.prov) : (p.prov+'%')) : '—'
+      let prezzo, prov
+      if(p.tipo==='percentuale'){
+        prezzo='<span style="color:#9e9e98;font-weight:400">su richiesta</span>'
+        if(p.marginePerc!=null){
+          prov=pctIt(p.marginePerc*p.prov/100)+' <span style="color:#9e9e98;font-weight:400;font-size:11px">del valore</span>'
+        } else {
+          prov=p.prov+'% <span style="color:#9e9e98;font-weight:400;font-size:11px">del margine</span>'
+        }
+      } else {
+        prezzo=(p.prezzo!=null && p.prezzo!=='') ? eur(p.prezzo) : '<span style="color:#9e9e98;font-weight:400">su richiesta</span>'
+        prov=(p.prov!=null && p.prov!=='') ? eur(p.prov) : '—'
+      }
       return '<tr><td>'+esc(p.nome||'')+'</td>'+
         '<td style="text-align:right;white-space:nowrap;font-weight:600">'+prezzo+'</td>'+
         '<td style="text-align:right;white-space:nowrap;font-weight:700;color:#3B6D11">'+prov+'</td></tr>'
