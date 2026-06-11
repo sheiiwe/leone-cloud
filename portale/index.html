@@ -295,6 +295,9 @@ tr:last-child td{border-bottom:none}
           <div id="documenti-box"><div class="empty">Caricamento…</div></div>
         </div>
       </div>
+
+      <!-- SCHEDA PROPOSTA (dettaglio + stato) -->
+      <div id="pane-proposta" style="display:none"></div>
     </div>
 
     <div class="footer">
@@ -510,21 +513,47 @@ async function avvia(session){
   }
 }
 
+let _schedaPropId=null
 function gestisciDeepLink(){
   try{
     const pid=new URLSearchParams(location.search).get('proposta')
-    if(!pid) return
-    vai('listino')
-    setTimeout(()=>{
-      const el=document.getElementById('prop-'+pid)
-      const target=el||document.getElementById('mie-proposte')
-      if(target) target.scrollIntoView({behavior:'smooth',block:'center'})
-      if(el){
-        el.style.background='rgba(242,32,21,.10)'
-        setTimeout(()=>{ el.style.background='transparent' }, 2800)
-      }
-    }, 400)
+    if(pid) apriSchedaProposta(pid)
   }catch(e){}
+}
+function renderSchedaProposta(p){
+  const box=document.getElementById('pane-proposta'); if(!box) return
+  const back='<div onclick="vai(\'listino\')" style="cursor:pointer;color:#185FA5;font-size:13px;margin-bottom:12px">&larr; Le mie proposte</div>'
+  if(!p){
+    box.innerHTML='<div class="card">'+back+'<h2 style="margin:6px 0">Proposta non disponibile</h2><div style="color:#6b6b66">Questa proposta non è più presente: potrebbe essere stata annullata o rimossa.</div></div>'
+    return
+  }
+  const S={Nuova:{t:'In attesa di valutazione',c:'#F22015',d:'La proposta è stata inviata. Leone Consulting la sta valutando.'},
+           Gestita:{t:'Confermata / gestita',c:'#3B6D11',d:'La proposta è stata presa in carico dall\u0027amministrazione.'},
+           Annullata:{t:'Annullata',c:'#9e9e98',d:'La proposta è stata annullata.'}}
+  let si=S[p.stato]||{t:(p.stato||'In attesa'),c:'#6b6b66',d:''}
+  if(p.stato==='Gestita' && p.confermata){ si={t:'Confermata ✓ vendite create',c:'#3B6D11',d:'La proposta è stata confermata: le vendite sono state create e assegnate a te.'} }
+  const items=(p.items||[]).map(i=>'<tr><td style="padding:7px 8px;border-bottom:1px solid #eee">'+esc(i.nome)+'</td><td style="padding:7px 8px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">'+(i.prezzo!=null?eur(i.prezzo):'su richiesta')+'</td></tr>').join('')
+  box.innerHTML='<div class="card">'+back+
+    '<div style="display:inline-block;background:'+si.c+';color:#fff;font-weight:700;font-size:12px;padding:6px 14px;border-radius:20px">'+si.t+'</div>'+
+    '<h2 style="margin:12px 0 2px">'+esc(p.cliente||'—')+'</h2>'+
+    '<div style="color:#9e9e98;font-size:12px;margin-bottom:8px">Proposta del '+esc(p.data||'')+'</div>'+
+    (si.d?'<div style="font-size:13px;color:#6b6b66;background:#f6f6f3;border-radius:8px;padding:10px 12px;margin-bottom:14px">'+si.d+'</div>':'')+
+    '<table style="border-collapse:collapse;width:100%;font-size:14px">'+items+'</table>'+
+    '<div style="margin-top:14px;font-size:14px"><b>Totale cliente:</b> '+eur(p.totale||0)+'<br><b>La tua provvigione:</b> '+eur(p.totProv||0)+'</div>'+
+    (p.note?'<div style="margin-top:10px;font-size:13px;color:#6b6b66"><b>Note:</b> '+esc(p.note)+'</div>':'')+
+    (p.stato==='Nuova'?'<div style="margin-top:18px"><span onclick="eliminaProposta(\''+p._id+'\')" style="color:#c0392b;cursor:pointer;font-size:13px;font-weight:600">Elimina proposta</span></div>':'')+
+    '</div>'
+}
+async function apriSchedaProposta(id){
+  _schedaPropId=id
+  vai('proposta')
+  document.getElementById('pane-proposta').innerHTML='<div class="card">Caricamento…</div>'
+  let p=(MIE_PROPOSTE||[]).find(x=>x._id===id)
+  if(!p){
+    try{ const r=await db.from('proposte').select('*').eq('id',id).maybeSingle(); if(r&&r.data) p={_id:r.data.id, ...(r.data.data||{})} }catch(e){}
+  }
+  _schedaPropId=id
+  renderSchedaProposta(p||null)
 }
 function vai(t){
   document.getElementById('tab-home').classList.toggle('active', t==='home')
@@ -541,6 +570,8 @@ function vai(t){
   document.getElementById('pane-lead').style.display = t==='lead' ? 'block' : 'none'
   document.getElementById('pane-profilo').style.display = t==='profilo' ? 'block' : 'none'
   document.getElementById('pane-doc').style.display = t==='doc' ? 'block' : 'none'
+  const _pp=document.getElementById('pane-proposta'); if(_pp) _pp.style.display = t==='proposta' ? 'block' : 'none'
+  if(t!=='proposta') _schedaPropId=null
 }
 
 // ── RENDER ────────────────────────────────────────────────────
@@ -657,6 +688,10 @@ async function caricaMieProposte(){
     MIE_PROPOSTE=(r.data||[]).map(x=>({_id:x.id,created:x.created_at,...(x.data||x)}))
   }catch(e){ MIE_PROPOSTE=[] }
   renderMieProposte()
+  // se sto guardando la scheda di una proposta, la aggiorno dal vivo (stato che cambia)
+  if(_schedaPropId && document.getElementById('pane-proposta') && document.getElementById('pane-proposta').style.display==='block'){
+    renderSchedaProposta((MIE_PROPOSTE||[]).find(x=>x._id===_schedaPropId)||null)
+  }
 }
 function renderMieProposte(){
   const box=document.getElementById('mie-proposte'); if(!box) return
@@ -666,11 +701,12 @@ function renderMieProposte(){
     MIE_PROPOSTE.map(p=>{
       const c=col[p.stato]||'#6b6b66'
       const items=(p.items||[]).map(i=>esc(i.nome)).join(', ')
-      return '<div id="prop-'+p._id+'" style="padding:10px 0;border-top:0.5px solid rgba(0,0,0,.07);scroll-margin-top:80px;border-radius:8px;transition:background .4s">'+
+      return '<div id="prop-'+p._id+'" onclick="apriSchedaProposta(\''+p._id+'\')" style="padding:10px 8px;margin:0 -8px;border-top:0.5px solid rgba(0,0,0,.07);scroll-margin-top:80px;border-radius:8px;transition:background .4s;cursor:pointer">'+
         '<div style="display:flex;justify-content:space-between;align-items:center"><b>'+esc(p.cliente||'—')+'</b><span style="font-size:11px;font-weight:700;color:'+c+'">'+esc(p.stato||'Nuova')+'</span></div>'+
         '<div style="font-size:12px;color:#6b6b66;margin-top:2px">'+items+'</div>'+
         '<div style="font-size:12px;color:#9e9e98;margin-top:2px">'+esc(p.data||'')+' · Totale '+eur(p.totale||0)+' · Tua provv. '+eur(p.totProv||0)+
-        (p.stato==='Nuova'?' · <span onclick="eliminaProposta(\''+p._id+'\')" style="color:#c0392b;cursor:pointer">elimina</span>':'')+'</div>'+
+        (p.stato==='Nuova'?' · <span onclick="event.stopPropagation();eliminaProposta(\''+p._id+'\')" style="color:#c0392b;cursor:pointer">elimina</span>':'')+'</div>'+
+        '<div style="font-size:11px;color:#185FA5;margin-top:4px">Tocca per vedere lo stato &rarr;</div>'+
       '</div>'
     }).join('')+'</div>'
 }
