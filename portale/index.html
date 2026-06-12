@@ -1346,6 +1346,13 @@ async function inviaNuovaLead(){
   try{
     const { error } = await db.from('leads').insert({ data: obj })
     if(error) throw error
+    // Notifica email all'amministrazione. Il webhook sui leads e' stato rimosso (causava loop):
+    // chiamiamo la Edge Function lead-email direttamente, fire-and-forget (il lead e' gia' salvato).
+    fetch(SUPA_URL+'/functions/v1/lead-email', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+SUPA_KEY, 'apikey':SUPA_KEY },
+      body: JSON.stringify({ type:'INSERT', record:{ data: obj } })
+    }).catch(err=>console.error('lead-email:', err))
     setMsg('✅ Lead inviata! Leone Consulting è stata avvisata.',false)
     ;['nl-nome','nl-tel','nl-email','nl-note'].forEach(id=>document.getElementById(id).value='')
     document.getElementById('nl-cat').value=''
