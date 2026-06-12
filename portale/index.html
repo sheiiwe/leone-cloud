@@ -561,6 +561,10 @@ async function avvia(session){
     }catch(e){ renderBacheca([]) }
 
     try{
+      const ro = await db.from('offerte').select('*').order('created_at')
+      OFF_LISTINO=(ro.data||[]).map(x=>({_id:x.id,...(x.data||{})})).filter(offAttiva)
+    }catch(e){ OFF_LISTINO=[] }
+    try{
       const r = await db.from('listino').select('*').limit(1)
       const items = (r.data && r.data[0] && r.data[0].data && r.data[0].data.items) || []
       renderListinoPortale(items)
@@ -859,8 +863,48 @@ function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</
 function row(lbl, val){ if(val==null || val==='') return ''; return '<div class="info-row"><span class="info-lbl">'+lbl+'</span><span class="info-val">'+esc(val)+'</span></div>' }
 
 let LISTINO_PORTALE = []
+let OFF_LISTINO = []
+let _liCounter = 0
+function offerteMatch(p, offers){
+  if(!p||!offers||!offers.length) return []
+  const nome=(p.nome||'').toLowerCase()
+  const cat=(p.cat||'').toLowerCase()
+  const enerCats=['Luce Fisso','Luce Variabile','Gas Fisso','Gas Variabile','Business']
+  const telCats=['Telefonia Mobile','Telefonia Fissa']
+  const isEner=cat.includes('energia')||cat.includes('utenze')
+  const isTel=cat.includes('telefon')||cat.includes('internet')
+  if(!isEner && !isTel) return []
+  let cand=offers.filter(o=>(isEner?enerCats:telCats).includes(o.cat))
+  const brand=nome.split('(')[0].trim().split(' ')[0]
+  if(brand && brand.length>=2) cand=cand.filter(o=>(o.forn||'').toLowerCase().includes(brand))
+  if(nome.includes('bollettino')) cand=cand.filter(o=>/bollettino/i.test(o.pagamento||''))
+  else if(nome.includes('rid')) cand=cand.filter(o=>/rid/i.test(o.pagamento||''))
+  return cand
+}
+function offDettaglioHtml(o){
+  const d=[]
+  if(o.prezzo) d.push(['Prezzo',o.prezzo])
+  if(o.pcv) d.push(['PCV/anno',o.pcv])
+  if(o.costoAtt) d.push(['Attivazione',o.costoAtt])
+  if(o.giga) d.push(['Giga',o.giga])
+  if(o.validita) d.push(['Validit\u00e0',o.validita])
+  if(o.fatt) d.push(['Fatturazione',o.fatt])
+  if(o.pagamento) d.push(['Pagamento',o.pagamento])
+  if(o.azioni) d.push(['Azioni',(o.azioni||'').replace(/ - /g,' / ')])
+  if(o.promo) d.push(['Promo',o.promo])
+  if(o.scad) d.push(['Valida fino al',itDateP(o.scad)])
+  return '<div style="background:#faf9f4;border:1px solid #ece9df;border-radius:8px;padding:10px 12px;margin:2px 0 10px"><div style="font-weight:700;margin-bottom:5px">'+esc(o.forn)+' \u2014 '+esc(o.nome)+'</div>'+d.map(r=>'<div style="font-size:12.5px;color:#555;line-height:1.6"><b>'+r[0]+':</b> '+esc(r[1])+'</div>').join('')+'</div>'
+}
+function mostraOffListino(rid, offId){
+  const tr=document.getElementById('detr-'+rid); if(!tr) return
+  const td=tr.querySelector('td'); if(!td) return
+  if(!offId){ td.innerHTML=''; return }
+  const o=(OFF_LISTINO||[]).find(x=>x._id===offId)
+  td.innerHTML=o?offDettaglioHtml(o):''
+}
 function renderListinoPortale(items, filtro){
   if(items!=null) LISTINO_PORTALE = items
+  _liCounter=0
   const box=document.getElementById('listino-lista'); if(!box) return
   const q=(filtro||'').toLowerCase().trim()
   let list=LISTINO_PORTALE||[]
@@ -882,13 +926,23 @@ function renderListinoPortale(items, filtro){
         prezzo=(p.prezzo!=null && p.prezzo!=='') ? eur(p.prezzo) : '<span style="color:#9e9e98;font-weight:400">su richiesta</span>'
         prov=(p.prov!=null && p.prov!=='') ? eur(p.prov) : '—'
       }
-      return '<tr><td>'+esc(p.nome||'')+'</td>'+
-        '<td style="text-align:right;white-space:nowrap;font-weight:600">'+prezzo+'</td>'+
-        '<td style="text-align:right;white-space:nowrap;font-weight:700;color:#3B6D11">'+prov+'</td>'+
-        '<td style="text-align:right;width:34px"><button onclick="addCarrello(\''+p.pid+'\')" title="Aggiungi al carrello" style="background:#F22015;color:#fff;border:none;width:26px;height:26px;border-radius:7px;font-size:16px;line-height:1;cursor:pointer;font-weight:700">+</button></td></tr>'
+      const matches=offerteMatch(p, OFF_LISTINO)
+      const rid='li'+(_liCounter++)
+      let selHtml=''
+      if(matches.length){
+        selHtml='<div style="margin-top:5px"><select onchange="mostraOffListino(\u0027'+rid+'\u0027,this.value)" style="font-size:11.5px;padding:5px 7px;border:1px solid #e0ded6;border-radius:6px;background:#fff;max-width:100%;font-family:inherit;color:#3B6D11;font-weight:600">'+
+          '<option value="">\ud83d\udd0e Vedi offerta reale ('+matches.length+')</option>'+
+          matches.map(o=>'<option value="'+o._id+'">'+esc(o.forn+' - '+o.nome)+'</option>').join('')+
+          '</select></div>'
+      }
+      return '<tr><td style="vertical-align:top">'+esc(p.nome||'')+selHtml+'</td>'+
+        '<td style="text-align:right;white-space:nowrap;font-weight:600;vertical-align:top">'+prezzo+'</td>'+
+        '<td style="text-align:right;white-space:nowrap;font-weight:700;color:#3B6D11;vertical-align:top">'+prov+'</td>'+
+        '<td style="text-align:right;vertical-align:top"><button onclick="addCarrello(\''+p.pid+'\')" title="Aggiungi al carrello" style="background:#F22015;color:#fff;border:none;width:26px;height:26px;border-radius:7px;font-size:16px;line-height:1;cursor:pointer;font-weight:700">+</button></td></tr>'+
+        '<tr id="detr-'+rid+'"><td colspan="4" style="padding:0;border:none"></td></tr>'
     }).join('')
     return '<div class="card"><h2 style="margin:0 0 8px">'+esc(cat)+'</h2>'+
-      '<table><thead><tr><th>Prodotto</th><th style="text-align:right">Prezzo</th><th style="text-align:right">La tua provvigione</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      '<table style="table-layout:fixed;width:100%"><colgroup><col><col style="width:92px"><col style="width:148px"><col style="width:36px"></colgroup><thead><tr><th>Prodotto</th><th style="text-align:right">Prezzo</th><th style="text-align:right">La tua provvigione</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
   }).join('')
 }
 let CART=[], MIE_PROPOSTE=[]
