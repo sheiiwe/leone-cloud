@@ -189,6 +189,7 @@ tr:last-child td{border-bottom:none}
     </div>
     <label style="font-size:12px;color:#777;display:block;margin-top:10px">💳 Pagamento *<select id="offproc-pag" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"><option value="RID">RID Bancario</option><option value="BP">Bollettino Postale</option></select></label>
     <label style="font-size:12px;color:#777;display:block;margin-top:10px">Note (indirizzo, orari per chiamare…)<textarea id="offproc-note" rows="2" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box;resize:vertical"></textarea></label>
+    <div id="offproc-extra"></div>
     <div class="notice" style="margin-top:10px;font-size:12px">ℹ Leone contatterà il cliente per attivare l'offerta e fare il contratto. Inserisci recapiti corretti.</div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
       <button onclick="chiudiOffProc()" style="background:#f0efe8;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Annulla</button>
@@ -326,10 +327,11 @@ tr:last-child td{border-bottom:none}
           <h2>➕ Segnala una nuova lead</h2>
           <div id="nl-msg" style="display:none;margin-bottom:12px;padding:11px 13px;border-radius:8px;font-size:13px"></div>
           <div style="display:grid;gap:10px">
-            <input id="nl-nome" type="text" placeholder="NOME E COGNOME DEL CONTATTO *" oninput="this.value=this.value.toUpperCase()" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box;text-transform:uppercase">
-            <input id="nl-tel" type="tel" inputmode="tel" placeholder="Telefono *" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box">
+            <input id="nl-nome" type="text" placeholder="Nome *" oninput="this.value=this.value.toUpperCase()" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box;text-transform:uppercase">
+            <input id="nl-cognome" type="text" placeholder="Cognome *" oninput="this.value=this.value.toUpperCase()" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box;text-transform:uppercase">
+            <input id="nl-tel" type="tel" inputmode="tel" placeholder="Cellulare *" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box">
             <input id="nl-email" type="email" inputmode="email" placeholder="Email" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box">
-            <select id="nl-cat" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box">
+            <select id="nl-cat" onchange="aggiornaCampiLead()" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box">
               <option value="">Area di interesse *</option>
               <option value="Energia (Luce e Gas)">Energia (Luce e Gas)</option>
               <option value="Telefonia / Internet / Fibra">Telefonia / Internet / Fibra</option>
@@ -344,6 +346,7 @@ tr:last-child td{border-bottom:none}
               <option value="Recupero anni scolastici">Recupero anni scolastici</option>
               <option value="Altro">Altro</option>
             </select>
+            <div id="nl-extra"></div>
             <textarea id="nl-note" placeholder="Note (orari per ricontattare, dettagli…)" style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box;min-height:70px;resize:vertical"></textarea>
             <button id="nl-btn" onclick="inviaNuovaLead()" style="background:#F22015;color:#fff;border:none;padding:13px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">Invia lead</button>
           </div>
@@ -748,6 +751,8 @@ function scegliOffP(id){
   document.getElementById('offproc-label').textContent=o.forn+' - '+o.nome
   ;['offproc-nome','offproc-cognome','offproc-tel','offproc-email','offproc-note'].forEach(k=>{ const el=document.getElementById(k); if(el) el.value='' })
   if(document.getElementById('offproc-pag')) document.getElementById('offproc-pag').value='RID'
+  const req=reqOrdine([{cat:o.cat, nome:o.nome}])
+  const exBox=document.getElementById('offproc-extra'); if(exBox) exBox.innerHTML=campiExtraHtml(req,'offproc')
   document.getElementById('m-off-proc').style.display='flex'
 }
 function chiudiOffProc(){ document.getElementById('m-off-proc').style.display='none' }
@@ -755,16 +760,23 @@ async function salvaOffProc(){
   const id=document.getElementById('offproc-id').value
   const o=(window._OFF_PROC||[]).find(x=>x._id===id); if(!o) return
   const gv=k=>document.getElementById(k).value.trim()
-  const nome=gv('offproc-nome'), cognome=gv('offproc-cognome'), tel=gv('offproc-tel')
+  const nome=gv('offproc-nome'), cognome=gv('offproc-cognome'), tel=gv('offproc-tel'), email=gv('offproc-email')
   if(!nome||!cognome){ alert('Inserisci nome e cognome del cliente'); return }
   if(!tel){ alert('Inserisci il telefono del cliente'); return }
+  const req=reqOrdine([{cat:o.cat, nome:o.nome}])
+  if(req.email && !email){ alert('Per questa offerta l\u0027email del cliente è obbligatoria.'); return }
+  const exv=validaExtra(req,'offproc'); if(exv.err){ alert(exv.err); return }
   if(!LISTINO_PORTALE||!LISTINO_PORTALE.length){ try{ const r=await db.from('listino').select('*').limit(1); LISTINO_PORTALE=(r.data&&r.data[0]&&r.data[0].data&&r.data[0].data.items)||[] }catch(e){} }
   const pag=document.getElementById('offproc-pag').value
   const m=listinoPerOffertaP(o,pag)
   const prov=m?(Number(m.prov)||0):provOfferta(o)
   const guad=(m&&m.guadagno!=null&&m.guadagno!=='')?Number(m.guadagno):null
   const item={pid:'offerta:'+o._id,nome:o.forn+' - '+o.nome,cat:o.cat,prezzo:0,prov:prov,tipo:'fisso'}
-  const data={autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente:(nome+' '+cognome).trim(),cliTel:tel,cliEmail:gv('offproc-email'),cliNote:gv('offproc-note'),note:'Da OFFERTA: '+o.forn+' '+o.nome,items:[item],totale:0,totProv:prov,stato:'Nuova',data:new Date().toLocaleDateString('it-IT'),tipoProposta:'offerta',offForn:o.forn,offNome:o.nome,offCat:o.cat,pagamentoTipo:pag,guadagnoLeone:guad,listinoNome:m?m.nome:''}
+  let bolletta=null
+  if(req.bolletta){ const up=await uploadBolletta('offproc', MIO_NOME); if(up.err){ alert(up.err); return } bolletta=up }
+  const data={autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente:(nome+' '+cognome).trim(),cliNome:nome,cliCognome:cognome,cliTel:tel,cliEmail:email,cliNote:gv('offproc-note'),note:'Da OFFERTA: '+o.forn+' '+o.nome,items:[item],totale:0,totProv:prov,stato:'Nuova',data:new Date().toLocaleDateString('it-IT'),tipoProposta:'offerta',offForn:o.forn,offNome:o.nome,offCat:o.cat,pagamentoTipo:pag,guadagnoLeone:guad,listinoNome:m?m.nome:''}
+  Object.assign(data, exv.v)
+  if(bolletta){ data.bollettaUrl=bolletta.url; data.bollettaPath=bolletta.path }
   try{ await db.from('proposte').insert({data}); chiudiOffProc(); alert('Offerta inviata! La trovi in "Le mie proposte". Leone contatter\u00e0 il cliente per attivarla.') }
   catch(e){ alert('Errore: '+(e.message||e)) }
 }
@@ -984,6 +996,7 @@ function renderCarrello(){
   const box=document.getElementById('cart-box'); if(!box) return
   if(!CART.length){ box.innerHTML=''; return }
   const items=CART.map(prodById).filter(Boolean)
+  const reqCart=reqOrdine(items)
   let totPrezzo=0, totProv=0
   const rows=items.map(p=>{
     const pr=(p.prezzo!=null&&p.prezzo!=='')?Number(p.prezzo):null
@@ -999,22 +1012,36 @@ function renderCarrello(){
     '<table><tbody>'+rows+'</tbody></table>'+
     '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px"><span>Totale prezzo cliente</span><b>'+eur(totPrezzo)+'</b></div>'+
     '<div style="display:flex;justify-content:space-between;font-size:13px;color:#3B6D11"><span>La tua provvigione totale</span><b>'+eur(totProv)+'</b></div>'+
-    '<input id="cart-cliente" type="text" placeholder="Nome del cliente" style="width:100%;margin-top:10px;padding:10px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box">'+
-    '<textarea id="cart-note" rows="2" placeholder="Note (telefono, email, dettagli...)" style="width:100%;margin-top:8px;padding:10px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box;resize:vertical"></textarea>'+
+    '<input id="cart-nome" type="text" placeholder="Nome cliente *" style="width:100%;margin-top:10px;padding:10px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box">'+
+    '<input id="cart-cognome" type="text" placeholder="Cognome cliente *" style="width:100%;margin-top:8px;padding:10px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box">'+
+    '<input id="cart-cell" type="tel" inputmode="tel" placeholder="Cellulare *" style="width:100%;margin-top:8px;padding:10px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box">'+
+    '<input id="cart-email" type="email" inputmode="email" placeholder="Email '+(reqCart.email?'*':'(facoltativa)')+'" style="width:100%;margin-top:8px;padding:10px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box">'+
+    campiExtraHtml(reqCart,'cart')+
+    '<textarea id="cart-note" rows="2" placeholder="Note (dettagli...)" style="width:100%;margin-top:8px;padding:10px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box;resize:vertical"></textarea>'+
     '<button id="cart-invia" onclick="inviaProposta()" style="width:100%;margin-top:10px;background:#F22015;color:#fff;border:none;padding:12px;border-radius:8px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit">Invia proposta a Leone Consulting</button>'+
   '</div>'
 }
 async function inviaProposta(){
   if(!CART.length) return
-  const cliente=(document.getElementById('cart-cliente').value||'').trim()
-  if(!cliente){ alert('Inserisci il nome del cliente.'); return }
-  const note=(document.getElementById('cart-note').value||'').trim()
+  const gv=k=>((document.getElementById(k)||{}).value||'').trim()
+  const nome=gv('cart-nome'), cognome=gv('cart-cognome'), cell=gv('cart-cell'), email=gv('cart-email')
+  const note=gv('cart-note')
   const items=CART.map(prodById).filter(Boolean).map(p=>({pid:p.pid,nome:p.nome,cat:p.cat,prezzo:(p.prezzo!=null&&p.prezzo!=='')?Number(p.prezzo):null,prov:p.prov,tipo:p.tipo,marginePerc:p.marginePerc!=null?p.marginePerc:null}))
-  const totale=items.reduce((s,i)=>s+(i.prezzo||0),0)
-  const totProv=items.reduce((s,i)=>s+((i.tipo==='fisso'&&i.prov!=null)?Number(i.prov):0),0)
+  const req=reqOrdine(items)
+  if(!nome||!cognome){ alert('Inserisci nome e cognome del cliente.'); return }
+  if(!cell){ alert('Inserisci il cellulare del cliente.'); return }
+  if(req.email && !email){ alert('Per questi prodotti l\u0027email del cliente è obbligatoria.'); return }
+  const ex=validaExtra(req,'cart'); if(ex.err){ alert(ex.err); return }
   const btn=document.getElementById('cart-invia'); if(btn) btn.disabled=true
   try{
-    const { error } = await db.from('proposte').insert({data:{autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente,note,items,totale,totProv,stato:'Nuova',data:new Date().toLocaleDateString('it-IT')}})
+    let bolletta=null
+    if(req.bolletta){ const up=await uploadBolletta('cart', MIO_NOME); if(up.err){ alert(up.err); if(btn)btn.disabled=false; return } bolletta=up }
+    const totale=items.reduce((s,i)=>s+(i.prezzo||0),0)
+    const totProv=items.reduce((s,i)=>s+((i.tipo==='fisso'&&i.prov!=null)?Number(i.prov):0),0)
+    const data={autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente:(nome+' '+cognome).trim(),cliNome:nome,cliCognome:cognome,cliTel:cell,cliEmail:email,note,items,totale,totProv,stato:'Nuova',data:new Date().toLocaleDateString('it-IT')}
+    Object.assign(data, ex.v)
+    if(bolletta){ data.bollettaUrl=bolletta.url; data.bollettaPath=bolletta.path }
+    const { error } = await db.from('proposte').insert({data})
     if(error) throw error
     CART=[]; renderCarrello()
     await caricaMieProposte()
@@ -1381,30 +1408,115 @@ function renderLeadPortale(lista){
     }).join('') + '</tbody></table>'
 }
 
+// ====== MOTORE REGOLE CAMPI OBBLIGATORI (per categoria / prodotto) ======
+const FASCE_ORARIE = ['09:00 - 10:00','10:00 - 11:00','11:00 - 12:00','12:00 - 13:00','13:00 - 14:00','14:00 - 15:00','15:00 - 16:00','16:00 - 17:00','17:00 - 18:00','18:00 - 19:00']
+const REG_CATEGORIA = {
+  'Energia & Utenze': {email:true, contatto:true, bolletta:true},
+  'Telefonia & Internet': {email:true, contatto:true}
+}
+const REG_PRODOTTO = {
+  'Assicurazione RCA': {email:true, targa:true},
+  'Assicurazione UNIPOL': {email:true, targa:true},
+  'Mutui': {email:true}, 'Prestito': {email:true}, 'Cessione del Quinto': {email:true},
+  'Noleggio a lungo termine': {email:true}, 'Antifurti': {email:true}, 'Depuratore d\u0027acqua': {email:true}
+}
+// area del form Lead -> requisiti
+const REG_AREA_LEAD = {
+  'Energia (Luce e Gas)': {email:true, contatto:true, bolletta:true},
+  'Telefonia / Internet / Fibra': {email:true, contatto:true},
+  'Pay TV (Sky)': {email:true, contatto:true},
+  'Assicurazioni': {email:true, targa:true},
+  'Antifurto / Allarmi': {email:true},
+  'Mutui / Prestiti / Cessione del quinto': {email:true},
+  'Noleggio a lungo termine': {email:true}
+}
+function reqOrdine(items){
+  const r={email:false, contatto:false, bolletta:false, targa:false}
+  const merge=x=>{ if(!x)return; if(x.email)r.email=true; if(x.contatto)r.contatto=true; if(x.bolletta)r.bolletta=true; if(x.targa)r.targa=true }
+  ;(items||[]).forEach(it=>{ merge(REG_CATEGORIA[it.cat]); merge(REG_PRODOTTO[it.nome]) })
+  return r
+}
+function campiExtraHtml(req, px){
+  let h=''
+  if(req.contatto){
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">'+
+      '<label style="font-size:12px;color:#777">Quando vuoi essere contattato *<input id="'+px+'-cdata" type="date" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>'+
+      '<label style="font-size:12px;color:#777">Fascia oraria *<select id="'+px+'-cfascia" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"><option value="">-- Scegli --</option>'+FASCE_ORARIE.map(f=>'<option value="'+f+'">'+f+'</option>').join('')+'</select></label>'+
+      '</div>'
+  }
+  if(req.targa){
+    h+='<label style="font-size:12px;color:#777;display:block;margin-top:10px">Targa veicolo *<input id="'+px+'-targa" type="text" oninput="this.value=this.value.toUpperCase()" placeholder="ES. AB123CD" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box;text-transform:uppercase"></label>'
+  }
+  if(req.bolletta){
+    h+='<label style="font-size:12px;color:#777;display:block;margin-top:10px">📄 Carica qui la tua bolletta *<input id="'+px+'-bolletta" type="file" accept="image/*,application/pdf" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box;background:#fff"></label>'
+  }
+  return h
+}
+function validaExtra(req, px){
+  const v={}
+  if(req.contatto){
+    const d=(document.getElementById(px+'-cdata')||{}).value||''
+    const f=(document.getElementById(px+'-cfascia')||{}).value||''
+    if(!d) return {err:'Indica quando vuoi essere contattato (data).'}
+    if(!f) return {err:'Scegli la fascia oraria.'}
+    v.contattoData=d; v.contattoFascia=f
+  }
+  if(req.targa){
+    const t=((document.getElementById(px+'-targa')||{}).value||'').trim()
+    if(!t) return {err:'Inserisci la targa del veicolo.'}
+    v.targa=t
+  }
+  return {v}
+}
+async function uploadBolletta(px, autore){
+  const inp=document.getElementById(px+'-bolletta')
+  const file=inp&&inp.files&&inp.files[0]
+  if(!file) return {err:'Carica la bolletta.'}
+  const safe=(autore||'cliente').toLowerCase().replace(/[^a-z0-9]+/g,'-')
+  const ext=(file.name.split('.').pop()||'dat').toLowerCase()
+  const path='bollette/'+safe+'-'+Date.now()+'.'+ext
+  try{
+    const up=await db.storage.from('documenti').upload(path, file, { upsert:true, contentType:file.type||'application/octet-stream' })
+    if(up.error) return {err:'Errore nel caricamento della bolletta: '+up.error.message}
+    const pub=db.storage.from('documenti').getPublicUrl(path)
+    return {url:(pub&&pub.data&&pub.data.publicUrl)||'', path}
+  }catch(e){ return {err:'Errore nel caricamento della bolletta: '+(e.message||e)} }
+}
+function aggiornaCampiLead(){
+  const area=(document.getElementById('nl-cat')||{}).value||''
+  const req=REG_AREA_LEAD[area]||{}
+  const box=document.getElementById('nl-extra'); if(box) box.innerHTML=campiExtraHtml(req,'nl')
+  const em=document.getElementById('nl-email'); if(em) em.placeholder='Email'+(req.email?' *':' (facoltativa)')
+}
 async function inviaNuovaLead(){
   const msg = document.getElementById('nl-msg')
   const setMsg = (t,err)=>{ msg.style.display='block'; msg.textContent=t; msg.style.background=err?'#fdecea':'#e8f5ee'; msg.style.color=err?'#c0392b':'#1f7a4d' }
-  const nome=document.getElementById('nl-nome').value.trim()
-  const tel=document.getElementById('nl-tel').value.trim()
-  const email=document.getElementById('nl-email').value.trim()
+  const gv=k=>((document.getElementById(k)||{}).value||'').trim()
+  const nome=gv('nl-nome'), cognome=gv('nl-cognome'), tel=gv('nl-tel'), email=gv('nl-email')
   const cat=document.getElementById('nl-cat').value
-  const note=document.getElementById('nl-note').value.trim()
-  if(!nome){ setMsg('Inserisci nome e cognome del contatto.',true); return }
-  if(!tel){ setMsg('Inserisci un numero di telefono.',true); return }
+  const note=gv('nl-note')
+  if(!nome||!cognome){ setMsg('Inserisci nome e cognome del contatto.',true); return }
+  if(!tel){ setMsg('Inserisci il cellulare.',true); return }
   if(!cat){ setMsg('Seleziona l\u0027area di interesse.',true); return }
+  const req=REG_AREA_LEAD[cat]||{}
+  if(req.email && !email){ setMsg('Per questa area l\u0027email del contatto è obbligatoria.',true); return }
+  const ex=validaExtra(req,'nl'); if(ex.err){ setMsg(ex.err,true); return }
   const btn=document.getElementById('nl-btn'); btn.disabled=true; btn.textContent='Invio…'
+  let bolletta=null
+  if(req.bolletta){ const up=await uploadBolletta('nl', MIO_NOME); if(up.err){ setMsg(up.err,true); btn.disabled=false; btn.textContent='Invia lead'; return } bolletta=up }
   const now=new Date()
-  const obj={ nome, tel, email, cat, note, stato:'Nuovo', pid:MIO_PID, pnome:MIO_NOME,
+  const obj={ nome:(nome+' '+cognome).trim(), cliNome:nome, cliCognome:cognome, tel, email, cat, note, stato:'Nuovo', pid:MIO_PID, pnome:MIO_NOME,
     data: now.toLocaleDateString('it-IT'), ora: now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}), fonte:'Portale' }
+  Object.assign(obj, ex.v)
+  if(bolletta){ obj.bollettaUrl=bolletta.url; obj.bollettaPath=bolletta.path }
   try{
     const { error } = await db.from('leads').insert({ data: obj })
     if(error) throw error
-    // Notifica email all'amministrazione tramite la coda email_queue (stesso percorso di
-    // offerte e listino, gia' collaudato e server-side). Niente webhook, niente CORS, niente loop.
     try{ await accodaEmailLead(obj, MIO_EMAIL) }catch(err){ console.error('email lead:', err) }
     setMsg('✅ Lead inviata! Leone Consulting è stata avvisata.',false)
-    ;['nl-nome','nl-tel','nl-email','nl-note'].forEach(id=>document.getElementById(id).value='')
+    ;['nl-nome','nl-cognome','nl-tel','nl-email','nl-note'].forEach(id=>{const e=document.getElementById(id); if(e) e.value=''})
     document.getElementById('nl-cat').value=''
+    aggiornaCampiLead()
     const ld = await db.from('leads').select('*')
     const mieiLead = (ld.data || []).map(r => ({ _id:r.id, ...(r.data || r) }))
     renderLeadPortale(mieiLead)
