@@ -174,6 +174,27 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- MODALE SCEGLI OFFERTA (procacciatore) -->
+<div id="m-off-proc" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:flex-start;justify-content:center;overflow:auto;padding:20px;box-sizing:border-box">
+  <div style="background:#fff;border-radius:12px;max-width:480px;width:100%;padding:22px;margin:auto;box-sizing:border-box">
+    <h3 style="margin:0 0 4px">Scegli questa offerta</h3>
+    <div id="offproc-label" style="font-size:13px;color:#777;margin-bottom:14px"></div>
+    <input type="hidden" id="offproc-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <label style="font-size:12px;color:#777">Nome cliente *<input id="offproc-nome" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">Cognome *<input id="offproc-cognome" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">☎ Telefono *<input id="offproc-tel" type="tel" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">✉ Email<input id="offproc-email" type="email" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+    </div>
+    <label style="font-size:12px;color:#777;display:block;margin-top:10px">Note (indirizzo, orari per chiamare…)<textarea id="offproc-note" rows="2" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box;resize:vertical"></textarea></label>
+    <div class="notice" style="margin-top:10px;font-size:12px">ℹ Leone contatterà il cliente per attivare l'offerta e fare il contratto. Inserisci recapiti corretti.</div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+      <button onclick="chiudiOffProc()" style="background:#f0efe8;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Annulla</button>
+      <button onclick="salvaOffProc()" style="background:#3B6D11;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Invia proposta</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODALE OFFERTA (admin portale) -->
 <div id="m-off-portale" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:flex-start;justify-content:center;overflow:auto;padding:20px;box-sizing:border-box">
   <div style="background:#fff;border-radius:12px;max-width:620px;width:100%;padding:22px;margin:auto;box-sizing:border-box">
@@ -681,13 +702,25 @@ async function caricaOfferteProc(){
   })
   box.innerHTML=html
 }
-async function scegliOffP(id){
+function scegliOffP(id){
   const o=(window._OFF_PROC||[]).find(x=>x._id===id); if(!o) return
-  const cliente=prompt('Nome del cliente per questa offerta ('+o.forn+' '+o.nome+'):'); if(!cliente||!cliente.trim()) return
+  document.getElementById('offproc-id').value=id
+  document.getElementById('offproc-label').textContent=o.forn+' - '+o.nome
+  ;['offproc-nome','offproc-cognome','offproc-tel','offproc-email','offproc-note'].forEach(k=>{ const el=document.getElementById(k); if(el) el.value='' })
+  document.getElementById('m-off-proc').style.display='flex'
+}
+function chiudiOffProc(){ document.getElementById('m-off-proc').style.display='none' }
+async function salvaOffProc(){
+  const id=document.getElementById('offproc-id').value
+  const o=(window._OFF_PROC||[]).find(x=>x._id===id); if(!o) return
+  const gv=k=>document.getElementById(k).value.trim()
+  const nome=gv('offproc-nome'), cognome=gv('offproc-cognome'), tel=gv('offproc-tel')
+  if(!nome||!cognome){ alert('Inserisci nome e cognome del cliente'); return }
+  if(!tel){ alert('Inserisci il telefono del cliente'); return }
   const prov=provOfferta(o)
   const item={pid:'offerta:'+o._id,nome:o.forn+' - '+o.nome,cat:o.cat,prezzo:0,prov:prov,tipo:'fisso'}
-  const data={autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente:cliente.trim(),note:'Da OFFERTA: '+o.forn+' '+o.nome,items:[item],totale:0,totProv:prov,stato:'Nuova',data:new Date().toLocaleDateString('it-IT'),tipoProposta:'offerta',offForn:o.forn,offNome:o.nome,offCat:o.cat}
-  try{ await db.from('proposte').insert({data}); alert('Offerta inviata come proposta! La trovi in "Le mie proposte". Leone la confermer\u00e0.') }
+  const data={autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente:(nome+' '+cognome).trim(),cliTel:tel,cliEmail:gv('offproc-email'),cliNote:gv('offproc-note'),note:'Da OFFERTA: '+o.forn+' '+o.nome,items:[item],totale:0,totProv:prov,stato:'Nuova',data:new Date().toLocaleDateString('it-IT'),tipoProposta:'offerta',offForn:o.forn,offNome:o.nome,offCat:o.cat}
+  try{ await db.from('proposte').insert({data}); chiudiOffProc(); alert('Offerta inviata! La trovi in "Le mie proposte". Leone contatter\u00e0 il cliente per attivarla.') }
   catch(e){ alert('Errore: '+(e.message||e)) }
 }
 let OFFP_ALL=[]
