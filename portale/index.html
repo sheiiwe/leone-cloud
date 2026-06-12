@@ -162,7 +162,49 @@ tr:last-child td{border-bottom:none}
       <div style="display:flex;justify-content:flex-end;margin-top:10px"><button onclick="pubblicaPostAdmin()" style="background:#F22015;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Pubblica</button></div>
     </div>
     <div class="card" style="margin-bottom:14px"><div class="notice">Sei collegato come <strong>amministratore</strong>. Qui pubblichi le comunicazioni e vedi i post dei procacciatori. La gestione completa (provvigioni, listino, ecc.) è nell'app desktop.</div></div>
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <h2 style="margin:0">💡 Offerte luce, gas e telefonia</h2>
+        <button onclick="apriOffertaP()" style="background:#3B6D11;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:13px">+ Nuova offerta</button>
+      </div>
+      <div class="notice" style="margin-bottom:10px">Modifichi qui le offerte che vedono i procacciatori. Le <strong>scadute</strong> restano marcate per te ma spariscono a loro.</div>
+      <div id="offerte-lista-admin">Caricamento…</div>
+    </div>
     <div id="bacheca-lista-admin"></div>
+  </div>
+</div>
+
+<!-- MODALE OFFERTA (admin portale) -->
+<div id="m-off-portale" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:flex-start;justify-content:center;overflow:auto;padding:20px;box-sizing:border-box">
+  <div style="background:#fff;border-radius:12px;max-width:620px;width:100%;padding:22px;margin:auto;box-sizing:border-box">
+    <h3 id="offp-title" style="margin:0 0 14px">Nuova offerta</h3>
+    <input type="hidden" id="offp-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <label style="font-size:12px;color:#777">Categoria
+        <select id="offp-cat" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px">
+          <option>Luce Fisso</option><option>Luce Variabile</option><option>Gas Fisso</option><option>Gas Variabile</option><option>Business</option><option value="Telefonia Mobile">Telefonia Mobile (SIM)</option><option>Telefonia Fissa</option>
+        </select>
+      </label>
+      <label style="font-size:12px;color:#777">Tipo
+        <select id="offp-tipo" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px"><option>Residenziale</option><option>Business</option></select>
+      </label>
+      <label style="font-size:12px;color:#777">Fornitore *<input id="offp-forn" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">Nome offerta *<input id="offp-nome" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">Prezzo<input id="offp-prezzo" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">PCV/CCV annua<input id="offp-pcv" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">Validità contratto<input id="offp-validita" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">Fatturazione<input id="offp-fatt" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">Costo attivazione (telco)<input id="offp-costoatt" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">Giga (mobile)<input id="offp-giga" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">Modalità pagamento<input id="offp-pagamento" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+      <label style="font-size:12px;color:#777">Azioni commerciali<input id="offp-azioni" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
+    </div>
+    <label style="font-size:12px;color:#777;display:block;margin-top:10px">Promo / Note<textarea id="offp-promo" rows="2" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box;resize:vertical"></textarea></label>
+    <label style="font-size:12px;color:#777;display:block;margin-top:10px">📅 Scadenza CTE — vendibile fino al (vuoto = sempre valida)<input type="date" id="offp-scad" style="padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;display:block"></label>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+      <button onclick="chiudiOffP()" style="background:#f0efe8;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Annulla</button>
+      <button onclick="salvaOffertaP()" style="background:#3B6D11;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Salva</button>
+    </div>
   </div>
 </div>
 
@@ -183,6 +225,7 @@ tr:last-child td{border-bottom:none}
         <div class="tab" id="tab-prov" onclick="vai('prov')">💰 Provvigioni</div>
         <div class="tab" id="tab-bacheca" onclick="vai('bacheca')">📣 Bacheca</div>
         <div class="tab" id="tab-listino" onclick="vai('listino')">💶 Listino</div>
+        <div class="tab" id="tab-offerte" onclick="vai('offerte')">💡 Offerte</div>
         <div class="tab" id="tab-lead" onclick="vai('lead')">📋 I miei Lead</div>
         <div class="tab" id="tab-profilo" onclick="vai('profilo')">👤 Profilo</div>
         <div class="tab" id="tab-doc" onclick="vai('doc')">📄 Documenti</div>
@@ -200,6 +243,11 @@ tr:last-child td{border-bottom:none}
           <div style="display:flex;justify-content:flex-end;margin-top:8px"><button id="btn-post" onclick="pubblicaPost()" style="background:#3B6D11;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Pubblica</button></div>
         </div>
         <div id="bacheca-lista"></div>
+      </div>
+
+      <div id="pane-offerte" style="display:none">
+        <div class="card" style="margin-bottom:14px"><div class="notice">💡 <strong>Offerte luce, gas e telefonia aggiornate e vendibili.</strong> Qui trovi solo le offerte <strong>attualmente proponibili</strong>: quelle scadute spariscono in automatico.</div></div>
+        <div id="offerte-lista-proc">Caricamento…</div>
       </div>
 
       <!-- LISTINO -->
@@ -424,6 +472,7 @@ async function avvia(session){
     document.getElementById('adm-email').textContent = email
     mostra('v-admin')
     try{ const bc = await db.from('bacheca').select('*').order('created_at',{ascending:false}); renderBacheca(bc.data||[], 'bacheca-lista-admin') }catch(e){ renderBacheca([], 'bacheca-lista-admin') }
+    caricaOfferteAdmin()
     try{
       if(session?.access_token) db.realtime.setAuth(session.access_token)
       if(window._canaleRt){ try{ db.removeChannel(window._canaleRt) }catch(e){} }
@@ -561,6 +610,7 @@ function vai(t){
   document.getElementById('tab-prov').classList.toggle('active', t==='prov')
   document.getElementById('tab-bacheca').classList.toggle('active', t==='bacheca')
   document.getElementById('tab-listino').classList.toggle('active', t==='listino')
+  document.getElementById('tab-offerte').classList.toggle('active', t==='offerte')
   document.getElementById('tab-lead').classList.toggle('active', t==='lead')
   document.getElementById('tab-profilo').classList.toggle('active', t==='profilo')
   document.getElementById('tab-doc').classList.toggle('active', t==='doc')
@@ -568,6 +618,8 @@ function vai(t){
   document.getElementById('pane-prov').style.display = t==='prov' ? 'block' : 'none'
   document.getElementById('pane-bacheca').style.display = t==='bacheca' ? 'block' : 'none'
   document.getElementById('pane-listino').style.display = t==='listino' ? 'block' : 'none'
+  document.getElementById('pane-offerte').style.display = t==='offerte' ? 'block' : 'none'
+  if(t==='offerte') caricaOfferteProc()
   document.getElementById('pane-lead').style.display = t==='lead' ? 'block' : 'none'
   document.getElementById('pane-profilo').style.display = t==='profilo' ? 'block' : 'none'
   document.getElementById('pane-doc').style.display = t==='doc' ? 'block' : 'none'
@@ -578,6 +630,93 @@ function vai(t){
 // ── RENDER ────────────────────────────────────────────────────
 function eur(n){ const x=Number(n)||0; return '€' + x.toLocaleString('it-IT', {minimumFractionDigits:0, maximumFractionDigits:2}) }
 function pctIt(x){ return (Math.round((Number(x)||0)*1000)/1000).toLocaleString('it-IT',{maximumFractionDigits:3})+'%' }
+const OFF_CATS_P=['Luce Fisso','Luce Variabile','Gas Fisso','Gas Variabile','Business','Telefonia Mobile','Telefonia Fissa']
+function itDateP(iso){ if(!iso) return ''; const p=String(iso).split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):iso }
+function offAttiva(o){ if(!o.scad) return true; const oggi=new Date(); oggi.setHours(0,0,0,0); return new Date(o.scad+'T00:00:00')>=oggi }
+async function caricaOfferteProc(){
+  const box=document.getElementById('offerte-lista-proc'); if(!box) return
+  box.innerHTML='Caricamento\u2026'
+  let off=[]
+  try{ const r=await db.from('offerte').select('*').order('created_at'); off=(r.data||[]).map(x=>({_id:x.id,...(x.data||{})})) }
+  catch(e){ box.innerHTML='<div class="card">Errore nel caricamento delle offerte.</div>'; return }
+  off=off.filter(offAttiva)
+  if(!off.length){ box.innerHTML='<div class="card">Nessuna offerta disponibile al momento.</div>'; return }
+  const grp={}; off.forEach(o=>{ (grp[o.cat]=grp[o.cat]||[]).push(o) })
+  let html=''
+  OFF_CATS_P.forEach(cat=>{
+    const items=grp[cat]; if(!items||!items.length) return
+    html+='<h3 style="margin:16px 0 8px;color:#2c2c28">'+cat+'</h3>'
+    items.forEach(o=>{
+      const d=[]
+      if(o.prezzo) d.push('<b>Prezzo:</b> '+esc(o.prezzo))
+      if(o.pcv) d.push('<b>PCV/anno:</b> '+esc(o.pcv))
+      if(o.costoAtt) d.push('<b>Attivazione:</b> '+esc(o.costoAtt))
+      if(o.giga) d.push('<b>Giga:</b> '+esc(o.giga))
+      if(o.validita) d.push('<b>Validit\u00e0:</b> '+esc(o.validita))
+      if(o.fatt) d.push('<b>Fatturazione:</b> '+esc(o.fatt))
+      if(o.pagamento) d.push('<b>Pagamento:</b> '+esc(o.pagamento))
+      if(o.azioni) d.push('<b>Azioni:</b> '+esc(o.azioni))
+      const scadTxt=o.scad?'<div style="font-size:12px;color:#3B6D11;font-weight:600;margin-top:6px">\u2714 valida fino al '+itDateP(o.scad)+'</div>':''
+      html+='<div class="card" style="margin-bottom:10px">'+
+        '<div style="font-weight:700">'+esc(o.forn)+' \u2014 '+esc(o.nome)+' <span style="font-size:11px;color:#9e9e98;font-weight:400">['+esc(o.tipo||'')+']</span></div>'+
+        '<div style="font-size:13px;color:#555;margin-top:6px;line-height:1.7">'+d.join(' \u00b7 ')+'</div>'+
+        (o.promo?'<div style="font-size:12.5px;color:#777;margin-top:5px">'+esc(o.promo)+'</div>':'')+scadTxt+
+      '</div>'
+    })
+  })
+  box.innerHTML=html
+}
+let OFFP_ALL=[]
+function offStatoAdm(o){ if(!o.scad) return ''; const oggi=new Date(); oggi.setHours(0,0,0,0); const d=new Date(o.scad+'T00:00:00'); const gg=Math.round((d-oggi)/86400000); if(gg<0) return '<span style="color:#c0392b;font-weight:700;font-size:11px">SCADUTA</span>'; if(gg<=7) return '<span style="color:#d68910;font-weight:700;font-size:11px">in scadenza ('+gg+'gg)</span>'; return '<span style="color:#3B6D11;font-size:11px">fino al '+itDateP(o.scad)+'</span>' }
+async function caricaOfferteAdmin(){
+  const box=document.getElementById('offerte-lista-admin'); if(!box) return
+  try{ const r=await db.from('offerte').select('*').order('created_at'); OFFP_ALL=(r.data||[]).map(x=>({_id:x.id,...(x.data||{})})) }
+  catch(e){ box.innerHTML='Errore nel caricamento.'; return }
+  renderOfferteAdmin()
+}
+function renderOfferteAdmin(){
+  const box=document.getElementById('offerte-lista-admin'); if(!box) return
+  if(!OFFP_ALL.length){ box.innerHTML='<div class="notice">Nessuna offerta. Esegui <b>offerte.sql</b> su Supabase.</div>'; return }
+  const grp={}; OFFP_ALL.forEach(o=>{ (grp[o.cat]=grp[o.cat]||[]).push(o) })
+  let html=''
+  OFF_CATS_P.forEach(cat=>{ const items=grp[cat]; if(!items||!items.length) return
+    html+='<div style="font-weight:700;margin:12px 0 6px">'+cat+' ('+items.length+')</div>'
+    items.forEach(o=>{ html+='<div style="border:1px solid #e8e6df;border-radius:8px;padding:8px 11px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
+      '<div style="font-size:13px"><b>'+esc(o.forn)+'</b> \u2014 '+esc(o.nome)+' &nbsp;'+offStatoAdm(o)+'</div>'+
+      '<div style="display:flex;gap:6px"><button onclick="apriOffertaP(\''+o._id+'\')" style="background:#f0efe8;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">Modifica</button><button onclick="eliminaOffertaP(\''+o._id+'\')" style="background:#fbe9e7;color:#c0392b;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">Elimina</button></div>'+
+    '</div>' })
+  })
+  box.innerHTML=html
+}
+function offpVal(k){ const el=document.getElementById(k); return el?el.value:'' }
+function apriOffertaP(id){
+  const o=id?OFFP_ALL.find(x=>x._id===id):null
+  document.getElementById('offp-title').textContent=o?'Modifica offerta':'Nuova offerta'
+  document.getElementById('offp-id').value=id||''
+  const g=(k,v)=>{ const el=document.getElementById(k); if(el) el.value=v||'' }
+  g('offp-cat',o?o.cat:'Luce Fisso'); g('offp-tipo',o?o.tipo:'Residenziale')
+  g('offp-forn',o?o.forn:''); g('offp-nome',o?o.nome:''); g('offp-prezzo',o?o.prezzo:'')
+  g('offp-pcv',o?o.pcv:''); g('offp-validita',o?o.validita:''); g('offp-fatt',o?o.fatt:'')
+  g('offp-costoatt',o?o.costoAtt:''); g('offp-giga',o?o.giga:'')
+  g('offp-pagamento',o?o.pagamento:''); g('offp-azioni',o?o.azioni:''); g('offp-promo',o?o.promo:'')
+  g('offp-scad',o?o.scad:'')
+  document.getElementById('m-off-portale').style.display='flex'
+}
+function chiudiOffP(){ document.getElementById('m-off-portale').style.display='none' }
+async function salvaOffertaP(){
+  if(!offpVal('offp-forn').trim()||!offpVal('offp-nome').trim()){ alert('Inserisci fornitore e nome offerta'); return }
+  const data={cat:offpVal('offp-cat'),tipo:offpVal('offp-tipo'),forn:offpVal('offp-forn').trim(),nome:offpVal('offp-nome').trim(),prezzo:offpVal('offp-prezzo').trim(),pcv:offpVal('offp-pcv').trim(),validita:offpVal('offp-validita').trim(),fatt:offpVal('offp-fatt').trim(),costoAtt:offpVal('offp-costoatt').trim(),giga:offpVal('offp-giga').trim(),pagamento:offpVal('offp-pagamento').trim(),azioni:offpVal('offp-azioni').trim(),promo:offpVal('offp-promo').trim(),scad:offpVal('offp-scad')}
+  const id=offpVal('offp-id')
+  try{
+    if(id){ await db.from('offerte').update({data}).eq('id',id) } else { await db.from('offerte').insert({data}) }
+    chiudiOffP(); await caricaOfferteAdmin()
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+}
+async function eliminaOffertaP(id){
+  if(!confirm('Eliminare questa offerta?')) return
+  try{ await db.from('offerte').delete().eq('id',id); await caricaOfferteAdmin() }
+  catch(e){ alert('Errore: '+(e.message||e)) }
+}
 function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 function row(lbl, val){ if(val==null || val==='') return ''; return '<div class="info-row"><span class="info-lbl">'+lbl+'</span><span class="info-val">'+esc(val)+'</span></div>' }
 
