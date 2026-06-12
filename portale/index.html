@@ -918,10 +918,11 @@ function apriOffReali(pid){
   const matches=offerteMatch(p, OFF_LISTINO)
   const t=document.getElementById('offreali-title'); if(t) t.textContent='Offerte reali \u2014 '+(p.nome||'')+(matches.length?(' ('+matches.length+')'):'')
   const b=document.getElementById('offreali-body')
-  if(b) b.innerHTML = matches.length ? matches.map(o=>offDettaglioHtml(o)).join('') : '<div style="color:#777;font-size:13px">Nessuna offerta reale per questo prodotto.</div>'
+  if(b) b.innerHTML = matches.length ? matches.map(o=>offDettaglioHtml(o)+'<div style="margin:-4px 0 12px"><button onclick="scegliOffDaListinoP(\u0027'+o._id+'\u0027)" style="background:#3B6D11;color:#fff;border:none;padding:7px 13px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:13px">+ Scegli (assegna)</button></div>').join('') : '<div style="color:#777;font-size:13px">Nessuna offerta reale per questo prodotto.</div>'
   const m=document.getElementById('m-off-reali'); if(m) m.style.display='flex'
 }
 function chiudiOffReali(){ const m=document.getElementById('m-off-reali'); if(m) m.style.display='none' }
+function scegliOffDaListinoP(id){ chiudiOffReali(); scegliOffP(id) }
 function renderListinoPortale(items, filtro){
   if(items!=null) LISTINO_PORTALE = items
   _liCounter=0
