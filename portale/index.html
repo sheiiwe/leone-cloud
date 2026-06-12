@@ -632,6 +632,19 @@ function eur(n){ const x=Number(n)||0; return '€' + x.toLocaleString('it-IT', 
 function pctIt(x){ return (Math.round((Number(x)||0)*1000)/1000).toLocaleString('it-IT',{maximumFractionDigits:3})+'%' }
 const OFF_CATS_P=['Luce Fisso','Luce Variabile','Gas Fisso','Gas Variabile','Business','Telefonia Mobile','Telefonia Fissa']
 function itDateP(iso){ if(!iso) return ''; const p=String(iso).split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):iso }
+function provOfferta(o){
+  const f=(o.forn||'').toLowerCase()
+  if(o.cat==='Telefonia Mobile'){ return f.includes('fastweb')?10:0 }
+  if(o.cat==='Telefonia Fissa'){ return f.includes('tim')?32.5:0 }
+  if(f.includes('plenitude')) return 20
+  if(f.includes('iren')) return 20
+  if(f.includes('enel')) return 10
+  if(f.includes('fastweb')) return 15
+  if(f.includes('acea')) return 10
+  if(f.includes('a2a')) return 15
+  if(f.includes('edison')) return 15
+  return 0
+}
 function offAttiva(o){ if(!o.scad) return true; const oggi=new Date(); oggi.setHours(0,0,0,0); return new Date(o.scad+'T00:00:00')>=oggi }
 async function caricaOfferteProc(){
   const box=document.getElementById('offerte-lista-proc'); if(!box) return
@@ -639,7 +652,7 @@ async function caricaOfferteProc(){
   let off=[]
   try{ const r=await db.from('offerte').select('*').order('created_at'); off=(r.data||[]).map(x=>({_id:x.id,...(x.data||{})})) }
   catch(e){ box.innerHTML='<div class="card">Errore nel caricamento delle offerte.</div>'; return }
-  off=off.filter(offAttiva)
+  off=off.filter(offAttiva); window._OFF_PROC=off
   if(!off.length){ box.innerHTML='<div class="card">Nessuna offerta disponibile al momento.</div>'; return }
   const grp={}; off.forEach(o=>{ (grp[o.cat]=grp[o.cat]||[]).push(o) })
   let html=''
@@ -662,10 +675,20 @@ async function caricaOfferteProc(){
         '<div style="font-weight:700">'+esc(o.forn)+' \u2014 '+esc(o.nome)+' <span style="font-size:11px;color:#9e9e98;font-weight:400">['+esc(o.tipo||'')+']</span></div>'+
         '<div style="font-size:13px;color:#555;margin-top:6px;line-height:1.7">'+d.join(' \u00b7 ')+'</div>'+
         (o.promo?'<div style="font-size:12.5px;color:#777;margin-top:5px">'+esc(o.promo)+'</div>':'')+scadTxt+
+        '<div style="margin-top:9px"><button onclick="scegliOffP(\''+o._id+'\')" style="background:#3B6D11;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:13px">+ Scegli questa offerta</button></div>'+
       '</div>'
     })
   })
   box.innerHTML=html
+}
+async function scegliOffP(id){
+  const o=(window._OFF_PROC||[]).find(x=>x._id===id); if(!o) return
+  const cliente=prompt('Nome del cliente per questa offerta ('+o.forn+' '+o.nome+'):'); if(!cliente||!cliente.trim()) return
+  const prov=provOfferta(o)
+  const item={pid:'offerta:'+o._id,nome:o.forn+' - '+o.nome,cat:o.cat,prezzo:0,prov:prov,tipo:'fisso'}
+  const data={autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente:cliente.trim(),note:'Da OFFERTA: '+o.forn+' '+o.nome,items:[item],totale:0,totProv:prov,stato:'Nuova',data:new Date().toLocaleDateString('it-IT'),tipoProposta:'offerta',offForn:o.forn,offNome:o.nome,offCat:o.cat}
+  try{ await db.from('proposte').insert({data}); alert('Offerta inviata come proposta! La trovi in "Le mie proposte". Leone la confermer\u00e0.') }
+  catch(e){ alert('Errore: '+(e.message||e)) }
 }
 let OFFP_ALL=[]
 function offStatoAdm(o){ if(!o.scad) return ''; const oggi=new Date(); oggi.setHours(0,0,0,0); const d=new Date(o.scad+'T00:00:00'); const gg=Math.round((d-oggi)/86400000); if(gg<0) return '<span style="color:#c0392b;font-weight:700;font-size:11px">SCADUTA</span>'; if(gg<=7) return '<span style="color:#d68910;font-weight:700;font-size:11px">in scadenza ('+gg+'gg)</span>'; return '<span style="color:#3B6D11;font-size:11px">fino al '+itDateP(o.scad)+'</span>' }
