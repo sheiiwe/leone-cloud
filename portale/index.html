@@ -947,10 +947,11 @@ function renderListinoPortale(items, filtro){
         prov=(p.prov!=null && p.prov!=='') ? eur(p.prov) : '—'
       }
       const matches=offerteMatch(p, OFF_LISTINO)
+      const catHasOffers=(OFF_LISTINO||[]).some(o=>o.cat===p.cat)
       const addNormale='<button onclick="addCarrello(\u0027'+p.pid+'\u0027)" title="Aggiungi al carrello" style="background:#F22015;color:#fff;border:none;width:26px;height:26px;border-radius:7px;font-size:16px;line-height:1;cursor:pointer;font-weight:700">+</button>'
       const addDisabled='<button disabled title="Nessuna offerta disponibile" style="background:#efeee8;color:#c9c7bf;border:none;width:26px;height:26px;border-radius:7px;font-size:16px;line-height:1;cursor:not-allowed;font-weight:700">+</button>'
       let prezzo, addBtn
-      if(suRichiesta){
+      if(suRichiesta && catHasOffers){
         if(matches.length){
           prezzo='<button onclick="apriOffReali(\u0027'+p.pid+'\u0027)" style="background:none;border:none;padding:0;color:#3B6D11;font-weight:700;cursor:pointer;font-family:inherit;font-size:12.5px;text-decoration:underline;text-align:right">Vedi le offerte ('+matches.length+')</button>'
           addBtn=addNormale
@@ -958,6 +959,9 @@ function renderListinoPortale(items, filtro){
           prezzo='<span style="color:#9e9e98;font-weight:400;font-size:12px">Nessuna offerta</span>'
           addBtn=addDisabled
         }
+      } else if(suRichiesta){
+        prezzo='<span style="color:#9e9e98;font-weight:400;font-size:12px">su richiesta</span>'
+        addBtn=addNormale
       } else {
         prezzo=eur(p.prezzo)
         addBtn=addNormale
