@@ -1014,20 +1014,28 @@ async function accodaEmailProposta(p){
   if(p.autoreEmail) rows.push({data:{to:p.autoreEmail,subject:'Riepilogo proposta per '+p.cliente+' — Leone Consulting',html:htmlProc}})
   await db.from('email_queue').insert(rows)
 }
-async function accodaEmailLead(o){
+async function accodaEmailLead(o, pemail){
   const ADMIN='amministrazione@leoneconsultingitalia.it'
   const st='font-family:Arial,Helvetica,sans-serif;color:#1a1a18;font-size:14px;line-height:1.6'
   const riga=(lbl,val)=> (val==null||val==='')?'':'<tr><td style="padding:5px 10px;border-bottom:1px solid #eee;color:#777;width:140px">'+lbl+'</td><td style="padding:5px 10px;border-bottom:1px solid #eee;font-weight:600">'+esc(val)+'</td></tr>'
-  const html='<div style="'+st+'"><h2 style="color:#3B6D11;margin:0 0 4px">Nuovo lead ricevuto</h2>'+
+  const contatto=riga('Nome',o.nome)+riga('Telefono',o.tel)+riga('Email',o.email)+riga('Area interesse',o.cat)+riga('Note',o.note)+riga('Data',(o.data||'')+(o.ora?(' '+o.ora):''))
+  const tab=(extra)=> '<table style="border-collapse:collapse;width:100%;max-width:520px;font-size:14px">'+contatto+(extra||'')+'</table>'
+  // Email all'amministrazione
+  const htmlAdmin='<div style="'+st+'"><h2 style="color:#3B6D11;margin:0 0 4px">Nuovo lead ricevuto</h2>'+
     '<p style="margin:0 0 12px;color:#555">È arrivato un nuovo contatto dal portale procacciatori.</p>'+
-    '<table style="border-collapse:collapse;width:100%;max-width:520px;font-size:14px">'+
-    riga('Nome',o.nome)+riga('Telefono',o.tel)+riga('Email',o.email)+
-    riga('Area interesse',o.cat)+riga('Note',o.note)+riga('Procacciatore',o.pnome)+
-    riga('Fonte',o.fonte)+riga('Data',(o.data||'')+(o.ora?(' '+o.ora):''))+
-    '</table>'+
+    tab(riga('Procacciatore',o.pnome)+riga('Fonte',o.fonte))+
     '<p style="margin:16px 0 0;font-size:12px;color:#888">Lo trovi nella sezione Lead dell\u0027app e del portale.</p></div>'
-  const subject='Nuovo lead: '+o.nome+(o.pnome?(' (da '+o.pnome+')'):'')
-  await db.from('email_queue').insert([{ data:{ to:ADMIN, subject, html } }])
+  const rows=[{ data:{ to:ADMIN, subject:'Nuovo lead: '+o.nome+(o.pnome?(' (da '+o.pnome+')'):''), html:htmlAdmin } }]
+  // Copia al procacciatore sulla sua email aziendale (quella di login)
+  if(pemail && pemail.toLowerCase()!==ADMIN.toLowerCase()){
+    const nomeP=esc((o.pnome||'').split(' ')[0]||'')
+    const htmlProc='<div style="'+st+'"><h2 style="color:#3B6D11;margin:0 0 4px">Riepilogo del tuo lead</h2>'+
+      '<p style="margin:0 0 12px;color:#555">Ciao '+nomeP+', hai inviato un nuovo contatto a Leone Consulting. Ecco il riepilogo:</p>'+
+      tab()+
+      '<p style="margin:16px 0 0;font-size:12px;color:#888">Leone Consulting ricontatterà il cliente. Grazie!</p></div>'
+    rows.push({ data:{ to:pemail, subject:'Riepilogo lead: '+o.nome+' — Leone Consulting', html:htmlProc } })
+  }
+  await db.from('email_queue').insert(rows)
 }
 async function caricaMieProposte(){
   try{
@@ -1363,7 +1371,7 @@ async function inviaNuovaLead(){
     if(error) throw error
     // Notifica email all'amministrazione tramite la coda email_queue (stesso percorso di
     // offerte e listino, gia' collaudato e server-side). Niente webhook, niente CORS, niente loop.
-    try{ await accodaEmailLead(obj) }catch(err){ console.error('email lead:', err) }
+    try{ await accodaEmailLead(obj, MIO_EMAIL) }catch(err){ console.error('email lead:', err) }
     setMsg('✅ Lead inviata! Leone Consulting è stata avvisata.',false)
     ;['nl-nome','nl-tel','nl-email','nl-note'].forEach(id=>document.getElementById(id).value='')
     document.getElementById('nl-cat').value=''
