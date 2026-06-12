@@ -231,6 +231,17 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- MODALE OFFERTE REALI (listino) -->
+<div id="m-off-reali" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:flex-start;justify-content:center;overflow:auto;padding:20px;box-sizing:border-box">
+  <div style="background:#fff;border-radius:12px;max-width:620px;width:100%;padding:22px;margin:auto;box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">
+      <h3 id="offreali-title" style="margin:0">Offerte reali</h3>
+      <button onclick="chiudiOffReali()" style="background:#f0efe8;border:none;padding:7px 12px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:13px">Chiudi</button>
+    </div>
+    <div id="offreali-body"></div>
+  </div>
+</div>
+
 <!-- APP PROCACCIATORE -->
 <div id="v-app" style="display:none">
   <div class="header">
@@ -902,6 +913,15 @@ function mostraOffListino(rid, offId){
   const o=(OFF_LISTINO||[]).find(x=>x._id===offId)
   td.innerHTML=o?offDettaglioHtml(o):''
 }
+function apriOffReali(pid){
+  const p=(LISTINO_PORTALE||[]).find(x=>x.pid===pid); if(!p) return
+  const matches=offerteMatch(p, OFF_LISTINO)
+  const t=document.getElementById('offreali-title'); if(t) t.textContent='Offerte reali \u2014 '+(p.nome||'')+(matches.length?(' ('+matches.length+')'):'')
+  const b=document.getElementById('offreali-body')
+  if(b) b.innerHTML = matches.length ? matches.map(o=>offDettaglioHtml(o)).join('') : '<div style="color:#777;font-size:13px">Nessuna offerta reale per questo prodotto.</div>'
+  const m=document.getElementById('m-off-reali'); if(m) m.style.display='flex'
+}
+function chiudiOffReali(){ const m=document.getElementById('m-off-reali'); if(m) m.style.display='none' }
 function renderListinoPortale(items, filtro){
   if(items!=null) LISTINO_PORTALE = items
   _liCounter=0
@@ -914,32 +934,37 @@ function renderListinoPortale(items, filtro){
   list.forEach(p=>{ const c=p.cat||'Altro'; (cats[c]=cats[c]||[]).push(p) })
   box.innerHTML = Object.keys(cats).map(cat=>{
     const rows=cats[cat].map(p=>{
-      let prezzo, prov
+      let prov
+      const suRichiesta = (p.tipo==='percentuale') || !(p.prezzo!=null && p.prezzo!=='')
       if(p.tipo==='percentuale'){
-        prezzo='<span style="color:#9e9e98;font-weight:400">su richiesta</span>'
         if(p.marginePerc!=null){
           prov=pctIt(p.marginePerc*p.prov/100)+' <span style="color:#9e9e98;font-weight:400;font-size:11px">del valore</span>'
         } else {
           prov=p.prov+'% <span style="color:#9e9e98;font-weight:400;font-size:11px">del margine</span>'
         }
       } else {
-        prezzo=(p.prezzo!=null && p.prezzo!=='') ? eur(p.prezzo) : '<span style="color:#9e9e98;font-weight:400">su richiesta</span>'
         prov=(p.prov!=null && p.prov!=='') ? eur(p.prov) : '—'
       }
       const matches=offerteMatch(p, OFF_LISTINO)
-      const rid='li'+(_liCounter++)
-      let selHtml=''
-      if(matches.length){
-        selHtml='<div style="margin-top:5px"><select onchange="mostraOffListino(\u0027'+rid+'\u0027,this.value)" style="font-size:11.5px;padding:5px 7px;border:1px solid #e0ded6;border-radius:6px;background:#fff;max-width:100%;font-family:inherit;color:#3B6D11;font-weight:600">'+
-          '<option value="">\ud83d\udd0e Vedi offerta reale ('+matches.length+')</option>'+
-          matches.map(o=>'<option value="'+o._id+'">'+esc(o.forn+' - '+o.nome)+'</option>').join('')+
-          '</select></div>'
+      const addNormale='<button onclick="addCarrello(\u0027'+p.pid+'\u0027)" title="Aggiungi al carrello" style="background:#F22015;color:#fff;border:none;width:26px;height:26px;border-radius:7px;font-size:16px;line-height:1;cursor:pointer;font-weight:700">+</button>'
+      const addDisabled='<button disabled title="Nessuna offerta disponibile" style="background:#efeee8;color:#c9c7bf;border:none;width:26px;height:26px;border-radius:7px;font-size:16px;line-height:1;cursor:not-allowed;font-weight:700">+</button>'
+      let prezzo, addBtn
+      if(suRichiesta){
+        if(matches.length){
+          prezzo='<button onclick="apriOffReali(\u0027'+p.pid+'\u0027)" style="background:none;border:none;padding:0;color:#3B6D11;font-weight:700;cursor:pointer;font-family:inherit;font-size:12.5px;text-decoration:underline;text-align:right">Vedi le offerte ('+matches.length+')</button>'
+          addBtn=addNormale
+        } else {
+          prezzo='<span style="color:#9e9e98;font-weight:400;font-size:12px">Nessuna offerta</span>'
+          addBtn=addDisabled
+        }
+      } else {
+        prezzo=eur(p.prezzo)
+        addBtn=addNormale
       }
-      return '<tr><td style="vertical-align:top">'+esc(p.nome||'')+selHtml+'</td>'+
-        '<td style="text-align:right;white-space:nowrap;font-weight:600;vertical-align:top">'+prezzo+'</td>'+
+      return '<tr><td style="vertical-align:top">'+esc(p.nome||'')+'</td>'+
+        '<td style="text-align:right;font-weight:600;vertical-align:top">'+prezzo+'</td>'+
         '<td style="text-align:right;white-space:nowrap;font-weight:700;color:#3B6D11;vertical-align:top">'+prov+'</td>'+
-        '<td style="text-align:right;vertical-align:top"><button onclick="addCarrello(\''+p.pid+'\')" title="Aggiungi al carrello" style="background:#F22015;color:#fff;border:none;width:26px;height:26px;border-radius:7px;font-size:16px;line-height:1;cursor:pointer;font-weight:700">+</button></td></tr>'+
-        '<tr id="detr-'+rid+'"><td colspan="4" style="padding:0;border:none"></td></tr>'
+        '<td style="text-align:right;vertical-align:top">'+addBtn+'</td></tr>'
     }).join('')
     return '<div class="card"><h2 style="margin:0 0 8px">'+esc(cat)+'</h2>'+
       '<table style="table-layout:fixed;width:100%"><colgroup><col><col style="width:92px"><col style="width:148px"><col style="width:36px"></colgroup><thead><tr><th>Prodotto</th><th style="text-align:right">Prezzo</th><th style="text-align:right">La tua provvigione</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
