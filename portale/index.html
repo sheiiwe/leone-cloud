@@ -186,6 +186,7 @@ tr:last-child td{border-bottom:none}
       <label style="font-size:12px;color:#777">☎ Telefono *<input id="offproc-tel" type="tel" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
       <label style="font-size:12px;color:#777">✉ Email<input id="offproc-email" type="email" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"></label>
     </div>
+    <label style="font-size:12px;color:#777;display:block;margin-top:10px">💳 Pagamento *<select id="offproc-pag" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box"><option value="RID">RID Bancario</option><option value="BP">Bollettino Postale</option></select></label>
     <label style="font-size:12px;color:#777;display:block;margin-top:10px">Note (indirizzo, orari per chiamare…)<textarea id="offproc-note" rows="2" style="width:100%;padding:9px;border:1px solid #e0ded6;border-radius:8px;font-family:inherit;font-size:13px;margin-top:3px;box-sizing:border-box;resize:vertical"></textarea></label>
     <div class="notice" style="margin-top:10px;font-size:12px">ℹ Leone contatterà il cliente per attivare l'offerta e fare il contratto. Inserisci recapiti corretti.</div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
@@ -666,6 +667,17 @@ function provOfferta(o){
   if(f.includes('edison')) return 15
   return 0
 }
+function listinoPerOffertaP(o,pag){
+  if(!o) return null
+  const L=LISTINO_PORTALE||[]
+  const ener=['Luce Fisso','Luce Variabile','Gas Fisso','Gas Variabile','Business'].includes(o.cat)
+  const catL=ener?'Energia & Utenze':'Telefonia & Internet'
+  let cand=L.filter(p=>p.cat===catL)
+  if(o.cat==='Telefonia Mobile') cand=cand.filter(p=>/fastweb sim/i.test(p.nome||''))
+  else if(o.cat==='Telefonia Fissa') cand=cand.filter(p=>/^tim/i.test(p.nome||''))
+  else { const brand=(o.forn||'').toLowerCase().split(' ')[0]; const sfx=pag==='BP'?'Bollettino Postale':'Rid Bancario'; cand=cand.filter(p=>(p.nome||'').toLowerCase().includes(brand)&&(p.nome||'').includes(sfx)); cand.sort((a,b)=>(/standard/i.test(a.nome||'')?0:1)-(/standard/i.test(b.nome||'')?0:1)||(a.nome||'').length-(b.nome||'').length) }
+  return cand[0]||null
+}
 function offAttiva(o){ if(!o.scad) return true; const oggi=new Date(); oggi.setHours(0,0,0,0); return new Date(o.scad+'T00:00:00')>=oggi }
 async function caricaOfferteProc(){
   const box=document.getElementById('offerte-lista-proc'); if(!box) return
@@ -707,6 +719,7 @@ function scegliOffP(id){
   document.getElementById('offproc-id').value=id
   document.getElementById('offproc-label').textContent=o.forn+' - '+o.nome
   ;['offproc-nome','offproc-cognome','offproc-tel','offproc-email','offproc-note'].forEach(k=>{ const el=document.getElementById(k); if(el) el.value='' })
+  if(document.getElementById('offproc-pag')) document.getElementById('offproc-pag').value='RID'
   document.getElementById('m-off-proc').style.display='flex'
 }
 function chiudiOffProc(){ document.getElementById('m-off-proc').style.display='none' }
@@ -717,9 +730,13 @@ async function salvaOffProc(){
   const nome=gv('offproc-nome'), cognome=gv('offproc-cognome'), tel=gv('offproc-tel')
   if(!nome||!cognome){ alert('Inserisci nome e cognome del cliente'); return }
   if(!tel){ alert('Inserisci il telefono del cliente'); return }
-  const prov=provOfferta(o)
+  if(!LISTINO_PORTALE||!LISTINO_PORTALE.length){ try{ const r=await db.from('listino').select('*').limit(1); LISTINO_PORTALE=(r.data&&r.data[0]&&r.data[0].data&&r.data[0].data.items)||[] }catch(e){} }
+  const pag=document.getElementById('offproc-pag').value
+  const m=listinoPerOffertaP(o,pag)
+  const prov=m?(Number(m.prov)||0):provOfferta(o)
+  const guad=(m&&m.guadagno!=null&&m.guadagno!=='')?Number(m.guadagno):null
   const item={pid:'offerta:'+o._id,nome:o.forn+' - '+o.nome,cat:o.cat,prezzo:0,prov:prov,tipo:'fisso'}
-  const data={autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente:(nome+' '+cognome).trim(),cliTel:tel,cliEmail:gv('offproc-email'),cliNote:gv('offproc-note'),note:'Da OFFERTA: '+o.forn+' '+o.nome,items:[item],totale:0,totProv:prov,stato:'Nuova',data:new Date().toLocaleDateString('it-IT'),tipoProposta:'offerta',offForn:o.forn,offNome:o.nome,offCat:o.cat}
+  const data={autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente:(nome+' '+cognome).trim(),cliTel:tel,cliEmail:gv('offproc-email'),cliNote:gv('offproc-note'),note:'Da OFFERTA: '+o.forn+' '+o.nome,items:[item],totale:0,totProv:prov,stato:'Nuova',data:new Date().toLocaleDateString('it-IT'),tipoProposta:'offerta',offForn:o.forn,offNome:o.nome,offCat:o.cat,pagamentoTipo:pag,guadagnoLeone:guad,listinoNome:m?m.nome:''}
   try{ await db.from('proposte').insert({data}); chiudiOffProc(); alert('Offerta inviata! La trovi in "Le mie proposte". Leone contatter\u00e0 il cliente per attivarla.') }
   catch(e){ alert('Errore: '+(e.message||e)) }
 }
