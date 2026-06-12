@@ -645,6 +645,7 @@ async function caricaOfferteProc(){
   let html=''
   OFF_CATS_P.forEach(cat=>{
     const items=grp[cat]; if(!items||!items.length) return
+    items.sort((a,b)=>(a.forn||'').localeCompare(b.forn||'')||(a.nome||'').localeCompare(b.nome||''))
     html+='<h3 style="margin:16px 0 8px;color:#2c2c28">'+cat+'</h3>'
     items.forEach(o=>{
       const d=[]
@@ -680,6 +681,7 @@ function renderOfferteAdmin(){
   const grp={}; OFFP_ALL.forEach(o=>{ (grp[o.cat]=grp[o.cat]||[]).push(o) })
   let html=''
   OFF_CATS_P.forEach(cat=>{ const items=grp[cat]; if(!items||!items.length) return
+    items.sort((a,b)=>(a.forn||'').localeCompare(b.forn||'')||(a.nome||'').localeCompare(b.nome||''))
     html+='<div style="font-weight:700;margin:12px 0 6px">'+cat+' ('+items.length+')</div>'
     items.forEach(o=>{ html+='<div style="border:1px solid #e8e6df;border-radius:8px;padding:8px 11px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">'+
       '<div style="font-size:13px"><b>'+esc(o.forn)+'</b> \u2014 '+esc(o.nome)+' &nbsp;'+offStatoAdm(o)+'</div>'+
