@@ -257,6 +257,7 @@ tr:last-child td{border-bottom:none}
 
       <!-- HOME -->
       <div id="pane-home" style="display:block">
+        <div id="home-avvisi"></div>
         <div id="home-content"></div>
       </div>
 
@@ -583,6 +584,7 @@ async function avvia(session){
     document.getElementById('app-content').style.display = 'block'
     renderHome()
     vai('home')
+    caricaAvvisiHome()
     gestisciDeepLink()
   }catch(e){
     document.getElementById('who-nome').textContent = email
@@ -786,6 +788,20 @@ async function caricaAvvisiProc(){
   try{ const r=await db.from('offerte').select('*').order('created_at'); off=(r.data||[]).map(x=>({_id:x.id,...(x.data||{})})) }
   catch(e){ box.innerHTML='<div class="card">Errore nel caricamento.</div>'; return }
   renderAvvisiBox('avvisi-lista-proc', off, true)
+}
+async function caricaAvvisiHome(){
+  const box=document.getElementById('home-avvisi'); if(!box) return
+  let off=[]
+  try{ const r=await db.from('offerte').select('*').order('created_at'); off=(r.data||[]).map(x=>({_id:x.id,...(x.data||{})})) }
+  catch(e){ box.innerHTML=''; return }
+  const a=avvisiCalc(off); const tot=a.scadute.length+a.inScad.length
+  if(!tot){ box.innerHTML=''; return }
+  const tutte=[].concat(a.scadute.map(x=>({o:x.o,gg:x.gg,sc:true})), a.inScad.map(x=>({o:x.o,gg:x.gg,sc:false}))).slice(0,4)
+  let h='<div class="card" style="border-left:4px solid #d68910;margin-bottom:14px;background:#fffaf2">'
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><h2 style="margin:0;font-size:16px">\ud83d\udd14 Avvisi offerte</h2><button onclick="vai(\u0027avvisi\u0027)" style="background:none;border:none;color:#F22015;font-weight:600;cursor:pointer;font-size:13px">Vedi tutti \u2192</button></div>'
+  h+='<div style="font-size:12px;color:#6b6b66;margin-bottom:6px">'+a.scadute.length+' scadute \u00b7 '+a.inScad.length+' in scadenza</div>'
+  h+=tutte.map(x=>rigaAvvisoP(x.o,x.gg,x.sc)).join('')
+  box.innerHTML=h
 }
 function offStatoAdm(o){ if(!o.scad) return ''; const oggi=new Date(); oggi.setHours(0,0,0,0); const d=new Date(o.scad+'T00:00:00'); const gg=Math.round((d-oggi)/86400000); if(gg<0) return '<span style="color:#c0392b;font-weight:700;font-size:11px">SCADUTA</span>'; if(gg<=7) return '<span style="color:#d68910;font-weight:700;font-size:11px">in scadenza ('+gg+'gg)</span>'; return '<span style="color:#3B6D11;font-size:11px">fino al '+itDateP(o.scad)+'</span>' }
 async function caricaOfferteAdmin(){
