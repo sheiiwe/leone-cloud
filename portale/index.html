@@ -710,19 +710,39 @@ function listinoPerOffertaP(o,pag){
   return cand[0]||null
 }
 function offAttiva(o){ if(!o.scad) return true; const oggi=new Date(); oggi.setHours(0,0,0,0); return new Date(o.scad+'T00:00:00')>=oggi }
+let _offSortP='forn'
+function setOffSortP(v){ _offSortP=v; caricaOfferteProc() }
+function _offSorterP(a,b){
+  if(_offSortP==='scad_asc'||_offSortP==='scad_desc'){
+    const da=a.scad?new Date(a.scad+'T00:00:00').getTime():null
+    const db2=b.scad?new Date(b.scad+'T00:00:00').getTime():null
+    if(da==null&&db2==null) return (a.forn||'').localeCompare(b.forn||'')
+    if(da==null) return 1
+    if(db2==null) return -1
+    return _offSortP==='scad_asc'?(da-db2):(db2-da)
+  }
+  return (a.forn||'').localeCompare(b.forn||'')||(a.nome||'').localeCompare(b.nome||'')
+}
+function _offSortSelP(){
+  return '<div style="margin:0 0 12px"><label style="font-size:13px;color:#6b6b66">Ordina per: </label><select onchange="setOffSortP(this.value)" style="font-size:13px;padding:7px 10px;border:1px solid #d8d8d2;border-radius:8px;background:#fff;font-family:inherit">'+
+    '<option value="forn"'+(_offSortP==='forn'?' selected':'')+'>Fornitore (A-Z)</option>'+
+    '<option value="scad_asc"'+(_offSortP==='scad_asc'?' selected':'')+'>Scadenza: più vicina prima</option>'+
+    '<option value="scad_desc"'+(_offSortP==='scad_desc'?' selected':'')+'>Scadenza: più lontana prima</option>'+
+    '</select></div>'
+}
 async function caricaOfferteProc(){
   const box=document.getElementById('offerte-lista-proc'); if(!box) return
-  box.innerHTML='Caricamento\u2026'
+  if(!window._OFF_PROC) box.innerHTML='Caricamento\u2026'
   let off=[]
   try{ const r=await db.from('offerte').select('*').order('created_at'); off=(r.data||[]).map(x=>({_id:x.id,...(x.data||{})})) }
   catch(e){ box.innerHTML='<div class="card">Errore nel caricamento delle offerte.</div>'; return }
   off=off.filter(offAttiva); window._OFF_PROC=off
   if(!off.length){ box.innerHTML='<div class="card">Nessuna offerta disponibile al momento.</div>'; return }
   const grp={}; off.forEach(o=>{ (grp[o.cat]=grp[o.cat]||[]).push(o) })
-  let html=''
+  let html=_offSortSelP()
   OFF_CATS_P.forEach(cat=>{
     const items=grp[cat]; if(!items||!items.length) return
-    items.sort((a,b)=>(a.forn||'').localeCompare(b.forn||'')||(a.nome||'').localeCompare(b.nome||''))
+    items.sort(_offSorterP)
     html+='<h3 style="margin:16px 0 8px;color:#2c2c28">'+cat+'</h3>'
     items.forEach(o=>{
       const d=[]
@@ -777,7 +797,7 @@ async function salvaOffProc(){
   const data={autoreNome:MIO_NOME,autoreEmail:MIO_EMAIL,autorePid:MIO_PID,cliente:(nome+' '+cognome).trim(),cliNome:nome,cliCognome:cognome,cliTel:tel,cliEmail:email,cliNote:gv('offproc-note'),note:'Da OFFERTA: '+o.forn+' '+o.nome,items:[item],totale:0,totProv:prov,stato:'Nuova',data:new Date().toLocaleDateString('it-IT'),tipoProposta:'offerta',offForn:o.forn,offNome:o.nome,offCat:o.cat,pagamentoTipo:pag,guadagnoLeone:guad,listinoNome:m?m.nome:''}
   Object.assign(data, exv.v)
   if(bolletta){ data.bollettaUrl=bolletta.url; data.bollettaPath=bolletta.path }
-  try{ await db.from('proposte').insert({data}); chiudiOffProc(); alert('Offerta inviata! La trovi in "Le mie proposte". Leone contatter\u00e0 il cliente per attivarla.') }
+  try{ await db.from('proposte').insert({data}); try{ await accodaEmailProposta(data) }catch(err){ console.error('email proposta:', err) } chiudiOffProc(); alert('Offerta inviata! La trovi in "Le mie proposte". Leone contatter\u00e0 il cliente per attivarla.') }
   catch(e){ alert('Errore: '+(e.message||e)) }
 }
 let OFFP_ALL=[]
@@ -1043,6 +1063,7 @@ async function inviaProposta(){
     if(bolletta){ data.bollettaUrl=bolletta.url; data.bollettaPath=bolletta.path }
     const { error } = await db.from('proposte').insert({data})
     if(error) throw error
+    try{ await accodaEmailProposta(data) }catch(err){ console.error('email proposta:', err) }
     CART=[]; renderCarrello()
     await caricaMieProposte()
     alert('Proposta inviata a Leone Consulting! La trovi qui sotto in "Le mie proposte".')
@@ -1058,10 +1079,16 @@ async function accodaEmailProposta(p){
   const ADMIN='amministrazione@leoneconsultingitalia.it'
   const items=emailItemsHtml(p.items)
   const st='font-family:Arial,Helvetica,sans-serif;color:#1a1a18;font-size:14px;line-height:1.5'
+  const dettCli=((p.cliTel||p.cliEmail)?'<p><b>Telefono:</b> '+esc(p.cliTel||'—')+(p.cliEmail?('<br><b>Email:</b> '+esc(p.cliEmail)):'')+'</p>':'')+
+    (p.contattoData?'<p><b>Quando contattare:</b> '+esc(p.contattoData)+(p.contattoFascia?(' · '+esc(p.contattoFascia)):'')+'</p>':'')+
+    (p.targa?'<p><b>Targa:</b> '+esc(p.targa)+'</p>':'')
+  const bollHtml=p.bollettaUrl?'<p style="margin-top:10px"><b>📄 Bolletta:</b> <a href="'+esc(p.bollettaUrl)+'">Scarica la bolletta</a></p>':''
   const htmlAdmin='<div style="'+st+'"><h2 style="color:#F22015;margin:0 0 8px">Nuova proposta dal portale</h2>'+
-    '<p><b>Cliente:</b> '+esc(p.cliente)+'<br><b>Procacciatore:</b> '+esc(p.autoreNome||'')+' ('+esc(p.autoreEmail||'')+')</p>'+items+
+    '<p><b>Cliente:</b> '+esc(p.cliente)+'<br><b>Procacciatore:</b> '+esc(p.autoreNome||'')+' ('+esc(p.autoreEmail||'')+')</p>'+
+    dettCli+items+
     '<p><b>Totale cliente:</b> '+eur(p.totale||0)+'<br><b>Provvigione procacciatore:</b> '+eur(p.totProv||0)+'</p>'+
     (p.note?'<p><b>Note:</b> '+esc(p.note)+'</p>':'')+
+    bollHtml+
     '<p style="color:#6b6b66;font-size:12px">Apri il gestionale (sezione Proposte) per confermarla e creare le vendite.</p></div>'
   const htmlProc='<div style="'+st+'"><h2 style="color:#3B6D11;margin:0 0 8px">Riepilogo della tua proposta</h2>'+
     '<p>Ciao '+esc((p.autoreNome||'').split(' ')[0]||'')+', ecco il riepilogo della proposta inviata a Leone Consulting per il cliente <b>'+esc(p.cliente)+'</b>:</p>'+items+
@@ -1075,12 +1102,13 @@ async function accodaEmailLead(o, pemail){
   const ADMIN='amministrazione@leoneconsultingitalia.it'
   const st='font-family:Arial,Helvetica,sans-serif;color:#1a1a18;font-size:14px;line-height:1.6'
   const riga=(lbl,val)=> (val==null||val==='')?'':'<tr><td style="padding:5px 10px;border-bottom:1px solid #eee;color:#777;width:140px">'+lbl+'</td><td style="padding:5px 10px;border-bottom:1px solid #eee;font-weight:600">'+esc(val)+'</td></tr>'
-  const contatto=riga('Nome',o.nome)+riga('Telefono',o.tel)+riga('Email',o.email)+riga('Area interesse',o.cat)+riga('Note',o.note)+riga('Data',(o.data||'')+(o.ora?(' '+o.ora):''))
+  const contatto=riga('Nome',o.nome)+riga('Telefono',o.tel)+riga('Email',o.email)+riga('Area interesse',o.cat)+riga('Quando contattare',(o.contattoData||'')+(o.contattoFascia?(' \u00b7 '+o.contattoFascia):''))+riga('Targa',o.targa)+riga('Note',o.note)+riga('Data',(o.data||'')+(o.ora?(' '+o.ora):''))
   const tab=(extra)=> '<table style="border-collapse:collapse;width:100%;max-width:520px;font-size:14px">'+contatto+(extra||'')+'</table>'
   // Email all'amministrazione
   const htmlAdmin='<div style="'+st+'"><h2 style="color:#3B6D11;margin:0 0 4px">Nuovo lead ricevuto</h2>'+
     '<p style="margin:0 0 12px;color:#555">È arrivato un nuovo contatto dal portale procacciatori.</p>'+
     tab(riga('Procacciatore',o.pnome)+riga('Fonte',o.fonte))+
+    (o.bollettaUrl?'<p style="margin:12px 0 0"><b>📄 Bolletta:</b> <a href="'+esc(o.bollettaUrl)+'">Scarica la bolletta</a></p>':'')+
     '<p style="margin:16px 0 0;font-size:12px;color:#888">Lo trovi nella sezione Lead dell\u0027app e del portale.</p></div>'
   const rows=[{ data:{ to:ADMIN, subject:'Nuovo lead: '+o.nome+(o.pnome?(' (da '+o.pnome+')'):''), html:htmlAdmin } }]
   // Copia al procacciatore sulla sua email aziendale (quella di login)
