@@ -559,8 +559,8 @@ tbody tr:hover td{background:var(--surface2)}
 
 <!-- CEDOLINI -->
 <div class="page" id="page-cedolini">
-  <div class="page-hdr"><h1>Cedolini</h1></div>
-  <div id="cedolini-body" style="max-width:900px"></div>
+  <div class="pg-title">Cedolini</div>
+  <div id="cedolini-body"></div>
 </div>
 
 <!-- PORTALE PROCACCIATORI -->
@@ -1032,6 +1032,7 @@ tbody tr:hover td{background:var(--surface2)}
             <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_rimborsi')">+ Rimborsi</button>
             <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_imponibile')">+ Imponibile</button>
             <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_iva')">+ IVA 22%</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_tot_fattura')">+ Totale fattura</button>
             <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_base_rit')">+ Base 50%</button>
             <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_ritenuta')">+ Ritenuta</button>
             <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_bollo')">+ Marca bollo</button>
@@ -5799,6 +5800,7 @@ async function generaCedolino(idx, mese){
     ced_prov_base: (q&&q.prov!=null)?(q.prov+'%'):'', ced_prov_super:'',
     ced_tot_lorde:'\u20ac '+fmtN(c.lordo), ced_rimborsi:'\u20ac 0,00',
     ced_imponibile:'\u20ac '+fmtN(c.lordo), ced_iva:'\u20ac '+fmtN(c.iva),
+    ced_tot_fattura:(c.piva?'\u20ac '+fmtN(c.lordo+c.iva):''),
     ced_base_rit:'\u20ac '+fmtN(c.baseRit), ced_ritenuta:'\u20ac '+fmtN(c.ritenuta),
     ced_bollo:(c.bollo>0?'\u20ac '+fmtN(c.bollo):'\u2014'),
     ced_netto:'\u20ac '+fmtN(c.piva?c.nettoFatt:c.nettoPag),
@@ -6623,6 +6625,7 @@ const MARKER_COLORS = {
   ced_rimborsi:   { color:'#148f77', label:'Rimborsi' },
   ced_imponibile: { color:'#148f77', label:'Totale imponibile' },
   ced_iva:        { color:'#148f77', label:'IVA 22%' },
+  ced_tot_fattura:{ color:'#148f77', label:'Totale fattura' },
   ced_base_rit:   { color:'#148f77', label:'Base ritenuta 50%' },
   ced_ritenuta:   { color:'#148f77', label:"Ritenuta d'acconto" },
   ced_bollo:      { color:'#148f77', label:'Marca da bollo' },
@@ -7108,12 +7111,13 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
   const oggi = new Date().toLocaleDateString('it-IT')
   const pages = pdfDoc.getPages()
   // Stampa testo con eventuale a-capo automatico se il campo ha una larghezza (w_pct)
-  const drawTxt = (pg, t, x, ph, yTop, wpct) => {
+  const drawTxt = (pg, t, x, ph, yTop, wpct, col) => {
+    const cc = col || PDFLib.rgb(0.05,0.05,0.05)
     const maxW = wpct ? (wpct/100)*pg.getWidth() : 0
     if(maxW>0){
-      wrapPdfText(t, font, 10, maxW).forEach((ln,i)=> pg.drawText(ln, { x, y: ph - yTop - 4 - i*12, size:10, font, color: PDFLib.rgb(0.05,0.05,0.05) }))
+      wrapPdfText(t, font, 10, maxW).forEach((ln,i)=> pg.drawText(ln, { x, y: ph - yTop - 4 - i*12, size:10, font, color: cc }))
     } else {
-      pg.drawText(t, { x, y: ph - yTop - 4, size:10, font, color: PDFLib.rgb(0.05,0.05,0.05) })
+      pg.drawText(t, { x, y: ph - yTop - 4, size:10, font, color: cc })
     }
   }
   markers.forEach(m => {
@@ -7149,7 +7153,8 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
     }
     if(Object.prototype.hasOwnProperty.call(extra, m.tipo)){
       const t=(extra[m.tipo]==null?'':extra[m.tipo]).toString()
-      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct)
+      const _white=['ced_tot_fattura','ced_netto','ced_netto_fattura','ced_netto_pagare'].indexOf(m.tipo)!==-1
+      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, _white?PDFLib.rgb(1,1,1):null)
       return
     }
     if(CAMPI_SCELTA[m.tipo]){
@@ -7499,6 +7504,7 @@ function renderEditorMarkers(){
     const cfg = MARKER_COLORS[m.tipo] || { color:'#888', label: m.tipo }
     const isCheck = (cfg.label||'').trim().startsWith('\u2611') // etichette "☑ ..." = caselle dove si stampa la X
     const el = document.createElement('div')
+    el.title = cfg.label
     if(isCheck){
       // Casellina ✕ centrata sul punto ESATTO di stampa; etichetta sulla stessa riga, a destra
       el.style.cssText = `position:absolute;left:${m.x_pct}%;top:${m.y_pct}%;transform:translate(-50%,-50%);width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:${cfg.color};border:1.5px solid #fff;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:grab;z-index:10;`
