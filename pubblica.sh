@@ -18,7 +18,9 @@ fi
 cp src/index.html /tmp/lc_index_backup.html
 cp package.json /tmp/lc_package_backup.json
 
-git add -A
+# Aggiunge SOLO nuovi/modificati, MAI rimozioni: cosi' non cancella portale/ e sign.html
+# (che stanno nel repo del sito ma non in questa cartella dell'app)
+git add --ignore-removal .
 
 if git diff --cached --quiet; then
   echo "ℹ️  Nessuna modifica locale."

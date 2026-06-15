@@ -2621,8 +2621,8 @@ const LISTINO_VERSION=3
 // ── PROC FORM ─────────────────────────────────────────────────
 function onRegime(){
   const v=document.getElementById('pr-regime').value
-  document.getElementById('pr-cf-lbl').textContent=v==='piva'?'Partita IVA':'Codice fiscale'
-  document.getElementById('pr-cf').placeholder=v==='piva'?'12345678901':'RSSMRA80A01H501U'
+  document.getElementById('pr-cf-lbl').textContent='Codice fiscale'
+  document.getElementById('pr-cf').placeholder='RSSMRA80A01H501U'
   document.getElementById('box-rit').style.display=v==='piva'?'none':'block'
   document.getElementById('box-piva').style.display=v==='piva'?'block':'none'
   {const w=document.getElementById('pr-piva-wrap'); if(w) w.style.display=v==='piva'?'flex':'none'}
@@ -3516,7 +3516,7 @@ function apriProfilo(i){
         <button onclick="document.getElementById('profilo-overlay').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2)">✕</button>
       </div>
       <div style="padding:20px 24px;max-height:60vh;overflow:auto">
-        ${sez('Anagrafica', row('Codice fiscale', p.cf)+row('Data di nascita', p.nascita)+row('Luogo di nascita', p.luogonascita)+row('Regime fiscale', regLabel))}
+        ${sez('Anagrafica', row('Codice fiscale', p.cf)+(p.regime==='piva'?(row('Partita IVA', p.piva||p.cf)+(p.ragioneSociale?row('Ragione sociale', p.ragioneSociale):'')):'')+row('Data di nascita', p.nascita)+row('Luogo di nascita', p.luogonascita)+row('Regime fiscale', regLabel))}
         ${sez('Contatti', row('Email personale', p.email)+row('Email aziendale', p.email_aziendale)+row('Telefono', p.tel)+row('Indirizzo', p.indirizzo)+row('Città', citta)+row('Zona', p.zona))}
         ${sez('Documento di identità', row('Tipo', p.doc_tipo)+row('Numero', p.doc_num)+row('Rilasciato da', p.doc_rilasciato)+row('Data rilascio', p.doc_rildata)+row('Scadenza', p.doc_scadenza))}
         ${sez('Dati bancari', row('IBAN', p.iban)+row('Tipo di conto', tcLabel))}
@@ -5710,7 +5710,7 @@ function genReport(i,mese){
   const q=getQual(p,i,mese)
   const html=`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Report ${p.nome} — ${mese}</title><style>body{font-family:-apple-system,'Helvetica Neue',sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#1a1a18;font-size:13px}.hdr{display:flex;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid #185FA5}.logo{font-size:18px;font-weight:700;color:#185FA5}.sub{font-size:12px;color:#6b6b66;margin-top:2px}h2{font-size:15px;font-weight:600;margin:1.5rem 0 .5rem}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:1rem}th{background:#f0efe9;padding:7px 10px;text-align:left;font-weight:600;border-bottom:1px solid #ddd}td{padding:7px 10px;border-bottom:.5px solid #eee}.tot{background:#f5f5f0;border-radius:8px;padding:1rem 1.25rem;margin-top:1.5rem}.tr{display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid #ddd;font-size:13px}.tr:last-child{border-bottom:none;font-weight:700;font-size:15px}.foot{margin-top:2rem;padding-top:1rem;border-top:.5px solid #ddd;font-size:11px;color:#9e9e98;text-align:center}</style></head><body>
   <div class="hdr"><div><div class="logo">Leone Consulting</div><div class="sub">di Leonardo Angelucci · Via Pia 42, 00049 Velletri (RM)</div><div class="sub">P.IVA 18231181001</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:600">Report Provvigioni</div><div style="color:#6b6b66;font-size:12px">Periodo: ${mese}</div></div></div>
-  <h2>Procacciatore</h2><table><tr><td><strong>Nome:</strong></td><td>${p.nome}</td><td><strong>Qualifica:</strong></td><td>${q.label} (${q.prov}%)</td></tr><tr><td><strong>${p.regime==='piva'?'P.IVA':'CF'}:</strong></td><td>${p.cf||'—'}</td><td><strong>IBAN:</strong></td><td>${p.iban||'—'}</td></tr></table>
+  <h2>Procacciatore</h2><table><tr><td><strong>Nome:</strong></td><td>${p.nome}</td><td><strong>Qualifica:</strong></td><td>${q.label} (${q.prov}%)</td></tr><tr><td><strong>${p.regime==='piva'?'P.IVA':'CF'}:</strong></td><td>${(p.regime==='piva'?(p.piva||p.cf):p.cf)||'—'}</td><td><strong>IBAN:</strong></td><td>${p.iban||'—'}</td></tr></table>
   <h2>Vendite ${mese}</h2>${vv.length?`<table><thead><tr><th>Data</th><th>Prodotto</th><th>Cliente</th><th style="text-align:right">Valore</th><th style="text-align:right">Provvigione</th></tr></thead><tbody>${vv.map(v=>`<tr><td>${v.data}</td><td>${v.prod}</td><td>${v.cliente||'—'}</td><td style="text-align:right">${v.val>0?fmtE(v.val):'—'}</td><td style="text-align:right;font-weight:600">${fmtE(v.prov)}</td></tr>`).join('')}</tbody></table>`:'<p style="color:#9e9e98">Nessuna vendita in questo periodo.</p>'}
   <div class="tot"><div class="tr"><span>Provvigione personale</span><span>${fmtE(provPers)}</span></div>${ovr>0?`<div class="tr"><span>Override rete</span><span>+${fmtE(ovr)}</span></div>`:''}<div class="tr"><span style="font-weight:600">Totale lordo</span><span style="font-weight:600">${fmtE(lordo)}</span></div>${p.regime==='ritenuta'?`<div class="tr"><span style="color:#A32D2D">Ritenuta 20%</span><span style="color:#A32D2D">−${fmtE(rit)}</span></div>`:''}<div class="tr"><span>NETTO</span><span style="color:#3B6D11">${fmtE(netto)}</span></div></div>
   ${p.regime==='ritenuta'&&lordo>77.47?'<p style="font-size:11px;color:#9e9e98;margin-top:.75rem">⚠ Applicare marca da bollo €2,00 sulla ricevuta.</p>':''}
@@ -7040,7 +7040,7 @@ function risolviCampo(tipo, p, oggi){
   if(tipo==='regime_testo')  return { testo: p.regime==='piva'?'Titolare di Partita IVA':"Ritenuta d'acconto" }
   if(tipo==='citta_cap_prov') return { testo: [p.citta, p.cap, p.prov?('('+p.prov+')'):''].filter(Boolean).join(' ') }
   if(tipo==='codice_ateco')  return { testo: p.ateco||'' }
-  if(tipo==='solo_piva')     return { testo: p.regime==='piva'?(p.piva||''):'' }
+  if(tipo==='solo_piva')     return { testo: p.regime==='piva'?(p.piva||p.cf||''):'' }
   if(tipo==='solo_cf')       return { testo: p.cf||'' }
   if(tipo==='num_contratto') return { testo: p.nContratto||'' }
   if(tipo==='area_geo')      return { testo: p.zona||'' }
@@ -7842,7 +7842,7 @@ function _cfCheck(c){
 }
 function apriCalcoloCF(){
   const regime=document.getElementById('pr-regime')?.value
-  if(regime==='piva'){ alert('In regime P.IVA questo campo contiene la Partita IVA, non il codice fiscale.'); return }
+  if(regime==='piva'){ /* CF e P.IVA sono campi distinti: il CF resta calcolabile anche in regime P.IVA */ }
   const full=(document.getElementById('pr-nome').value||'').trim()
   const parti=full.toUpperCase().replace(/[^A-ZÀ-Ù ]/g,' ').split(/\s+/).filter(Boolean)
   document.getElementById('cf-cognome').value = parti.length>1?parti.slice(0,-1).join(' '):''
