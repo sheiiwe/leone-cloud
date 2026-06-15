@@ -295,7 +295,6 @@ ipcMain.handle('aggiornamento-rapido', async () => {
     { url: '/sheiiwe/leone-cloud/main/compila_documento.py', dest: path.join(baseDir, 'compila_documento.py') },
     { url: '/sheiiwe/leone-cloud/main/ipc-handlers.js', dest: path.join(baseDir, 'ipc-handlers.js') },
     { url: '/sheiiwe/leone-cloud/main/preload.js', dest: path.join(baseDir, 'preload.js') },
-    { url: '/sheiiwe/leone-cloud/main/email-server.js', dest: path.join(baseDir, 'email-server.js') },
     { url: '/sheiiwe/leone-cloud/main/package.json', dest: path.join(baseDir, 'package.json') },
   ]
 
@@ -306,14 +305,14 @@ ipcMain.handle('aggiornamento-rapido', async () => {
       headers: { 'User-Agent': 'leone-cloud' }
     }
     https.get(options, (res) => {
-      if(res.statusCode !== 200){ reject(new Error(`HTTP ${res.statusCode}`)); return }
+      if(res.statusCode !== 200){ console.warn('Salto file non trovato (HTTP '+res.statusCode+'): '+urlPath); res.resume(); resolve(); return }
       let data = ''
       res.on('data', chunk => data += chunk)
       res.on('end', () => {
         fs.writeFileSync(dest, data, 'utf8')
         resolve()
       })
-    }).on('error', reject)
+    }).on('error', ()=>{ console.warn('Errore rete su '+urlPath); resolve() })
   })
 
   try {

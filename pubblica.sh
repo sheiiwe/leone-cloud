@@ -3,6 +3,16 @@
 
 cd "$(dirname "$0")"
 
+# Auto-riparazione: se manca .git, ricrea il collegamento al sito SENZA cancellare il portale
+if [ ! -d .git ]; then
+  echo "🔧 .git mancante: ripristino collegamento a GitHub..."
+  git init -q
+  git remote remove origin 2>/dev/null
+  git remote add origin https://github.com/sheiiwe/leone-cloud.git
+  git fetch origin main -q
+  git reset --mixed origin/main -q
+fi
+
 echo "📦 Pubblicazione in corso..."
 
 VERSIONE=$(node -e "console.log(require('./package.json').version)" 2>/dev/null || echo "?")

@@ -7491,6 +7491,18 @@ function apriOpzioniCampo(idx){
     r.oninput=()=>{ const val=parseInt(r.value); v.textContent=val?val+'%':'no'; if(val) editorMarkers[editorDocId][idx].w_pct=val; else delete editorMarkers[editorDocId][idx].w_pct; renderEditorMarkers() }
   }
 }
+function _ensureMarkerTip(){
+  let t=document.getElementById('lc-marker-tip')
+  if(!t){
+    t=document.createElement('div'); t.id='lc-marker-tip'
+    t.style.cssText='position:fixed;z-index:99999;pointer-events:none;background:#0f1115;color:#fff;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.55);white-space:nowrap;display:none;border:1px solid rgba(255,255,255,.15)'
+    document.body.appendChild(t)
+  }
+  return t
+}
+function _showMarkerTip(ev,label){ const t=_ensureMarkerTip(); t.textContent=label||''; t.style.display='block'; _moveMarkerTip(ev) }
+function _moveMarkerTip(ev){ const t=document.getElementById('lc-marker-tip'); if(!t||t.style.display==='none')return; let x=ev.clientX+14, y=ev.clientY+18; const w=t.offsetWidth,h=t.offsetHeight; if(x+w>window.innerWidth-8)x=window.innerWidth-8-w; if(y+h>window.innerHeight-8)y=ev.clientY-18-h; t.style.left=x+'px'; t.style.top=y+'px' }
+function _hideMarkerTip(){ const t=document.getElementById('lc-marker-tip'); if(t)t.style.display='none' }
 function renderEditorMarkers(){
   const layer = document.getElementById('editor-markers-layer')
   if(!layer || !editorDocId) return
@@ -7505,6 +7517,10 @@ function renderEditorMarkers(){
     const isCheck = (cfg.label||'').trim().startsWith('\u2611') // etichette "☑ ..." = caselle dove si stampa la X
     const el = document.createElement('div')
     el.title = cfg.label
+    el.addEventListener('mouseenter', (ev)=>_showMarkerTip(ev, cfg.label))
+    el.addEventListener('mousemove', (ev)=>_moveMarkerTip(ev))
+    el.addEventListener('mouseleave', ()=>_hideMarkerTip())
+    el.addEventListener('mousedown', ()=>_hideMarkerTip())
     if(isCheck){
       // Casellina ✕ centrata sul punto ESATTO di stampa; etichetta sulla stessa riga, a destra
       el.style.cssText = `position:absolute;left:${m.x_pct}%;top:${m.y_pct}%;transform:translate(-50%,-50%);width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:${cfg.color};border:1.5px solid #fff;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:grab;z-index:10;`
