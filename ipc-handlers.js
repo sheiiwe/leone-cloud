@@ -1,18 +1,61 @@
 const { ipcMain, shell } = require('electron')
-const { transportEmail, transportPEC } = require('./email-server')
+const nodemailer = require('nodemailer')
 const { execFile } = require('child_process')
 const path = require('path')
 const os = require('os')
 const fs = require('fs')
 
-const fromAddr = (via) => via === 'pec'
-  ? '"Leone Consulting" <amministratore@pec.leoneconsultingitalia.it>'
-  : '"Leone Consulting" <amministrazione@leoneconsultingitalia.it>'
+// Trasporti email DINAMICI: le credenziali arrivano da Impostazioni (cloud).
+// Fallback sicuro al vecchio email-server.js SOLO se il file esiste ancora.
+let _t = { email: null, pec: null }
+let _fromUser = { email: 'amministrazione@leoneconsultingitalia.it', pec: 'amministratore@pec.leoneconsultingitalia.it' }
+try {
+  const legacy = require('./email-server')
+  _t.email = legacy.transportEmail || null
+  _t.pec = legacy.transportPEC || null
+} catch (e) { /* email-server.js non presente: si usa la config da Impostazioni */ }
 
-const transport = (via) => via === 'pec' ? transportPEC : transportEmail
+ipcMain.handle('set-email-config', (event, cfg) => {
+  try {
+    if (cfg && cfg.smtp && cfg.smtp.host && cfg.smtp.user) {
+      _t.email = nodemailer.createTransport({ host: cfg.smtp.host, port: Number(cfg.smtp.port) || 465, secure: true, auth: { user: cfg.smtp.user, pass: cfg.smtp.pass } })
+      _fromUser.email = cfg.smtp.user
+    }
+    if (cfg && cfg.pec && cfg.pec.host && cfg.pec.user) {
+      _t.pec = nodemailer.createTransport({ host: cfg.pec.host, port: Number(cfg.pec.port) || 465, secure: true, auth: { user: cfg.pec.user, pass: cfg.pec.pass } })
+      _fromUser.pec = cfg.pec.user
+    }
+    return { ok: true }
+  } catch (e) { return { ok: false, error: e.message } }
+})
+
+const fromAddr = (via) => via === 'pec'
+  ? `"Leone Consulting" <${_fromUser.pec}>`
+  : `"Leone Consulting" <${_fromUser.email}>`
+
+const transport = (via) => {
+  const t = via === 'pec' ? _t.pec : _t.email
+  if (!t) throw new Error('Email non configurata. Vai in Impostazioni → Email & PEC e inserisci le credenziali.')
+  return t
+}
+
+// Trasporto costruito dalle credenziali passate nell'invio (preferito),
+// con fallback a quelle pushate / al file legacy.
+const makeTransport = (via, smtp, smtpPec) => {
+  const cfg = via === 'pec' ? smtpPec : smtp
+  if (cfg && cfg.host && cfg.user) {
+    return nodemailer.createTransport({ host: cfg.host, port: Number(cfg.port) || 465, secure: true, auth: { user: cfg.user, pass: cfg.pass } })
+  }
+  return transport(via)
+}
+const fromFor = (via, smtp, smtpPec) => {
+  const cfg = via === 'pec' ? smtpPec : smtp
+  if (cfg && cfg.user) return `"Leone Consulting" <${cfg.user}>`
+  return fromAddr(via)
+}
 
 // ── INVIA CONTRATTO PER FIRMA ──────────────────────────────────
-ipcMain.handle('send-contract', async (event, { to, name, contractType, signToken, via }) => {
+ipcMain.handle('send-contract', async (event, { to, name, contractType, signToken, via, smtp, smtpPec }) => {
   const signUrl = `https://sheiiwe.github.io/leone-cloud/sign.html?token=${signToken}`
   const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a18">
   <div style="background:#185FA5;padding:24px;text-align:center"><h1 style="color:#fff;margin:0">Leone Consulting</h1><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:13px">di Leonardo Angelucci</p></div>
@@ -24,14 +67,14 @@ ipcMain.handle('send-contract', async (event, { to, name, contractType, signToke
   </div>
   <div style="background:#f5f5f0;padding:16px 24px;font-size:11px;color:#888;text-align:center">Leone Consulting di Leonardo Angelucci · Via Pia 42, 00049 Velletri (RM) · P.IVA 18231181001</div>
   </body></html>`
-  const info = await transport(via).sendMail({ from: fromAddr(via), to, subject: `${contractType} — Leone Consulting: firma richiesta`, html })
+  const info = await makeTransport(via, smtp, smtpPec).sendMail({ from: fromFor(via, smtp, smtpPec), to, subject: `${contractType} — Leone Consulting: firma richiesta`, html })
   return { success: true, messageId: info.messageId }
 })
 
 // ── INVIA REPORT / BONUS ──────────────────────────────────────
-ipcMain.handle('send-report', async (event, { to, name, reportHtml, mese, via }) => {
-  await transport(via).sendMail({
-    from: fromAddr(via), to,
+ipcMain.handle('send-report', async (event, { to, name, reportHtml, mese, via, smtp, smtpPec }) => {
+  await makeTransport(via, smtp, smtpPec).sendMail({
+    from: fromFor(via, smtp, smtpPec), to,
     subject: `${mese} — Leone Consulting`,
     html: reportHtml,
   })
@@ -288,11 +331,10 @@ ipcMain.handle('aggiornamento-rapido', async () => {
 })
 
 // ── EMAIL NOTIFICA COLLABORATORE ──────────────────────────────
-ipcMain.handle('invia-email-collaboratore', async (event, { emailCollaboratore, nomeProdotto, lead }) => {
+ipcMain.handle('invia-email-collaboratore', async (event, { emailCollaboratore, nomeProdotto, lead, smtp }) => {
   try {
-    const { transportEmail } = require('./email-server')
-    await transportEmail.sendMail({
-      from: '"Leone Consulting" <amministrazione@leoneconsultingitalia.it>',
+    await makeTransport('email', smtp).sendMail({
+      from: fromFor('email', smtp),
       to: emailCollaboratore,
       subject: `🆕 Nuovo lead per: ${nomeProdotto}`,
       html: `
@@ -323,12 +365,11 @@ ipcMain.handle('get-version', () => {
 })
 
 // ── SEND MAIL GENERICO (notifiche admin firma) ────────────────
-ipcMain.handle('sendMail', async (event, { to, subject, html }) => {
+ipcMain.handle('sendMail', async (event, { to, subject, html, smtp, attachments }) => {
   try {
-    await transportEmail.sendMail({
-      from: '"Leone Consulting" <amministrazione@leoneconsultingitalia.it>',
-      to, subject, html
-    })
+    const msg = { from: fromFor('email', smtp), to, subject, html }
+    if (Array.isArray(attachments) && attachments.length) msg.attachments = attachments
+    await makeTransport('email', smtp).sendMail(msg)
     return { ok: true }
   } catch(e) {
     console.error('sendMail error:', e)

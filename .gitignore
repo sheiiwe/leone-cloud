@@ -3,5 +3,3 @@ dist/
 assets/previews/
 *.log
 .DS_Store
-
-email-server.js

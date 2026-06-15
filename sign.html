@@ -3,13 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>Firma contratto — Leone Consulting</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;background:#f5f5f0;color:#1a1a18;min-height:100vh}
@@ -59,13 +55,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
 .badge-wait{display:inline-flex;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500;background:#FAEEDA;color:#854F0B}
 .badge-done{display:inline-flex;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500;background:#EAF3DE;color:#3B6D11}
 .scroll-hint{font-size:11px;color:#854F0B;background:#FAEEDA;padding:7px 12px;border-radius:6px;margin-bottom:10px;text-align:center}
-.radio-row{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12.5px;color:#1a1a18;cursor:pointer}
-.radio-row input{width:16px;height:16px;accent-color:#185FA5;flex-shrink:0}
-.up-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;font-size:12.5px;color:#1a1a18;border-bottom:0.5px solid #f0efe9}
-.up-row:last-child{border-bottom:none}
-.up-row input[type=file]{font-size:11px;max-width:52%}
-.sel{width:100%;padding:10px 12px;font-size:13px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;background:#fff;color:#1a1a18;font-family:inherit;cursor:pointer}
-.sel{width:100%;padding:10px 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:#1a1a18;cursor:pointer}
 </style>
 </head>
 <body>
@@ -126,34 +115,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
       <div class="scroll-hint" id="scroll-hint">📜 Scorri fino in fondo per poter firmare</div>
     </div>
 
-    <!-- Dati e documenti del firmatario -->
-    <div class="card" id="card-dati">
-      <h2>📋 I tuoi dati e documenti</h2>
-      <div style="margin-bottom:16px">
-        <div style="font-size:12.5px;font-weight:600;margin-bottom:6px">Qual è il tuo conto? <span style="color:#c0392b">(obbligatorio)</span></div>
-        <select id="sel-tipo-conto" class="sel" onchange="aggiornaFirmaPronta()">
-          <option value="">Seleziona...</option>
-          <option value="bancario">Conto corrente bancario</option>
-          <option value="postale">Conto corrente postale (Poste Italiane)</option>
-          <option value="estero">Conto corrente estero</option>
-        </select>
-      </div>
-      <div style="margin-bottom:16px">
-        <div style="font-size:12.5px;font-weight:600;margin-bottom:6px">Qual è il tuo regime fiscale? <span style="color:#c0392b">(obbligatorio)</span></div>
-        <select id="sel-regime" class="sel" onchange="aggiornaFirmaPronta()">
-          <option value="">Seleziona...</option>
-          <option value="piva">Titolare di Partita IVA</option>
-          <option value="ritenuta">Prestazione occasionale</option>
-        </select>
-      </div>
-      <div>
-        <div style="font-size:12.5px;font-weight:600;margin-bottom:4px">Allega i tuoi documenti</div>
-        <label class="up-row">Carta d'identità <span style="color:#c0392b">(obbligatorio)</span> <input type="file" id="up-identita" accept="image/*,application/pdf" onchange="aggiornaFirmaPronta()"></label>
-        <label class="up-row">Codice fiscale / Tessera sanitaria <span style="color:#c0392b">(obbligatorio)</span> <input type="file" id="up-cf" accept="image/*,application/pdf" onchange="aggiornaFirmaPronta()"></label>
-        <label class="up-row">Visura camerale o documento equivalente <span style="color:#7a7a72">(obbligatorio solo se Partita IVA)</span> <input type="file" id="up-visura" accept="image/*,application/pdf" onchange="aggiornaFirmaPronta()"></label>
-      </div>
-    </div>
-
     <!-- Firma -->
     <div class="card" id="card-firma" style="opacity:.4;pointer-events:none">
       <h2>✍️ Firma qui sotto</h2>
@@ -164,37 +125,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
       </div>
       <button class="btn-ghost" onclick="cancellaFirma()">↺ Cancella e rifai</button>
 
-      <div style="margin-top:14px;font-size:12px;color:#7a3030;background:#fdecea;border:1px solid #f5c6cb;border-radius:8px;padding:9px 11px">⚠️ Per poter firmare devi spuntare <strong>tutte</strong> le caselle qui sotto e aver compilato conto, regime e documenti qui sopra.</div>
-
       <div style="margin-top:14px">
-        <label class="checkbox-row" style="font-weight:700;background:#eef6ee;border:1px solid #cfe3cf;border-radius:8px;padding:9px 11px;margin-bottom:6px">
-          <input type="checkbox" id="chk-tutto" onchange="toggleTutteSpunte()">
-          ✅ Accetto tutte le dichiarazioni qui sotto
-        </label>
         <label class="checkbox-row">
-          <input type="checkbox" id="chk-consenso" onchange="aggiornaFirmaPronta()">
+          <input type="checkbox" id="chk-consenso">
           Dichiaro di aver letto integralmente il contratto <strong id="chk-tipo-ct"></strong> e di accettarne il contenuto, apponendo la mia firma digitale consapevolmente.
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" id="chk-vessatorie" onchange="aggiornaFirmaPronta()">
+          <input type="checkbox" id="chk-privacy">
+          Accetto il trattamento dei miei dati personali ai sensi del GDPR (Reg. UE 2016/679) per le finalità contrattuali e amministrative indicate nell'informativa allegata.
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="chk-vessatorie">
           Ai sensi degli artt. 1341 e 1342 c.c., approvo specificamente le clausole di cui agli Art. 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13 del contratto.
-        </label>
-        <label class="checkbox-row">
-          <input type="checkbox" id="chk-privacy-fisc" onchange="aggiornaFirmaPronta()">
-          Acconsento al trattamento dei miei dati per le finalità fiscali e contabili (fatturazione, ritenute e adempimenti di legge).
-        </label>
-        <label class="checkbox-row">
-          <input type="checkbox" id="chk-contrattuali" onchange="aggiornaFirmaPronta()">
-          Acconsento al trattamento dei miei dati per le finalità contrattuali e amministrative.
-        </label>
-        <label class="checkbox-row">
-          <input type="checkbox" id="chk-privacy" onchange="aggiornaFirmaPronta()">
-          Acconsento al trattamento dei miei dati personali ai sensi del GDPR (Reg. UE 2016/679), secondo l'informativa privacy allegata.
         </label>
       </div>
 
-      <div id="firma-mancanze" style="display:none;margin-top:14px;font-size:12px;color:#c0392b;background:#fdecea;border:1px solid #f5c6cb;border-radius:8px;padding:9px 11px"></div>
-      <button class="btn btn-p" id="btn-firma" onclick="firmaContratto()" style="margin-top:14px">
+      <button class="btn btn-p" id="btn-firma" onclick="firmaContratto()" style="margin-top:16px">
         ✍️ Firma e conferma contratto
       </button>
     </div>
@@ -216,12 +162,8 @@ const { createClient } = supabase
 const db = createClient(SUPA_URL, SUPA_KEY)
 const dbAdmin = db
 
-// URL del PDF: se il contratto ha un documento configurato lo usa, altrimenti fallback al PDF standard
-const PDF_FALLBACK = SUPA_URL + '/storage/v1/object/public/contratti/contratto_procacciatori_con_privacy.pdf'
-function urlPdfContratto(){
-  if (contratto && contratto.pdfPath) return SUPA_URL + '/storage/v1/object/public/contratti/' + contratto.pdfPath
-  return PDF_FALLBACK
-}
+// URL pubblico del contratto su Supabase Storage
+const PDF_URL = SUPA_URL + '/storage/v1/object/public/contratti/contratto_procacciatori_con_privacy.pdf'
 
 const params = new URLSearchParams(window.location.search)
 const token = params.get('token')
@@ -247,7 +189,6 @@ async function init() {
     document.getElementById('chk-tipo-ct').textContent = '"' + (contratto.tipoContratto || '') + '"'
     mostra('stato-firma')
     initCanvas()
-    wireFirmaChecks()
     caricaPDF()
     setupScrollWatch()
   } catch(e) { console.error(e); mostra('stato-errore') }
@@ -265,7 +206,7 @@ function mostra(id) {
 // ── PDF ───────────────────────────────────────────────────────
 async function caricaPDF() {
   try {
-    pdfDoc = await pdfjsLib.getDocument(urlPdfContratto()).promise
+    pdfDoc = await pdfjsLib.getDocument(PDF_URL).promise
     document.getElementById('pdf-info').textContent = `${pdfDoc.numPages} pagine`
     await renderAllPages()
   } catch(e) {
@@ -345,7 +286,7 @@ function initCanvas() {
   }
   let lastX, lastY
   function start(e) { e.preventDefault(); drawing=true; const p=getPos(e); lastX=p.x; lastY=p.y; ctx.beginPath(); ctx.moveTo(lastX,lastY) }
-  function draw(e) { if(!drawing) return; e.preventDefault(); const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); lastX=p.x; lastY=p.y; if(!hasFirma){ hasFirma=true; aggiornaFirmaPronta() } }
+  function draw(e) { if(!drawing) return; e.preventDefault(); const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); lastX=p.x; lastY=p.y; hasFirma=true }
   function stop() { drawing=false }
   canvas.addEventListener('mousedown',start); canvas.addEventListener('mousemove',draw); canvas.addEventListener('mouseup',stop); canvas.addEventListener('mouseleave',stop)
   canvas.addEventListener('touchstart',start,{passive:false}); canvas.addEventListener('touchmove',draw,{passive:false}); canvas.addEventListener('touchend',stop)
@@ -355,118 +296,14 @@ function cancellaFirma() {
   const canvas = document.getElementById('sign-canvas')
   canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height)
   hasFirma = false
-  aggiornaFirmaPronta()
-}
-
-// Spunta master: seleziona/deseleziona tutte le dichiarazioni insieme
-function toggleTutteSpunte(){
-  const v = document.getElementById('chk-tutto').checked
-  ;['chk-consenso','chk-vessatorie','chk-privacy-fisc','chk-contrattuali','chk-privacy'].forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=v })
-  aggiornaFirmaPronta()
-}
-// Abilita il tasto Firma solo quando TUTTO è a posto; mostra cosa manca
-function aggiornaFirmaPronta(){
-  const miss=[]
-  if(!document.getElementById('sel-tipo-conto').value) miss.push('seleziona il conto')
-  const reg=document.getElementById('sel-regime').value
-  if(!reg) miss.push('seleziona il regime fiscale')
-  if(!document.getElementById('up-identita')?.files?.[0]) miss.push('allega la carta d\u0027identità')
-  if(!document.getElementById('up-cf')?.files?.[0]) miss.push('allega il codice fiscale')
-  if(reg==='piva' && !document.getElementById('up-visura')?.files?.[0]) miss.push('allega la visura camerale (P.IVA)')
-  const tutteSpunte=['chk-consenso','chk-vessatorie','chk-privacy-fisc','chk-contrattuali','chk-privacy'].every(id=>document.getElementById(id)?.checked)
-  const _ct=document.getElementById('chk-tutto'); if(_ct) _ct.checked=tutteSpunte
-  if(!tutteSpunte) miss.push('spunta tutte le dichiarazioni')
-  if(!hasFirma) miss.push('disegna la tua firma')
-  const btn=document.getElementById('btn-firma'); const box=document.getElementById('firma-mancanze')
-  if(!btn) return
-  if(miss.length){
-    btn.disabled=true; btn.style.opacity='.5'; btn.style.cursor='not-allowed'
-    if(box){ box.style.display='block'; box.innerHTML='⚠️ Manca ancora: '+miss.join(' · ')+'.' }
-  } else {
-    btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'
-    if(box) box.style.display='none'
-  }
-}
-function wireFirmaChecks(){
-  ['sel-tipo-conto','sel-regime','up-identita','up-cf','up-visura','chk-consenso','chk-vessatorie','chk-privacy-fisc','chk-contrattuali','chk-privacy'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.addEventListener('change', aggiornaFirmaPronta)
-  })
-  aggiornaFirmaPronta()
-}
-
-// ── GENERA PDF FIRMATO ────────────────────────────────────────
-// Timbra sul PDF del contratto: immagine firma (segnaposto "Firma"/data_firma),
-// data (segnaposto "Data"), e X su Conto/Regime/Privacy/Documenti scelti.
-// Usa gli stessi offset di compilaPdfBytes nell'app, così la calibrazione coincide.
-async function generaPdfFirmato(firmaPngDataUrl, tipoConto, regime) {
-  if (typeof PDFLib === 'undefined') { console.warn('pdf-lib non caricata'); return null }
-  if (!contratto || !contratto.pdfPath || !Array.isArray(contratto.coords) || !contratto.coords.length) return null
-  const url = urlPdfContratto()
-  const resp = await fetch(url)
-  if (!resp.ok) throw new Error('PDF non scaricabile (' + resp.status + ')')
-  const bytes = await resp.arrayBuffer()
-  const pdfDoc = await PDFLib.PDFDocument.load(bytes)
-  const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica)
-  const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold)
-  const pngImg = await pdfDoc.embedPng(firmaPngDataUrl)
-  const pages = pdfDoc.getPages()
-  const dateOnly = new Date().toLocaleDateString('it-IT')
-  const hasFile = id => !!(document.getElementById(id) && document.getElementById(id).files && document.getElementById(id).files[0])
-
-  contratto.coords.forEach(m => {
-    const pg = pages[(m.page || 1) - 1]; if (!pg) return
-    const pw = pg.getSize().width, ph = pg.getSize().height
-    const x = (m.x_pct / 100) * pw
-    const yTop = (m.y_pct / 100) * ph
-    const t = m.tipo
-
-    if (t === 'data_firma') {
-      const w = 130
-      const h = w * (pngImg.height / pngImg.width)
-      pg.drawImage(pngImg, { x: x, y: ph - yTop - h, width: w, height: h })
-      return
-    }
-
-    let testo = null, spunta = false
-    if (t === 'data') testo = dateOnly
-    else if (t === 'nome') testo = contratto.nomeDestinatario || ''
-    else if (t === 'email') testo = contratto.emailDestinatario || ''
-    else if (t === 'conto_bancario') spunta = (tipoConto === 'bancario')
-    else if (t === 'conto_postale')  spunta = (tipoConto === 'postale')
-    else if (t === 'conto_estero')   spunta = (tipoConto === 'estero')
-    else if (t === 'regime_piva')        spunta = (regime === 'piva')
-    else if (t === 'regime_occasionale') spunta = (regime === 'ritenuta')
-    else if (t === 'privacy_contr' || t === 'privacy_fisc') spunta = true
-    else if (t === 'chk_doc_identita') spunta = hasFile('up-identita')
-    else if (t === 'chk_doc_cf')       spunta = hasFile('up-cf')
-    else if (t === 'chk_doc_visura')   spunta = hasFile('up-visura')
-    else return
-
-    if (spunta) {
-      pg.drawText('X', { x: x - 4, y: ph - yTop - 5, size: 12, font: fontBold, color: PDFLib.rgb(0,0,0) })
-    } else if (testo) {
-      pg.drawText(testo.toString(), { x: x, y: ph - yTop - 4, size: 10, font, color: PDFLib.rgb(0.05,0.05,0.05) })
-    }
-  })
-
-  return await pdfDoc.save()
 }
 
 // ── FIRMA ─────────────────────────────────────────────────────
 async function firmaContratto() {
   if (!hasFirma) { alert('Per favore disegna la tua firma nel riquadro.'); return }
-  if (!document.getElementById('chk-consenso').checked) { alert('Devi confermare di aver letto integralmente il contratto.'); return }
+  if (!document.getElementById('chk-consenso').checked) { alert('Devi confermare di aver letto il contratto.'); return }
+  if (!document.getElementById('chk-privacy').checked) { alert('Devi accettare il trattamento dei dati.'); return }
   if (!document.getElementById('chk-vessatorie').checked) { alert('Devi approvare le clausole specifiche (art. 1341 c.c.).'); return }
-  if (!document.getElementById('chk-privacy-fisc').checked) { alert('Devi accettare il trattamento dei dati per le finalità fiscali e contabili.'); return }
-  if (!document.getElementById('chk-contrattuali').checked) { alert('Devi accettare il trattamento dei dati per le finalità contrattuali e amministrative.'); return }
-  if (!document.getElementById('chk-privacy').checked) { alert('Devi accettare il trattamento dei dati personali (GDPR).'); return }
-  const tipoConto = document.getElementById('sel-tipo-conto').value
-  if (!tipoConto) { alert('Seleziona il tuo conto.'); return }
-  const regimeScelto = document.getElementById('sel-regime').value
-  if (!regimeScelto) { alert('Seleziona il tuo regime fiscale.'); return }
-  if (!document.getElementById('up-identita')?.files?.[0]) { alert('Allega la tua Carta d\u0027identità.'); return }
-  if (!document.getElementById('up-cf')?.files?.[0]) { alert('Allega il tuo Codice fiscale / Tessera sanitaria.'); return }
-  if (regimeScelto === 'piva' && !document.getElementById('up-visura')?.files?.[0]) { alert('Hai scelto Partita IVA: devi allegare la Visura camerale (o documento equivalente).'); return }
 
   const btn = document.getElementById('btn-firma')
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Salvataggio...'
@@ -478,44 +315,7 @@ async function firmaContratto() {
     let ip = '—'
     try { const r = await fetch('https://api.ipify.org?format=json'); ip = (await r.json()).ip } catch(e) {}
 
-    // ── Caricamento documenti allegati dal firmatario ──
-    const documentiCaricati = {}
-    const erroriUpload = []
-    async function caricaDoc(inputId, nome, etichetta){
-      const f = document.getElementById(inputId)?.files?.[0]
-      if(!f) return
-      const ext = (f.name.split('.').pop()||'bin').toLowerCase()
-      const path = 'firme/' + contratto._id + '_' + nome + '.' + ext
-      try {
-        const { error } = await db.storage.from('contratti').upload(path, f, { upsert:true, contentType: f.type||'application/octet-stream' })
-        if(error){ erroriUpload.push(etichetta + ': ' + error.message) }
-        else { documentiCaricati[nome] = path }
-      } catch(e) { erroriUpload.push(etichetta + ': ' + (e.message||e)) }
-    }
-    await caricaDoc('up-identita','carta_identita','Carta d\u0027identità')
-    await caricaDoc('up-cf','codice_fiscale','Codice fiscale')
-    await caricaDoc('up-visura','visura_camerale','Visura camerale')
-    if(erroriUpload.length){
-      alert('Non sono riuscito a caricare i documenti:\n\n' + erroriUpload.join('\n') + '\n\nLa firma NON è stata registrata. Riprova; se persiste, contatta Leone Consulting.')
-      btn.disabled = false; btn.innerHTML = '\u270d\ufe0f Firma e conferma contratto'
-      return
-    }
-
-    // ── Genera il PDF firmato (firma + data + spunte) e lo carica ──
-    let pdfFirmatoPath = null
-    try {
-      const out = await generaPdfFirmato(firmaBase64, tipoConto, regimeScelto)
-      if (out) {
-        pdfFirmatoPath = 'firme/' + (contratto.signToken || contratto._id) + '_firmato.pdf'
-        const upF = await db.storage.from('contratti').upload(pdfFirmatoPath, new Blob([out], {type:'application/pdf'}), { upsert:true, contentType:'application/pdf' })
-        if (upF.error) { console.error('Upload PDF firmato:', upF.error); pdfFirmatoPath = null }
-      }
-    } catch(e) { console.error('Generazione PDF firmato:', e) }
-
-    const datiAggiornati = { ...contratto, statoFirma:'Firmato', dataFirma, firmaBase64, ipFirma:ip, timestampFirma:now.toISOString(),
-      tipoConto, regimeScelto,
-      lettoIntegralmente:true, clausoleApprovate:true, privacyFiscale:true, privacyContrattuale:true, privacyGdpr:true,
-      documentiCaricati, pdfFirmatoPath }
+    const datiAggiornati = { ...contratto, statoFirma:'Firmato', dataFirma, firmaBase64, ipFirma:ip, timestampFirma:now.toISOString() }
 
     const { error } = await db.from('contratti_firme').update({
       data: datiAggiornati

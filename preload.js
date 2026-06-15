@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   inviaEmailCollaboratore: (dati) => ipcRenderer.invoke('invia-email-collaboratore', dati),
   getVersion: () => ipcRenderer.invoke('get-version'),
   sendMail: (dati) => ipcRenderer.invoke('sendMail', dati),
+  setEmailConfig: (cfg) => ipcRenderer.invoke('set-email-config', cfg),
   suonaNotifica: () => ipcRenderer.invoke('suona-notifica'),
   apriFileTmp: (buffer, fileName) => ipcRenderer.invoke('apri-file-tmp', { buffer, fileName }),
   salvaFile: (buffer, fileName) => ipcRenderer.invoke('salva-file', { buffer, fileName }),
