@@ -1006,39 +1006,34 @@ tbody tr:hover td{background:var(--surface2)}
             <button class="btn btn-sm" style="background:#5d6d7e;color:#fff;font-size:11px;padding:3px 7px;font-weight:700" onclick="nuovoCampoCustom()">➕ Campo personalizzato</button>
             <span style="flex-basis:100%;height:0"></span>
             <span style="font-size:11px;font-weight:700;color:var(--accent);align-self:center;padding:0 4px">CEDOLINO ▸</span>
-            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('regime_testo')">+ Regime (testo)</button>
+            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('regime_testo')">+ Regime fiscale</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('citta_cap_prov')">+ Città/CAP/Prov</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('codice_ateco')">+ Cod. ATECO</button>
-            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('solo_piva')">+ Solo P.IVA</button>
-            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('solo_cf')">+ Solo CF</button>
+            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('solo_piva')">+ Partita IVA</button>
+            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('solo_cf')">+ Codice fiscale</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('num_contratto')">+ N° contratto</button>
-            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('area_geo')">+ Area/Zona</button>
-            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('tel_email')">+ Tel/Email</button>
+            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('area_geo')">+ Area geografica</button>
+            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('tel_email')">+ Telefono / Email</button>
             <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_mese')">+ Mese</button>
             <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_anno')">+ Anno</button>
-            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_data_emiss')">+ Data emiss.</button>
-            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_n_prosp')">+ N° prospetto</button>
+            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_data_emiss')">+ Data emissione</button>
+            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_n_prosp')">+ Numero prospetto</button>
             <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_causale')">+ Causale (auto)</button>
-            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_prodotto')">+ Prodotto</button>
-            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_prov_base')">+ % Prov. base</button>
-            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_prov_super')">+ % Superpremio</button>
+            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_prov_base')">+ Provvigione base %</button>
+            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_prov_super')">+ Super premio %</button>
             <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('tabella_affari')">+ Tabella affari (auto)</button>
-            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_num')">+ Col. N°</button>
-            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_cliente')">+ Col. Cliente</button>
-            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_desc')">+ Col. Descrizione</button>
-            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_pct')">+ Col. Provv. %</button>
-            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_lorda')">+ Col. Provv. lorda</button>
-            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_tot_lorde')">+ Tot. lorde</button>
-            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_rimborsi')">+ Rimborsi</button>
-            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_imponibile')">+ Imponibile</button>
+            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_num')">+ Colonna N°</button>
+            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_cliente')">+ Colonna Cliente</button>
+            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_desc')">+ Colonna Descrizione</button>
+            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_pct')">+ Colonna Provvigione %</button>
+            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_lorda')">+ Colonna Provvigione lorda</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_imponibile')">+ Totale lordo</button>
             <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_iva')">+ IVA 22%</button>
             <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_tot_fattura')">+ Totale fattura</button>
-            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_base_rit')">+ Base 50%</button>
-            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_ritenuta')">+ Ritenuta</button>
-            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_bollo')">+ Marca bollo</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_base_rit')">+ Base imponibile 50%</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_ritenuta')">+ Ritenuta d'acconto</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_bollo')">+ Marca da bollo</button>
             <button class="btn btn-sm" style="background:#0b5345;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_netto')">+ Totale netto</button>
-            <button class="btn btn-sm" style="background:#0b5345;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_netto_fattura')">+ Netto fattura</button>
-            <button class="btn btn-sm" style="background:#0b5345;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_netto_pagare')">+ Netto a pagare</button>
           </div>
           <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
             <button class="btn btn-sm" onclick="editorPrevPage()">◀ Pag</button>
@@ -1055,7 +1050,6 @@ tbody tr:hover td{background:var(--surface2)}
             <img id="editor-pdf-img" style="display:block;width:100%;height:auto">
             <div id="editor-markers-layer" style="position:absolute;inset:0;pointer-events:none"></div>
           </div>
-          <div id="editor-markers-layer" style="position:absolute;inset:0;pointer-events:none"></div>
         </div>
 
         <!-- Placeholder -->
@@ -3543,7 +3537,7 @@ function renderProc(){
     const fat=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&v.data.startsWith(m)).reduce((s,v)=>s+v.val,0)
     const rete=p.rete||[]
     const scadenza=p.fine?controllaScadenza(p.fine):''
-    return`<tr style="cursor:pointer" ondblclick="apriProfilo(${i})"><td><div class="ar"><div class="av ${avc(i)}">${avatarImg(i,32)}</div><div style="min-width:0;max-width:200px"><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.nome}">${p.nome}</div>${p.email?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email}">${p.email}</div>`:''}${p.email_aziendale?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email_aziendale}">🏢 ${p.email_aziendale}</div>`:''}</div></div></td><td>${qualBadge(q,isAuto)}</td><td style="font-weight:600">${q.prov}%</td><td style="font-size:11px;color:var(--text2)">${rete.length>0?rete.map(n=>`${procs[n.idx]?.nome||'?'}: ${n.pct}%`).join(', '):'—'}</td><td>${regimeBadge(p.regime)}</td><td style="font-size:11px;color:var(--text2)">${p.cf||'—'}</td><td>${fmtE(fat)}</td><td><span style="cursor:pointer" onclick="apriPopupStato(${i},event)">${statoBadge(p.stato)}</span></td><td style="font-size:11px;color:var(--text2)">${p.inizio||'—'}</td><td style="font-size:11px">${p.fine?`${p.fine}${scadenza}`:'—'}</td><td style="vertical-align:middle"><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:flex-start"><button class="btn btn-sm" onclick="editProc(${i})" title="Modifica">✎</button><button class="btn btn-sm" onclick="apriAnagrafica(${i},'proc')" title="Archivio">📁</button><button class="btn btn-sm btn-r" onclick="eliminaProc(${i})" title="Elimina">✕</button></div></td></tr>`
+    return`<tr style="cursor:pointer" ondblclick="apriProfilo(${i})"><td><div class="ar"><div class="av ${avc(i)}">${avatarImg(i,32)}</div><div style="min-width:0;max-width:200px"><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.nome}${(p.regime==='piva'&&p.ragioneSociale)?' ('+p.ragioneSociale+')':''}">${p.nome}${(p.regime==='piva'&&p.ragioneSociale)?` <span style="font-weight:400;color:var(--text2)">(${p.ragioneSociale})</span>`:''}</div>${p.email?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email}">${p.email}</div>`:''}${p.email_aziendale?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email_aziendale}">🏢 ${p.email_aziendale}</div>`:''}</div></div></td><td>${qualBadge(q,isAuto)}</td><td style="font-weight:600">${q.prov}%</td><td style="font-size:11px;color:var(--text2)">${rete.length>0?rete.map(n=>`${procs[n.idx]?.nome||'?'}: ${n.pct}%`).join(', '):'—'}</td><td>${regimeBadge(p.regime)}</td><td style="font-size:11px;color:var(--text2)">${p.cf||'—'}</td><td>${fmtE(fat)}</td><td><span style="cursor:pointer" onclick="apriPopupStato(${i},event)">${statoBadge(p.stato)}</span></td><td style="font-size:11px;color:var(--text2)">${p.inizio||'—'}</td><td style="font-size:11px">${p.fine?`${p.fine}${scadenza}`:'—'}</td><td style="vertical-align:middle"><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:flex-start"><button class="btn btn-sm" onclick="editProc(${i})" title="Modifica">✎</button><button class="btn btn-sm" onclick="apriAnagrafica(${i},'proc')" title="Archivio">📁</button><button class="btn btn-sm btn-r" onclick="eliminaProc(${i})" title="Elimina">✕</button></div></td></tr>`
   }).join('')
 }
 
@@ -4209,7 +4203,7 @@ function renderProvv(){
     const vv=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&(!mf||v.data.startsWith(mf)))
     const fat=vv.reduce((s,v)=>s+v.val,0),provPers=vv.reduce((s,v)=>s+v.prov,0)
     let ovr=0;(p.rete||[]).forEach(n=>{const vNet=vendite.filter(v=>v.pidx===n.idx&&v.stato==='Incassato'&&(!mf||v.data.startsWith(mf)));ovr+=vNet.reduce((s,v)=>s+v.val,0)*(n.pct/100)})
-    const lordo=provPers+ovr,rit=p.regime==='ritenuta'?lordo*0.20:0
+    const lordo=provPers+ovr,rit=p.regime==='ritenuta'?lordo*0.115:0
     totL+=lordo;totR+=rit
     const q=getQual(p,i,mf||curMese()),isAuto=!p.qualForce||p.qualForce==='auto'
     return{p,i,fat,provPers,ovr,lordo,rit,netto:lordo-rit,q,isAuto,mese:mf||curMese()}
@@ -5706,7 +5700,7 @@ function genReport(i,mese){
   const vv=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&v.data.startsWith(mese))
   const fat=vv.reduce((s,v)=>s+v.val,0),provPers=vv.reduce((s,v)=>s+v.prov,0)
   let ovr=0;(p.rete||[]).forEach(n=>{const vNet=vendite.filter(v=>v.pidx===n.idx&&v.stato==='Incassato'&&v.data.startsWith(mese));ovr+=vNet.reduce((s,v)=>s+v.val,0)*(n.pct/100)})
-  const lordo=provPers+ovr,rit=p.regime==='ritenuta'?lordo*0.20:0,netto=lordo-rit
+  const lordo=provPers+ovr,rit=p.regime==='ritenuta'?lordo*0.115:0,netto=lordo-rit
   const q=getQual(p,i,mese)
   const html=`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Report ${p.nome} — ${mese}</title><style>body{font-family:-apple-system,'Helvetica Neue',sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#1a1a18;font-size:13px}.hdr{display:flex;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid #185FA5}.logo{font-size:18px;font-weight:700;color:#185FA5}.sub{font-size:12px;color:#6b6b66;margin-top:2px}h2{font-size:15px;font-weight:600;margin:1.5rem 0 .5rem}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:1rem}th{background:#f0efe9;padding:7px 10px;text-align:left;font-weight:600;border-bottom:1px solid #ddd}td{padding:7px 10px;border-bottom:.5px solid #eee}.tot{background:#f5f5f0;border-radius:8px;padding:1rem 1.25rem;margin-top:1.5rem}.tr{display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid #ddd;font-size:13px}.tr:last-child{border-bottom:none;font-weight:700;font-size:15px}.foot{margin-top:2rem;padding-top:1rem;border-top:.5px solid #ddd;font-size:11px;color:#9e9e98;text-align:center}</style></head><body>
   <div class="hdr"><div><div class="logo">Leone Consulting</div><div class="sub">di Leonardo Angelucci · Via Pia 42, 00049 Velletri (RM)</div><div class="sub">P.IVA 18231181001</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:600">Report Provvigioni</div><div style="color:#6b6b66;font-size:12px">Periodo: ${mese}</div></div></div>
@@ -6599,34 +6593,34 @@ const MARKER_COLORS = {
   rec_impresa:        { color:'#922b21', label:'☑ Recesso: impresa' },
   rec_personali:      { color:'#922b21', label:'☑ Recesso: personali' },
   rec_altro:          { color:'#922b21', label:'✏️ Recesso: altro' },
-  regime_testo:   { color:'#0e6655', label:'Regime (testo)' },
+  regime_testo:   { color:'#0e6655', label:'Regime fiscale' },
   citta_cap_prov: { color:'#0e6655', label:'Città/CAP/Prov' },
   codice_ateco:   { color:'#0e6655', label:'Cod. ATECO' },
   solo_piva:      { color:'#0e6655', label:'Partita IVA' },
   solo_cf:        { color:'#0e6655', label:'Codice fiscale' },
   num_contratto:  { color:'#0e6655', label:'N° contratto' },
-  area_geo:       { color:'#0e6655', label:'Area / Zona' },
-  tel_email:      { color:'#0e6655', label:'Tel / Email' },
+  area_geo:       { color:'#0e6655', label:'Area geografica' },
+  tel_email:      { color:'#0e6655', label:'Telefono / Email' },
   tabella_affari: { color:'#1f8a70', label:'Tabella affari (auto)' },
-  aff_num:        { color:'#1f8a70', label:'Col. affari: N°' },
-  aff_cliente:    { color:'#1f8a70', label:'Col. affari: Cliente' },
-  aff_desc:       { color:'#1f8a70', label:'Col. affari: Descrizione' },
-  aff_pct:        { color:'#1f8a70', label:'Col. affari: Provv. %' },
-  aff_lorda:      { color:'#1f8a70', label:'Col. affari: Provv. lorda' },
+  aff_num:        { color:'#1f8a70', label:'Colonna N°' },
+  aff_cliente:    { color:'#1f8a70', label:'Colonna Cliente' },
+  aff_desc:       { color:'#1f8a70', label:'Colonna Descrizione' },
+  aff_pct:        { color:'#1f8a70', label:'Colonna Provvigione %' },
+  aff_lorda:      { color:'#1f8a70', label:'Colonna Provvigione lorda' },
   ced_causale:    { color:'#117a65', label:'Causale (auto)' },
   ced_mese:       { color:'#117a65', label:'Mese' },
   ced_anno:       { color:'#117a65', label:'Anno' },
   ced_data_emiss: { color:'#117a65', label:'Data emissione' },
-  ced_n_prosp:    { color:'#117a65', label:'N° prospetto' },
+  ced_n_prosp:    { color:'#117a65', label:'Numero prospetto' },
   ced_prodotto:   { color:'#117a65', label:'Prodotto' },
-  ced_prov_base:  { color:'#117a65', label:'% Provvigione base' },
-  ced_prov_super: { color:'#117a65', label:'% Superpremio' },
+  ced_prov_base:  { color:'#117a65', label:'Provvigione base %' },
+  ced_prov_super: { color:'#117a65', label:'Super premio %' },
   ced_tot_lorde:  { color:'#148f77', label:'Totale lorde' },
   ced_rimborsi:   { color:'#148f77', label:'Rimborsi' },
-  ced_imponibile: { color:'#148f77', label:'Totale imponibile' },
+  ced_imponibile: { color:'#148f77', label:'Totale lordo' },
   ced_iva:        { color:'#148f77', label:'IVA 22%' },
   ced_tot_fattura:{ color:'#148f77', label:'Totale fattura' },
-  ced_base_rit:   { color:'#148f77', label:'Base ritenuta 50%' },
+  ced_base_rit:   { color:'#148f77', label:'Base imponibile 50%' },
   ced_ritenuta:   { color:'#148f77', label:"Ritenuta d'acconto" },
   ced_bollo:      { color:'#148f77', label:'Marca da bollo' },
   ced_netto:      { color:'#0b5345', label:'Totale netto' },
@@ -7508,6 +7502,11 @@ function renderEditorMarkers(){
   if(!layer || !editorDocId) return
   layer.innerHTML = ''
   layer.style.pointerEvents = 'auto'
+  if(!layer._tipBound){
+    layer._tipBound = true
+    layer.addEventListener('mousemove', (e)=>{ const m=e.target.closest('[data-tip]'); if(m){ _showMarkerTip(e, m.dataset.tip) } else { _hideMarkerTip() } })
+    layer.addEventListener('mouseleave', ()=>_hideMarkerTip())
+  }
   const markers = (editorMarkers[editorDocId]||[]).filter(m => m.page === editorPage)
   const allMarkers = editorMarkers[editorDocId]||[]
 
@@ -7517,10 +7516,7 @@ function renderEditorMarkers(){
     const isCheck = (cfg.label||'').trim().startsWith('\u2611') // etichette "☑ ..." = caselle dove si stampa la X
     const el = document.createElement('div')
     el.title = cfg.label
-    el.addEventListener('mouseenter', (ev)=>_showMarkerTip(ev, cfg.label))
-    el.addEventListener('mousemove', (ev)=>_moveMarkerTip(ev))
-    el.addEventListener('mouseleave', ()=>_hideMarkerTip())
-    el.addEventListener('mousedown', ()=>_hideMarkerTip())
+    el.dataset.tip = cfg.label
     if(isCheck){
       // Casellina ✕ centrata sul punto ESATTO di stampa; etichetta sulla stessa riga, a destra
       el.style.cssText = `position:absolute;left:${m.x_pct}%;top:${m.y_pct}%;transform:translate(-50%,-50%);width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:${cfg.color};border:1.5px solid #fff;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:grab;z-index:10;`
