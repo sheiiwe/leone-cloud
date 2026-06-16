@@ -403,7 +403,8 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="info-card">Offerte caricate dal foglio fornitori. Le <strong>scadute</strong> restano qui marcate "DA RINNOVARE" ma <strong>spariscono ai procacciatori</strong> nel portale. Aggiorna la data di scadenza quando il fornitore rinnova.</div>
   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center" id="offerte-cats"></div>
   <div class="card">
-    <div class="card-hdr"><h3 id="offerte-title">Tutte le offerte</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="btn-cat-off" onclick="aggiornaOfferteDaCatalogo()" title="Carica e aggiorna tutte le offerte dal catalogo Team Evolution (no doppioni)">📥 Aggiorna da catalogo</button><button class="btn btn-p" onclick="apriOfferta()">+ Nuova offerta</button></div></div>
+    <div class="card-hdr"><h3 id="offerte-title">Tutte le offerte</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" id="btn-ai-sync" onclick="sincronizzaOfferteAI()" title="L'AI legge tutti i fogli Google dell'azienda e aggiorna le offerte (prezzi, nuove, scadenze, eliminate)">🤖 Aggiorna offerte con AI</button><button class="btn" id="btn-sync-google" onclick="sincronizzaScadenzeDaGoogle(false)" title="Solo date di scadenza, senza AI">🔄 Solo scadenze</button><button class="btn" id="btn-cat-off" onclick="aggiornaOfferteDaCatalogo()" title="Carica e aggiorna tutte le offerte dal catalogo interno (no doppioni)">📥 Aggiorna da catalogo</button><button class="btn btn-p" onclick="apriOfferta()">+ Nuova offerta</button></div></div>
+    <div id="cat-url-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 0 10px;font-size:12px;color:var(--text2)"><span style="white-space:nowrap">Link foglio scadenze (azienda):</span><input id="cat-url" placeholder="incolla qui il link del foglio Google delle scadenze" style="flex:1;min-width:240px;font-size:12px;padding:6px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)"><button class="btn btn-sm" onclick="salvaLinkScadenze()">💾 Salva link</button></div>
     <div id="offerte-lista" style="padding:4px 0"></div>
   </div>
 </div>
@@ -3837,8 +3838,8 @@ function statoOff(scad){
 const CATALOGO_OFFERTE=[
  // LUCE FISSO
  {cat:'Luce Fisso',forn:'Enel',nome:'Enel Fix Web Luce',prezzo:'0,149 \u20ac/kWh',pcv:'144 \u20ac',validita:'36 mesi',fatt:'Mensile',scad:'2026-06-25',pagamento:'RID + bolletta web, no Postepay',azioni:'Switch',promo:'Se ha gas Enel: 0,139 \u20ac/kWh per 36 mesi'},
- {cat:'Luce Fisso',forn:'Plenitude',nome:'Fixa Time Base',prezzo:'0,1329 \u20ac/kWh',pcv:'144 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID, no Postepay',azioni:'Switch/Voltura',promo:'no over 85; sconto 20% gia incluso + 5% RID (iniziale 0,1749)'},
- {cat:'Luce Fisso',forn:'Plenitude',nome:'Fixa Time Smart',prezzo:'0,144 \u20ac/kWh',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; senza RID 0,1694'},
+ {cat:'Luce Fisso',forn:'Plenitude',nome:'Fixa Time Base',prezzo:'0,1329 \u20ac/kWh',pcv:'144 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-15',pagamento:'RID, no Postepay',azioni:'Switch/Voltura',promo:'no over 85; sconto 20% gia incluso + 5% RID (iniziale 0,1749)'},
+ {cat:'Luce Fisso',forn:'Plenitude',nome:'Fixa Time Smart',prezzo:'0,144 \u20ac/kWh',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-15',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; senza RID 0,1694'},
  {cat:'Luce Fisso',forn:'Acea',nome:'Acea Fix',prezzo:'0,125 \u20ac/kWh',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-16',pagamento:'RID + bolletta web',azioni:'Switch',promo:'no over 75'},
  {cat:'Luce Fisso',forn:'Illumia',nome:'Energia Lunga Luce Easy',prezzo:'0,118 \u20ac/kWh',pcv:'144 \u20ac',validita:'36 mesi',fatt:'Bimestrale',scad:'2026-07-10',pagamento:'RID',azioni:'Switch/Subentro',promo:'bonus 75 euro al 12 mese; dal 37 mese PUN+0,03; penali 150/100/50'},
  {cat:'Luce Fisso',forn:'Iren',nome:'Iren Stay Connettivita',prezzo:'18,99 \u20ac x12 mesi',pcv:'dal 13 mese 20,99 \u20ac',validita:'60 mesi',fatt:'Mensile',scad:'',pagamento:'RID',azioni:'Switch/Subentro',promo:'solo con Iren Stay Luce Fisso 0,1528 e CCV 159; attivazione 49,99 con gas'},
@@ -3858,8 +3859,8 @@ const CATALOGO_OFFERTE=[
  {cat:'Luce Variabile',forn:'A2A',nome:'A2A Easy',prezzo:'PUN',pcv:'150 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID',azioni:'Switch',promo:''},
  // GAS FISSO
  {cat:'Gas Fisso',forn:'Enel',nome:'Enel Fix Web Gas',prezzo:'0,70 \u20ac/Smc',pcv:'144 \u20ac',validita:'36 mesi',fatt:'Mensile',scad:'2026-06-25',pagamento:'RID, no Postepay',azioni:'Switch',promo:'se ha luce Enel: 0,49 \u20ac/Smc per 36 mesi'},
- {cat:'Gas Fisso',forn:'Plenitude',nome:'Fixa Time Base',prezzo:'0,5525 \u20ac/Smc',pcv:'144 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; sconto 20% + 5% RID; iniziale 0,727'},
- {cat:'Gas Fisso',forn:'Plenitude',nome:'Fixa Time Smart',prezzo:'0,5678 \u20ac/Smc',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; senza RID 0,668'},
+ {cat:'Gas Fisso',forn:'Plenitude',nome:'Fixa Time Base',prezzo:'0,5525 \u20ac/Smc',pcv:'144 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-15',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; sconto 20% + 5% RID; iniziale 0,727'},
+ {cat:'Gas Fisso',forn:'Plenitude',nome:'Fixa Time Smart',prezzo:'0,5678 \u20ac/Smc',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-15',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; senza RID 0,668'},
  {cat:'Gas Fisso',forn:'Acea',nome:'Acea Fix',prezzo:'0,52 \u20ac/Smc',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-16',pagamento:'RID + bolletta web',azioni:'Switch',promo:'no over 75'},
  {cat:'Gas Fisso',forn:'Illumia',nome:'Energia Lunga Gas Easy',prezzo:'0,52 \u20ac/Smc',pcv:'144 \u20ac',validita:'36 mesi',fatt:'Mensile',scad:'2026-07-10',pagamento:'RID',azioni:'Switch/Subentro',promo:'bonus 35 euro al 12 mese; dal 37 mese PSV+0,20'},
  {cat:'Gas Fisso',forn:'Iren',nome:'Iren Prima Scelta',prezzo:'0,46 \u20ac/Smc',pcv:'120 \u20ac',validita:'indeterminata',fatt:'Mensile',scad:'2026-07-02',pagamento:'RID',azioni:'Switch',promo:'no over 85'},
@@ -3877,8 +3878,8 @@ const CATALOGO_OFFERTE=[
  {cat:'Gas Variabile',forn:'A2A',nome:'Smart',prezzo:'PSV + 0,12 \u20ac/Smc',pcv:'114 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID',azioni:'Switch',promo:''},
  {cat:'Gas Variabile',forn:'A2A',nome:'Easy',prezzo:'PSV',pcv:'150 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID',azioni:'Switch',promo:''},
  // BUSINESS
- {cat:'Business',forn:'Eni',nome:'Trend Business Luce',prezzo:'Spread 0,0253 \u20ac/kWh',pcv:'192 \u20ac',validita:'',fatt:'Mensile',scad:'',pagamento:'',azioni:'Switch',promo:'fino 30.000 kWh/anno'},
- {cat:'Business',forn:'Eni',nome:'Trend Business Gas',prezzo:'Spread 0,1150 \u20ac/Smc',pcv:'192 \u20ac',validita:'',fatt:'Mensile',scad:'',pagamento:'',azioni:'Switch',promo:'fino 10.000 Smc/anno'},
+ {cat:'Business',forn:'Eni',nome:'Trend Business Luce',prezzo:'Spread 0,0253 \u20ac/kWh',pcv:'192 \u20ac',validita:'',fatt:'Mensile',scad:'2026-06-15',pagamento:'',azioni:'Switch',promo:'fino 30.000 kWh/anno'},
+ {cat:'Business',forn:'Eni',nome:'Trend Business Gas',prezzo:'Spread 0,1150 \u20ac/Smc',pcv:'192 \u20ac',validita:'',fatt:'Mensile',scad:'2026-06-15',pagamento:'',azioni:'Switch',promo:'fino 10.000 Smc/anno'},
  {cat:'Business',forn:'Iren',nome:'Tua Azienda Mono Luce Variabile',prezzo:'Spread 0,0198 \u20ac/kWh',pcv:'180 \u20ac',validita:'',fatt:'Mensile',scad:'2026-09-13',pagamento:'',azioni:'Switch/Subentro',promo:'100% rinnovabili'},
  {cat:'Business',forn:'Iren',nome:'Tua Azienda Gas Variabile',prezzo:'Spread 0,14 \u20ac/Smc',pcv:'180 \u20ac',validita:'',fatt:'Mensile',scad:'2026-09-13',pagamento:'',azioni:'Switch/Subentro',promo:'100% rinnovabili'},
  {cat:'Business',forn:'Enel',nome:'Business Super Luce 3-25 kW',prezzo:'0,16100 \u20ac/kWh',pcv:'180 \u20ac',validita:'24 mesi',fatt:'Mensile',scad:'2026-06-25',pagamento:'',azioni:'Switch',promo:'100% rinnovabili'},
@@ -3945,6 +3946,98 @@ async function aggiornaOfferteDaCatalogo(){
     alert('Catalogo aggiornato.\n\nOfferte aggiornate: '+agg+'\nOfferte nuove aggiunte: '+nuovi+'\n\nRicorda: Fastweb Energia e le Eni sono scadute/in scadenza.')
   }catch(e){ alert('Errore durante l\u0027aggiornamento: '+(e.message||e)) }
   finally{ if(btn){btn.disabled=false; btn.innerHTML='\ud83d\udce5 Aggiorna da catalogo'} }
+}
+function _csvToRows(text){
+  const rows=[]; let row=[]; let cur=''; let q=false
+  text=String(text).replace(/\r\n/g,'\n').replace(/\r/g,'\n')
+  for(let i=0;i<text.length;i++){
+    const ch=text[i]
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++} else q=false } else cur+=ch }
+    else { if(ch==='"') q=true; else if(ch===','){ row.push(cur); cur='' } else if(ch==='\n'){ row.push(cur); rows.push(row); row=[]; cur='' } else cur+=ch }
+  }
+  if(cur!==''||row.length){ row.push(cur); rows.push(row) }
+  return rows.filter(r=>r.some(c=>(c||'').trim()!==''))
+}
+function _normData(s){
+  s=(s||'').trim(); if(!s) return ''
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  const m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/); if(m) return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2)
+  return ''
+}
+const SCAD_URL_DEFAULT='https://docs.google.com/spreadsheets/d/1kOvepVi-yJ1fdBY1-Lyv_bGFICeTxFvW/export?format=csv&gid=2060193380'
+function _toCsvUrl(u){
+  u=(u||'').trim(); if(!u) return SCAD_URL_DEFAULT
+  const id=(u.match(/\/d\/([a-zA-Z0-9_-]+)/)||[])[1]
+  const gid=(u.match(/[?&#]gid=(\d+)/)||[])[1]||'0'
+  return id ? ('https://docs.google.com/spreadsheets/d/'+id+'/export?format=csv&gid='+gid) : u
+}
+function _normy(s){ return (s||'').toString().toLowerCase().replace(/\([^)]*\)/g,' ').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim() }
+function _parseScadenze(text){
+  const rows=_csvToRows(text); const out=[]
+  for(const r of rows){
+    let di=-1, dv=''
+    for(let i=0;i<r.length;i++){ const d=_normData(r[i]); if(d){ di=i; dv=d; break } }
+    if(di<0) continue
+    let nome=''
+    for(let i=di-1;i>=0;i--){ if((r[i]||'').trim()){ nome=r[i].trim(); break } }
+    if(!nome) continue
+    if(/scadenz|fornitor|nota|allegare|offerta/i.test(nome) && !/[a-z]{2,}\s+[a-z]{2,}/i.test(nome)) continue
+    out.push({nome, scad:dv})
+  }
+  return out
+}
+const _SUP_ALIAS={ eni:['eni','plenitude'], plenitude:['plenitude','eni'] }
+function _matchOfferta(scadName, o){
+  const tks=_normy(scadName).split(' ').filter(Boolean); if(!tks.length) return false
+  const fornOff=_normy(o.forn), nomeOff=_normy(o.nome), catOff=_normy(o.cat)
+  const sup=tks[0], aliases=_SUP_ALIAS[sup]||[sup]
+  if(!aliases.some(a=>fornOff.split(' ').includes(a)||fornOff.includes(a))) return false
+  const hasEnergia=_normy(scadName).includes('energia')
+  if(hasEnergia && !(catOff.includes('luce')||catOff.includes('gas'))) return false
+  const stop=['offerte','e','di','del','la','il','energia']
+  const rest=tks.slice(1).filter(t=>t.length>2 && !stop.includes(t))
+  if(!rest.length) return !catOff.includes('telefonia')
+  if(rest.includes('smart')) return nomeOff.includes('smart')
+  if(rest.includes('time') && !rest.includes('smart')) return nomeOff.includes('time') && !nomeOff.includes('smart')
+  return rest.every(t=>nomeOff.includes(t))
+}
+async function salvaLinkScadenze(){
+  impostazioni['scadenze_csv_url']=(document.getElementById('cat-url')||{}).value.trim()
+  try{ await upsertImpostazioni(); toast('Link foglio salvato') }catch(e){ alert('Errore: '+(e.message||e)) }
+}
+async function sincronizzaScadenzeDaGoogle(silent){
+  if(!window.electronAPI?.fetchUrl){ if(!silent) alert('Questa versione non supporta la sincronizzazione. Reinstalla l\u0027app.'); return }
+  const url=_toCsvUrl(impostazioni['scadenze_csv_url']||SCAD_URL_DEFAULT)
+  const btn=document.getElementById('btn-sync-google'); if(btn&&!silent){btn.disabled=true;btn.innerHTML='<div class="spinner"></div>'}
+  try{
+    const r=await window.electronAPI.fetchUrl(url)
+    if(!r||!r.ok) throw new Error((r&&r.errore)||'download fallito')
+    const sc=_parseScadenze(r.body)
+    if(!sc.length) throw new Error('Nessuna scadenza trovata nel foglio (controlla che il link sia condiviso e sia la scheda scadenze)')
+    await caricaOfferte()
+    let upd=0; const nonTrovate=[]
+    for(const row of sc){
+      const matched=OFFERTE.filter(o=>_matchOfferta(row.nome,o))
+      if(!matched.length){ nonTrovate.push(row.nome+' ('+row.scad.split('-').reverse().join('/')+')'); continue }
+      for(const o of matched){ if(o.scad!==row.scad){ const {_id,...d}=o; await db.from('offerte').update({data:Object.assign({},d,{scad:row.scad})}).eq('id',o._id); upd++ } }
+    }
+    impostazioni['scadenze_last_sync']=today(); await upsertImpostazioni()
+    await caricaOfferte(); renderOfferte()
+    if(!silent) alert('Scadenze aggiornate dal foglio Google.\n\nDate aggiornate: '+upd+(nonTrovate.length?('\n\n\u26a0\ufe0f Non abbinate automaticamente (verifica a mano):\n- '+nonTrovate.join('\n- ')):''))
+  }catch(e){ if(!silent) alert('Errore sincronizzazione: '+(e.message||e)); else console.error('sync scadenze:',e) }
+  finally{ if(btn&&!silent){btn.disabled=false;btn.innerHTML='\ud83d\udd04 Aggiorna scadenze da Google'} }
+}
+async function sincronizzaOfferteAI(){
+  const btn=document.getElementById('btn-ai-sync'); const old=btn?btn.innerHTML:''
+  if(btn){btn.disabled=true;btn.innerHTML='<div class="spinner"></div> AI in corso...'}
+  try{
+    const {data,error}=await db.functions.invoke('sync-offerte-ai',{body:{}})
+    if(error) throw error
+    if(!data||!data.ok) throw new Error((data&&data.errore)||'errore AI')
+    await caricaOfferte(); renderOfferte()
+    alert('Offerte aggiornate con AI dai fogli Google.\n\nLette: '+data.totale+'\nAggiornate: '+data.aggiornate+'\nNuove: '+data.nuove+'\nEliminate: '+data.eliminate)
+  }catch(e){ alert('Errore AI: '+(e.message||e)) }
+  finally{ if(btn){btn.disabled=false;btn.innerHTML=old||'\ud83e\udd16 Aggiorna offerte con AI'} }
 }
 async function caricaOfferte(){
   try{
@@ -4023,6 +4116,7 @@ function _offSorter(a,b){
 }
 function renderOfferte(){
   const box=document.getElementById('offerte-lista'); if(!box) return
+  const cu=document.getElementById('cat-url'); if(cu && document.activeElement!==cu) cu.value=impostazioni['scadenze_csv_url']||''
   const t=document.getElementById('offerte-title'); if(t) t.textContent=_offFilter==='Tutte'?'Tutte le offerte':_offFilter
   let list=OFFERTE.filter(o=>_offFilter==='Tutte'||o.cat===_offFilter)
   if(!list.length){ box.innerHTML='<div style="padding:16px;color:var(--text2)">Nessuna offerta. Esegui <b>offerte.sql</b> su Supabase per caricarle.</div>'; return }
@@ -7221,19 +7315,23 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
   const pdfDoc = await PDFLib.PDFDocument.load(bytes)
   const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica)
   const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold)
+  const fontTimes = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRoman)
+  const fontCourier = await pdfDoc.embedFont(PDFLib.StandardFonts.Courier)
+  const FONTS = { helv:font, times:fontTimes, courier:fontCourier }
   const oggi = new Date().toLocaleDateString('it-IT')
   const pages = pdfDoc.getPages()
-  // Stampa testo: se il campo ha una larghezza, il testo si rimpicciolisce per starci in una riga (niente a-capo)
-  const drawTxt = (pg, t, x, ph, yTop, wpct, col, fs) => {
+  // Stampa testo. Rimpicciolisce SOLO se il campo ha "Adatta alla larghezza" attivo; altrimenti usa la dimensione fissa.
+  const drawTxt = (pg, t, x, ph, yTop, wpct, col, fs, autofit, fkey) => {
     const cc = col || PDFLib.rgb(0.05,0.05,0.05)
+    const f = FONTS[fkey] || font
     const str = String(t)
     let size = fs || 10
-    const maxW = wpct ? (wpct/100)*pg.getWidth() : 0
-    if(maxW>0){
-      const w = font.widthOfTextAtSize(str, size)
+    if(autofit && wpct){
+      const maxW = (wpct/100)*pg.getWidth()
+      const w = f.widthOfTextAtSize(str, size)
       if(w > maxW) size = Math.max(5, size * maxW / w)
     }
-    pg.drawText(str, { x, y: ph - yTop - 4, size, font, color: cc })
+    pg.drawText(str, { x, y: ph - yTop - 4, size, font:f, color: cc })
   }
   markers.forEach(m => {
     if(skip.indexOf(m.tipo)!==-1) return
@@ -7269,7 +7367,7 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
     if(Object.prototype.hasOwnProperty.call(extra, m.tipo)){
       const t=(extra[m.tipo]==null?'':extra[m.tipo]).toString()
       const _white=['ced_tot_fattura','ced_netto','ced_netto_fattura','ced_netto_pagare'].indexOf(m.tipo)!==-1
-      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, _white?PDFLib.rgb(1,1,1):null, m.fs)
+      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, _white?PDFLib.rgb(1,1,1):null, m.fs, m.autofit, m.font)
       return
     }
     if(CAMPI_SCELTA[m.tipo]){
@@ -7279,7 +7377,7 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
         if(on) pg.drawText('X', { x: x-4, y: ph - yTop - 5, size: 12, font: fontBold, color: PDFLib.rgb(0,0,0) })
       } else {
         const t = (scelte[m.tipo]||'').toString()
-        if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, null, m.fs)
+        if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, null, m.fs, m.autofit, m.font)
       }
       return
     }
@@ -7289,7 +7387,7 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
       pg.drawText('X', { x: x-4, y: ph - yTop - 5, size: 12, font: fontBold, color: PDFLib.rgb(0,0,0) })
     } else if(r.testo!==undefined){
       const t = (r.testo||'').toString()
-      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, null, m.fs)
+      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, null, m.fs, m.autofit, m.font)
     }
   })
   if(keepPage){ for(let pi=pdfDoc.getPageCount()-1; pi>=0; pi--){ if(pi!==(keepPage-1)) pdfDoc.removePage(pi) } }
@@ -7597,14 +7695,20 @@ function apriOpzioniCampo(idx){
   if(canWidth){
     const cur = m.w_pct ? Math.round(m.w_pct) : 0
     const curFs = m.fs || 0
+    const curFont = m.font || 'helv'
+    const _ff = {helv:'sans-serif', times:'serif', courier:'monospace'}
     html+='<label style="font-size:11px;color:var(--text2)">Larghezza del campo</label>'
     html+='<div style="display:flex;align-items:center;gap:8px;margin:6px 0 4px"><input type="range" id="opz-w" min="0" max="90" step="2" value="'+cur+'" style="flex:1"><span id="opz-wv" style="font-size:11px;width:48px;text-align:right">'+(cur?cur+'%':'no')+'</span></div>'
-    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:12px">0 = nessun limite. Con una larghezza impostata, il testo si rimpicciolisce da solo per starci dentro (niente a-capo).</div>'
+    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:12px">Riferimento per l\u0027opzione \u00abAdatta alla larghezza\u00bb qui sotto.</div>'
+    html+='<label style="font-size:11px;color:var(--text2)">Font</label>'
+    html+='<select id="opz-font" style="width:100%;font-size:13px;padding:6px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);margin:6px 0 12px"><option value="helv"'+(curFont==='helv'?' selected':'')+'>Helvetica (predefinito)</option><option value="times"'+(curFont==='times'?' selected':'')+'>Times</option><option value="courier"'+(curFont==='courier'?' selected':'')+'>Courier</option></select>'
     html+='<label style="font-size:11px;color:var(--text2)">Dimensione testo</label>'
-    html+='<div style="display:flex;align-items:center;gap:8px;margin:6px 0 4px"><input type="range" id="opz-fs" min="0" max="16" step="0.5" value="'+curFs+'" style="flex:1"><span id="opz-fsv" style="font-size:11px;width:64px;text-align:right">'+(curFs?curFs+' pt':'auto')+'</span></div>'
-    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:8px">0 = automatico (parte da 10 pt e si adatta alla larghezza).</div>'
+    html+='<div style="display:flex;align-items:center;gap:8px;margin:6px 0 4px"><input type="range" id="opz-fs" min="0" max="16" step="0.5" value="'+curFs+'" style="flex:1"><span id="opz-fsv" style="font-size:11px;width:78px;text-align:right">'+(curFs?curFs+' pt':'10 (default)')+'</span></div>'
+    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:10px">0 = 10 pt. Imposta i punti per avere i campi tutti uguali.</div>'
+    html+='<label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text);margin-bottom:6px;cursor:pointer"><input type="checkbox" id="opz-af"'+(m.autofit?' checked':'')+' style="margin-top:2px"> Adatta il testo alla larghezza (rimpicciolisce solo questo campo se troppo lungo)</label>'
+    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:10px">Lascialo spento per tenere tutti i campi della stessa dimensione.</div>'
     html+='<div style="font-size:10px;color:var(--text3);margin-bottom:4px">Anteprima:</div>'
-    html+='<div id="opz-prev" style="border:0.5px solid var(--border);border-radius:6px;padding:8px;background:#fff;color:#111;overflow:hidden;white-space:nowrap;margin-bottom:14px;font-size:'+(curFs||10)+'px">'+escB(_sampleForMarker(m.tipo, cfg.label))+'</div>'
+    html+='<div id="opz-prev" style="border:0.5px solid var(--border);border-radius:6px;padding:8px;background:#fff;color:#111;overflow:hidden;white-space:nowrap;margin-bottom:14px;font-family:'+_ff[curFont]+';font-size:'+(curFs||10)+'px">'+escB(_sampleForMarker(m.tipo, cfg.label))+'</div>'
   }
   html+='<div style="display:flex;gap:8px;justify-content:space-between;align-items:center">'
   html+='<button class="btn btn-sm btn-r" onclick="eliminaMarker('+idx+')">🗑 Elimina campo</button>'
@@ -7615,7 +7719,11 @@ function apriOpzioniCampo(idx){
     const r=document.getElementById('opz-w'), v=document.getElementById('opz-wv')
     r.oninput=()=>{ const val=parseInt(r.value); v.textContent=val?val+'%':'no'; if(val) editorMarkers[editorDocId][idx].w_pct=val; else delete editorMarkers[editorDocId][idx].w_pct; renderEditorMarkers() }
     const fr=document.getElementById('opz-fs'), fv=document.getElementById('opz-fsv'), pv=document.getElementById('opz-prev')
-    if(fr){ fr.oninput=()=>{ const val=parseFloat(fr.value)||0; fv.textContent=val?val+' pt':'auto'; if(val) editorMarkers[editorDocId][idx].fs=val; else delete editorMarkers[editorDocId][idx].fs; if(pv) pv.style.fontSize=(val||10)+'px' } }
+    const ff=document.getElementById('opz-font'), af=document.getElementById('opz-af')
+    const ffmap={helv:'sans-serif', times:'serif', courier:'monospace'}
+    if(fr){ fr.oninput=()=>{ const val=parseFloat(fr.value)||0; fv.textContent=val?val+' pt':'10 (default)'; if(val) editorMarkers[editorDocId][idx].fs=val; else delete editorMarkers[editorDocId][idx].fs; if(pv) pv.style.fontSize=(val||10)+'px' } }
+    if(ff){ ff.onchange=()=>{ const val=ff.value; if(val&&val!=='helv') editorMarkers[editorDocId][idx].font=val; else delete editorMarkers[editorDocId][idx].font; if(pv) pv.style.fontFamily=ffmap[val]||ffmap.helv } }
+    if(af){ af.onchange=()=>{ if(af.checked) editorMarkers[editorDocId][idx].autofit=true; else delete editorMarkers[editorDocId][idx].autofit } }
   }
 }
 function _ensureMarkerTip(){
@@ -7773,6 +7881,8 @@ async function salvaCoordinate(){
     }
     if(m.w_pct) c.w = Math.round((m.w_pct / 100) * W)
     if(m.fs) c.fs = m.fs
+    if(m.autofit) c.af = 1
+    if(m.font) c.fnt = m.font
     return c
   })
   
@@ -7817,7 +7927,9 @@ async function loadEditorCoordinate(){
           x_pct: (c.x / W) * 100,
           y_pct: (c.y / H) * 100,
           ...(c.w ? { w_pct: (c.w / W) * 100 } : {}),
-          ...(c.fs ? { fs: c.fs } : {})
+          ...(c.fs ? { fs: c.fs } : {}),
+          ...(c.af ? { autofit: true } : {}),
+          ...(c.fnt ? { font: c.fnt } : {})
         }))
       })
     }
@@ -7879,6 +7991,8 @@ loadAll().then(()=>{
   // Carica documenti custom da Storage
   caricaDocumentiCustom()
   loadDocs()
+  // Aggiornamento automatico scadenze offerte dal foglio Google (una volta al giorno)
+  setTimeout(()=>{ try{ if(impostazioni['scadenze_last_sync']!==today()){ sincronizzaScadenzeDaGoogle(true) } }catch(e){ console.error('auto-sync:',e) } }, 6000)
 })
 } // ── fine avviaApp ──
 

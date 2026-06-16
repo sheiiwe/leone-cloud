@@ -18,4 +18,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   suonaNotifica: () => ipcRenderer.invoke('suona-notifica'),
   apriFileTmp: (buffer, fileName) => ipcRenderer.invoke('apri-file-tmp', { buffer, fileName }),
   salvaFile: (buffer, fileName) => ipcRenderer.invoke('salva-file', { buffer, fileName }),
+  fetchUrl: (url) => ipcRenderer.invoke('fetch-url', { url }),
 })

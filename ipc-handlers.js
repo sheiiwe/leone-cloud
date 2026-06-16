@@ -423,3 +423,24 @@ ipcMain.handle('salva-file', async (event, { buffer, fileName }) => {
     return { ok: false, errore: e.message }
   }
 })
+
+// ── SCARICA URL (per leggere fogli Google pubblici, niente CORS) ──
+ipcMain.handle('fetch-url', async (event, { url }) => {
+  return await new Promise((resolve) => {
+    const https = require('https')
+    const get = (u, depth) => {
+      if(depth > 6){ resolve({ ok:false, errore:'Troppi redirect' }); return }
+      try{
+        https.get(u, { headers:{ 'User-Agent':'Mozilla/5.0' } }, (res) => {
+          if(res.statusCode >= 300 && res.statusCode < 400 && res.headers.location){ get(res.headers.location, depth+1); return }
+          if(res.statusCode !== 200){ resolve({ ok:false, errore:'HTTP '+res.statusCode }); return }
+          let data = ''
+          res.setEncoding('utf8')
+          res.on('data', c => data += c)
+          res.on('end', () => resolve({ ok:true, body:data }))
+        }).on('error', e => resolve({ ok:false, errore:e.message }))
+      }catch(e){ resolve({ ok:false, errore:e.message }) }
+    }
+    get(url, 0)
+  })
+})
