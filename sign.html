@@ -125,7 +125,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-se
       </div>
       <button class="btn-ghost" onclick="cancellaFirma()">↺ Cancella e rifai</button>
 
-      <div style="margin-top:14px">
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid #eee">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px">I tuoi dati e documenti</div>
+        <label style="font-size:13px;display:block;margin-bottom:6px">Hai la Partita IVA?</label>
+        <div style="display:flex;gap:20px;margin-bottom:16px;font-size:14px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="piva" id="piva-si"> Si, ho Partita IVA</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="piva" id="piva-no"> No</label>
+        </div>
+        <label style="font-size:13px;display:block;margin-bottom:4px">Foto carta d&#39;identita (fronte/retro o PDF)</label>
+        <input type="file" id="up-identita" accept="image/*,application/pdf" onchange="caricaAllegato(this,&#39;identita&#39;)" style="display:block;margin-bottom:14px;font-size:13px">
+        <label style="font-size:13px;display:block;margin-bottom:4px">Foto tessera sanitaria / codice fiscale (foto o PDF)</label>
+        <input type="file" id="up-cf" accept="image/*,application/pdf" onchange="caricaAllegato(this,&#39;cf&#39;)" style="display:block;margin-bottom:14px;font-size:13px">
+        <div id="row-visura">
+          <label style="font-size:13px;display:block;margin-bottom:4px">Visura camerale o equivalente (obbligatoria se hai Partita IVA)</label>
+          <input type="file" id="up-visura" accept="image/*,application/pdf" onchange="caricaAllegato(this,&#39;visura&#39;)" style="display:block;margin-bottom:4px;font-size:13px">
+        </div>
+        <div id="up-stato" style="font-size:12px;color:#3B6D11;margin-top:6px"></div>
+      </div>
+
+      <div style="margin-top:18px">
+        <label class="checkbox-row" style="font-weight:700">
+          <input type="checkbox" id="chk-tutte" onchange="toggleTutteClausole(this)">
+          Accetto tutte le condizioni seguenti
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="chk-fiscale">
+          Acconsento al trattamento dei miei dati per finalita fiscali e contabili.
+        </label>
         <label class="checkbox-row">
           <input type="checkbox" id="chk-consenso">
           Dichiaro di aver letto integralmente il contratto <strong id="chk-tipo-ct"></strong> e di accettarne il contenuto, apponendo la mia firma digitale consapevolmente.
@@ -177,9 +203,10 @@ let hasScrolledToBottom = false
 async function init() {
   if (!token) { mostra('stato-errore'); return }
   try {
-    const { data, error } = await db.from('contratti_firme').select('*')
+    let { data, error } = await db.from('contratti_firme').select('*').eq('data->>signToken', token)
     if (error) throw error
-    const row = (data || []).find(r => (r.data || r).signToken === token)
+    let row = (data || [])[0]
+    if (!row) { const r2 = await db.from('contratti_firme').select('*'); row = (r2.data || []).find(r => (r.data || r).signToken === token) }
     if (!row) { mostra('stato-errore'); return }
     contratto = row.data || row
     contratto._id = row.id
@@ -300,11 +327,52 @@ function cancellaFirma() {
 }
 
 // ── FIRMA ─────────────────────────────────────────────────────
+let allegati = { identita:null, cf:null, visura:null }
+function toggleVisura(){
+  const si = document.getElementById('piva-si')
+  const row = document.getElementById('row-visura')
+  if(row) row.style.display = (si && si.checked) ? 'block' : 'none'
+}
+function caricaAllegato(input, key){
+  const f = input.files && input.files[0]; if(!f) return
+  if(f.size > 10*1024*1024){ alert('File troppo grande (massimo 10MB).'); input.value=''; return }
+  if(f.type.indexOf('image/')===0){
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const max=1600; let w=img.width, h=img.height
+        if(w>max||h>max){ if(w>h){ h=Math.round(h*max/w); w=max } else { w=Math.round(w*max/h); h=max } }
+        const c=document.createElement('canvas'); c.width=w; c.height=h
+        c.getContext('2d').drawImage(img,0,0,w,h)
+        c.toBlob(b=>{ allegati[key]={ blob:b, ext:'jpg' }; aggiornaStatoAllegati() }, 'image/jpeg', 0.8)
+      }
+      img.src = reader.result
+    }
+    reader.readAsDataURL(f)
+  } else {
+    allegati[key]={ blob:f, ext:(f.name.split('.').pop()||'pdf') }; aggiornaStatoAllegati()
+  }
+}
+function aggiornaStatoAllegati(){
+  const s=document.getElementById('up-stato'); if(!s) return
+  const a=[]; if(allegati.identita) a.push('\u2713 Documento'); if(allegati.cf) a.push('\u2713 Codice fiscale'); if(allegati.visura) a.push('\u2713 Visura')
+  s.textContent = a.join('    ')
+}
+function toggleTutteClausole(cb){
+  ['chk-fiscale','chk-consenso','chk-privacy','chk-vessatorie'].forEach(id=>{ const e=document.getElementById(id); if(e) e.checked=cb.checked })
+}
 async function firmaContratto() {
   if (!hasFirma) { alert('Per favore disegna la tua firma nel riquadro.'); return }
   if (!document.getElementById('chk-consenso').checked) { alert('Devi confermare di aver letto il contratto.'); return }
   if (!document.getElementById('chk-privacy').checked) { alert('Devi accettare il trattamento dei dati.'); return }
   if (!document.getElementById('chk-vessatorie').checked) { alert('Devi approvare le clausole specifiche (art. 1341 c.c.).'); return }
+  if (!document.getElementById('chk-fiscale').checked) { alert('Devi acconsentire al trattamento dati per finalita fiscali e contabili.'); return }
+  const pivaSi = document.getElementById('piva-si'), pivaNo = document.getElementById('piva-no')
+  if (!(pivaSi.checked || pivaNo.checked)) { alert('Indica se hai la Partita IVA.'); return }
+  if (!allegati.identita) { alert('Carica la foto del documento d\u0027identita.'); return }
+  if (!allegati.cf) { alert('Carica la foto della tessera sanitaria / codice fiscale.'); return }
+  if (pivaSi.checked && !allegati.visura) { alert('Avendo Partita IVA devi caricare la visura camerale (o equivalente).'); return }
 
   const btn = document.getElementById('btn-firma')
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Salvataggio...'
@@ -316,7 +384,16 @@ async function firmaContratto() {
     let ip = '—'
     try { const r = await fetch('https://api.ipify.org?format=json'); ip = (await r.json()).ip } catch(e) {}
 
-    const datiAggiornati = { ...contratto, statoFirma:'Firmato', dataFirma, firmaBase64, ipFirma:ip, timestampFirma:now.toISOString() }
+    const documentiCaricati = {}
+    const mapKey = { identita:'carta_identita', cf:'codice_fiscale', visura:'visura_camerale' }
+    for (const k of Object.keys(allegati)) {
+      const a = allegati[k]; if(!a || !a.blob) continue
+      const path = 'firme-doc/' + token + '/' + mapKey[k] + '.' + (a.ext||'bin')
+      const up = await db.storage.from('contratti').upload(path, a.blob, { upsert:true, contentType: a.blob.type || 'application/octet-stream' })
+      if (up.error) throw new Error('Caricamento ' + mapKey[k] + ' fallito: ' + up.error.message)
+      documentiCaricati[mapKey[k]] = path
+    }
+    const datiAggiornati = { ...contratto, statoFirma:'Firmato', dataFirma, firmaBase64, ipFirma:ip, timestampFirma:now.toISOString(), hasPiva: pivaSi.checked, consensoFiscale: true, documentiCaricati }
 
     const { error } = await db.from('contratti_firme').update({
       data: datiAggiornati
