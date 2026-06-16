@@ -364,16 +364,14 @@ ipcMain.handle('get-version', () => {
 })
 
 // ── SEND MAIL GENERICO (notifiche admin firma) ────────────────
-ipcMain.handle('sendMail', async (event, { to, subject, html, smtp, attachments }) => {
-  try {
-    const msg = { from: fromFor('email', smtp), to, subject, html }
-    if (Array.isArray(attachments) && attachments.length) msg.attachments = attachments
-    await makeTransport('email', smtp).sendMail(msg)
-    return { ok: true }
-  } catch(e) {
-    console.error('sendMail error:', e)
-    return { ok: false, errore: e.message }
+ipcMain.handle('sendMail', async (event, { to, subject, html, smtp, smtpPec, via, attachments }) => {
+  const v = via || 'email'
+  const msg = { from: fromFor(v, smtp, smtpPec), to, subject, html }
+  if (Array.isArray(attachments) && attachments.length) {
+    msg.attachments = attachments.map(a => ({ filename: a.filename, content: Buffer.from(a.content) }))
   }
+  await makeTransport(v, smtp, smtpPec).sendMail(msg)
+  return { ok: true }
 })
 
 // ── SUONO NOTIFICA SISTEMA ────────────────────────────────────
