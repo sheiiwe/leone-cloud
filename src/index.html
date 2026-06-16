@@ -573,11 +573,11 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="card">
     <div class="card-hdr"><h3>Link del portale</h3></div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 0">
-      <input id="portale-url" type="text" readonly value="https://sheiiwe.github.io/leone-cloud/portale/" style="flex:1;min-width:260px;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text)">
+      <input id="portale-url" type="text" readonly value="https://portale.leoneconsultingitalia.it/" style="flex:1;min-width:260px;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--bg);color:var(--text)">
       <button class="btn" id="btn-portale-edit" onclick="modificaPortaleLink()">✏️ Modifica</button>
       <button class="btn btn-p" onclick="copiaLink(document.getElementById('portale-url').value)">📋 Copia link</button>
     </div>
-    <div style="font-size:12px;color:var(--text2);margin-top:12px">Quando avrai il tuo dominio personalizzato, cambieremo questo link con il tuo (es. <em>portale.leoneconsultingitalia.it</em>) e tutto continuerà a funzionare allo stesso modo.</div>
+    <div style="font-size:12px;color:var(--text2);margin-top:12px">Questo \u00e8 il link del portale da dare ai procacciatori.</div>
   </div>
 </div>
 
@@ -1920,7 +1920,7 @@ async function generaPdfCredenziali(nome, email, password){
   page.drawRectangle({x:40,y:y-92,width:515,height:96,color:rgb(0.985,0.955,0.95),borderColor:red,borderWidth:1})
   let by=y-16
   const KV=(k,v,vb=false)=>{ page.drawText(k,{x:54,y:by,size:11,font:bold,color:dark}); page.drawText(v,{x:200,y:by,size:11,font:vb?bold:font,color:dark}); by-=26 }
-  KV('Indirizzo portale:', 'sheiiwe.github.io/leone-cloud/portale/')
+  KV('Indirizzo portale:', 'portale.leoneconsultingitalia.it/')
   KV('Email (login):', email)
   KV('Password:', password, true)
   y-=112
@@ -1941,7 +1941,7 @@ async function salvaPasswordProc(procId, password){
   await db.from('procacciatori').update({data}).eq('id',procId)
 }
 function _emailCredHtml(nome, emailAz, password){
-  const portale='https://sheiiwe.github.io/leone-cloud/portale/'
+  const portale='https://portale.leoneconsultingitalia.it/'
   return '<div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a18;font-size:14px;line-height:1.6"><h2 style="color:#3B6D11;margin:0 0 8px">Le tue credenziali \u2014 Portale Leone Consulting</h2>'+
     '<p>Ciao '+escB((nome||'').split(' ')[0]||'')+', ecco le credenziali per accedere al portale procacciatori:</p>'+
     '<table style="border-collapse:collapse;font-size:14px"><tr><td style="padding:5px 10px;color:#777">Indirizzo</td><td style="padding:5px 10px"><a href="'+portale+'">'+portale+'</a></td></tr>'+
@@ -4490,7 +4490,7 @@ async function inviaContratto(sezione){
       await window.electronAPI.sendContract({..._ec(),to:email,name:nome,contractType:tipo,signToken:token,via})
       alert(`✅ Contratto inviato a ${email}!\n\nIl destinatario riceverà l\'email con il link per firmare.`)
     } else {
-      const signUrl=`https://sheiiwe.github.io/leone-cloud/sign.html?token=${token}`
+      const signUrl=`https://firma.leoneconsultingitalia.it/?token=${token}`
       alert(`Contratto salvato!\n\nLink per la firma (copia e invia manualmente):\n${signUrl}`)
     }
 
@@ -6532,7 +6532,7 @@ async function upsertImpostazioni(){
 async function renderPortaleLink(){
   try{ await loadImpostazioni() }catch(e){}
   const i=document.getElementById('portale-url')
-  if(i) i.value=(impostazioni&&impostazioni.portaleUrl)||'https://sheiiwe.github.io/leone-cloud/portale/'
+  if(i) i.value=(impostazioni&&impostazioni.portaleUrl)||'https://portale.leoneconsultingitalia.it/'
   const b=document.getElementById('btn-portale-edit'); if(b){ b.textContent='✏️ Modifica'; if(i) i.readOnly=true }
 }
 async function modificaPortaleLink(){
