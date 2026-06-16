@@ -3610,7 +3610,7 @@ async function saveVend(){
   let bolletta=null
   if(req.bolletta){ const up=await uploadBollettaApp(cnome+' '+ccognome); if(up.err){ alert(up.err); btn.disabled=false; btn.innerHTML='Salva'; return } bolletta=up }
   const _pv=isAzienda?{}:(procs[parseInt(pidx)]||{})
-  const obj={pidx:isAzienda?null:parseInt(pidx),procId:isAzienda?null:(_pv._id||null),procEmail:isAzienda?'':(_pv.email||'').trim().toLowerCase(),azienda:isAzienda,prod:prod.nome,cat:prod.cat,piatt:prod.piatt,val,prov,cliente:(cnome+' '+ccognome).trim(),cliNome:cnome,cliCognome:ccognome,cliTel:ccell,cliEmail:cemail,stato:document.getElementById('vd-stato').value,note:document.getElementById('vd-note').value,leadId:(_convLeadId||null),data:document.getElementById('vd-data').value||today()}
+  const obj={pidx:isAzienda?null:parseInt(pidx),procId:isAzienda?null:(_pv._id||null),procEmail:isAzienda?'':(_pv.email||'').trim().toLowerCase(),azienda:isAzienda,prod:prod.nome,cat:prod.cat,piatt:prod.piatt,val,prov,provTipo:prod.tipo,provPct:(prod.tipo==='fisso'?null:prod.prov),cliente:(cnome+' '+ccognome).trim(),cliNome:cnome,cliCognome:ccognome,cliTel:ccell,cliEmail:cemail,stato:document.getElementById('vd-stato').value,note:document.getElementById('vd-note').value,leadId:(_convLeadId||null),data:document.getElementById('vd-data').value||today()}
   Object.assign(obj, exv.v)
   if(bolletta){ obj.bollettaUrl=bolletta.url; obj.bollettaPath=bolletta.path }
   try{syncStatus('syncing','Salvataggio...');await db.from('vendite').insert({data:obj});if(_convLeadId){try{const lr=leads.find(x=>x._id===_convLeadId);if(lr){const {_id,...ldata}=lr;ldata.stato='Acquisito';await db.from('leads').update({data:ldata}).eq('id',_id)}}catch(e){console.error('convert lead:',e)}_convLeadId=null}closeM('m-vend');['vd-val','vd-cliente','vd-cognome','vd-cell','vd-email','vd-note'].forEach(id=>{const e=document.getElementById(id); if(e) e.value=''});const _ex=document.getElementById('vd-extra'); if(_ex) _ex.innerHTML='';await loadAll();renderVendite();renderLead()}
@@ -5884,6 +5884,13 @@ function _calcCedolino(p, vv, ovr){
   const nettoPag=piva?0:(lordo-ritenuta-bollo)
   return {lordo,iva,ritenuta,baseRit,bollo,nettoFatt,nettoPag,piva,forf}
 }
+// Colonna "Provv. %" del cedolino: "fissa" per i prodotti a compenso fisso, la percentuale per quelli a %.
+function _affPct(v){
+  if(v && v.provTipo){ return v.provTipo==='fisso' ? 'fissa' : ((v.provPct!=null?v.provPct:'')+'%') }
+  const lp=(typeof LISTINO!=='undefined') ? (LISTINO.find(x=>x.nome===v.prod && (!v.cat||x.cat===v.cat)) || LISTINO.find(x=>x.nome===v.prod)) : null
+  if(lp){ return lp.tipo==='fisso' ? 'fissa' : (lp.prov+'%') }
+  return 'fissa'
+}
 async function generaCedolino(idx, mese){
   const docId=impostazioni['cedolino_docid']
   if(!docId) return alert('Prima scegli il modello cedolino qui sopra.')
@@ -5894,7 +5901,7 @@ async function generaCedolino(idx, mese){
   if(c.lordo<=0 && !confirm('Nessuna provvigione incassata per '+p.nome+' in '+_meseLabelCed(mese)+'.\nGenero comunque il cedolino?')) return
   const q=(typeof getQual==='function')?getQual(p,idx,mese):{prov:null}
   const fmtN=n=>(n||0).toFixed(2).replace('.',',')
-  const affari=vv.map((v,k)=>({n:String(k+1),cliente:(v.cliente||'').slice(0,30),desc:(v.prod||'').slice(0,34),pct:(v.val>0?(Math.round(v.prov/v.val*1000)/10)+'%':''),lorda:fmtN(v.prov)}))
+  const affari=vv.map((v,k)=>({n:String(k+1),cliente:(v.cliente||'').slice(0,30),desc:(v.prod||'').slice(0,34),pct:_affPct(v),lorda:fmtN(v.prov)}))
   if(ovr>0) affari.push({n:String(affari.length+1),cliente:'Provvigioni rete',desc:'Override downline',pct:'',lorda:fmtN(ovr)})
   const prodotti=[...new Set(vv.map(v=>v.cat).filter(Boolean))].join(', ')
   const extraBase={ nome:(p.regime==='piva' && p.ragioneSociale)?p.ragioneSociale:(p.nome||''),
