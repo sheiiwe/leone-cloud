@@ -166,7 +166,10 @@ tr:last-child td{border-bottom:none}
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
         <h2 style="margin:0">💡 Offerte luce, gas e telefonia</h2>
-        <button onclick="apriOffertaP()" style="background:#3B6D11;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:13px">+ Nuova offerta</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="btn-ai-sync-p" onclick="sincronizzaOfferteAIP()" style="background:#1a3a5c;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:13px" title="L'AI legge i fogli Google dell'azienda e aggiorna le offerte">🤖 Aggiorna offerte con AI</button>
+          <button onclick="apriOffertaP()" style="background:#3B6D11;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:13px">+ Nuova offerta</button>
+        </div>
       </div>
       <div class="notice" style="margin-bottom:10px">Modifichi qui le offerte che vedono i procacciatori. Le <strong>scadute</strong> restano marcate per te ma spariscono a loro.</div>
       <div id="offerte-lista-admin">Caricamento…</div>
@@ -851,6 +854,18 @@ async function caricaAvvisiHome(){
   box.innerHTML=h
 }
 function offStatoAdm(o){ if(!o.scad) return ''; const oggi=new Date(); oggi.setHours(0,0,0,0); const d=new Date(o.scad+'T00:00:00'); const gg=Math.round((d-oggi)/86400000); if(gg<0) return '<span style="color:#c0392b;font-weight:700;font-size:11px">SCADUTA</span>'; if(gg<=7) return '<span style="color:#d68910;font-weight:700;font-size:11px">in scadenza ('+gg+'gg)</span>'; return '<span style="color:#3B6D11;font-size:11px">fino al '+itDateP(o.scad)+'</span>' }
+async function sincronizzaOfferteAIP(){
+  const btn=document.getElementById('btn-ai-sync-p'); const old=btn?btn.innerHTML:''
+  if(btn){ btn.disabled=true; btn.textContent='🤖 AI in corso...' }
+  try{
+    const { data, error } = await db.functions.invoke('sync-offerte-ai', { body:{} })
+    if(error) throw error
+    if(!data || !data.ok) throw new Error((data && data.errore) || 'errore AI')
+    alert('Offerte aggiornate con AI.\n\nLette: '+data.totale+'\nAggiornate: '+data.aggiornate+'\nNuove: '+data.nuove+'\nEliminate: '+data.eliminate)
+    caricaOfferteAdmin()
+  }catch(e){ alert('Errore AI: '+(e.message||e)) }
+  finally{ if(btn){ btn.disabled=false; btn.innerHTML=old||'🤖 Aggiorna offerte con AI' } }
+}
 async function caricaOfferteAdmin(){
   const box=document.getElementById('offerte-lista-admin'); if(!box) return
   try{ const r=await db.from('offerte').select('*').order('created_at'); OFFP_ALL=(r.data||[]).map(x=>({_id:x.id,...(x.data||{})})) }
