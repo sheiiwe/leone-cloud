@@ -7223,15 +7223,17 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
   const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold)
   const oggi = new Date().toLocaleDateString('it-IT')
   const pages = pdfDoc.getPages()
-  // Stampa testo con eventuale a-capo automatico se il campo ha una larghezza (w_pct)
-  const drawTxt = (pg, t, x, ph, yTop, wpct, col) => {
+  // Stampa testo: se il campo ha una larghezza, il testo si rimpicciolisce per starci in una riga (niente a-capo)
+  const drawTxt = (pg, t, x, ph, yTop, wpct, col, fs) => {
     const cc = col || PDFLib.rgb(0.05,0.05,0.05)
+    const str = String(t)
+    let size = fs || 10
     const maxW = wpct ? (wpct/100)*pg.getWidth() : 0
     if(maxW>0){
-      wrapPdfText(t, font, 10, maxW).forEach((ln,i)=> pg.drawText(ln, { x, y: ph - yTop - 4 - i*12, size:10, font, color: cc }))
-    } else {
-      pg.drawText(t, { x, y: ph - yTop - 4, size:10, font, color: cc })
+      const w = font.widthOfTextAtSize(str, size)
+      if(w > maxW) size = Math.max(5, size * maxW / w)
     }
+    pg.drawText(str, { x, y: ph - yTop - 4, size, font, color: cc })
   }
   markers.forEach(m => {
     if(skip.indexOf(m.tipo)!==-1) return
@@ -7267,7 +7269,7 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
     if(Object.prototype.hasOwnProperty.call(extra, m.tipo)){
       const t=(extra[m.tipo]==null?'':extra[m.tipo]).toString()
       const _white=['ced_tot_fattura','ced_netto','ced_netto_fattura','ced_netto_pagare'].indexOf(m.tipo)!==-1
-      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, _white?PDFLib.rgb(1,1,1):null)
+      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, _white?PDFLib.rgb(1,1,1):null, m.fs)
       return
     }
     if(CAMPI_SCELTA[m.tipo]){
@@ -7277,7 +7279,7 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
         if(on) pg.drawText('X', { x: x-4, y: ph - yTop - 5, size: 12, font: fontBold, color: PDFLib.rgb(0,0,0) })
       } else {
         const t = (scelte[m.tipo]||'').toString()
-        if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct)
+        if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, null, m.fs)
       }
       return
     }
@@ -7287,7 +7289,7 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
       pg.drawText('X', { x: x-4, y: ph - yTop - 5, size: 12, font: fontBold, color: PDFLib.rgb(0,0,0) })
     } else if(r.testo!==undefined){
       const t = (r.testo||'').toString()
-      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct)
+      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, null, m.fs)
     }
   })
   if(keepPage){ for(let pi=pdfDoc.getPageCount()-1; pi>=0; pi--){ if(pi!==(keepPage-1)) pdfDoc.removePage(pi) } }
@@ -7579,6 +7581,10 @@ function eliminaMarker(idx){
   renderEditorMarkers()
 }
 // Doppio clic su un campo: opzioni (larghezza testo / elimina)
+function _sampleForMarker(tipo, label){
+  const s={ nome:'Alessandro Di Bartolomeo', solo_piva:'IT 18231181001', solo_cf:'DBTLSN90A01H501Z', citta_cap_prov:'00049 Velletri (RM)', tel_email:'379 126 4864 / nome.cognome@email.it', area_geo:'Lazio \u2013 Roma Sud', num_contratto:'PRO-001/2026', codice_ateco:'46.18.91', regime_testo:'Prestazione occasionale', ced_causale:'Pagamento provvigioni Maggio 2026', ced_n_prosp:'CED-001/2026', ced_data_emiss:'16/06/2026' }
+  return s[tipo] || label || 'Testo di esempio'
+}
 function apriOpzioniCampo(idx){
   const arr = editorMarkers[editorDocId]||[]; const m = arr[idx]; if(!m) return
   const cfg = MARKER_COLORS[m.tipo] || { color:'#888', label:m.tipo }
@@ -7590,9 +7596,15 @@ function apriOpzioniCampo(idx){
   let html='<div style="font-size:13px;font-weight:700;margin-bottom:12px">'+cfg.label.replace(/^\u2611\s*/,'').replace(/^\u270f\ufe0f\s*/,'')+'</div>'
   if(canWidth){
     const cur = m.w_pct ? Math.round(m.w_pct) : 0
-    html+='<label style="font-size:11px;color:var(--text2)">Larghezza del campo (a-capo automatico)</label>'
+    const curFs = m.fs || 0
+    html+='<label style="font-size:11px;color:var(--text2)">Larghezza del campo</label>'
     html+='<div style="display:flex;align-items:center;gap:8px;margin:6px 0 4px"><input type="range" id="opz-w" min="0" max="90" step="2" value="'+cur+'" style="flex:1"><span id="opz-wv" style="font-size:11px;width:48px;text-align:right">'+(cur?cur+'%':'no')+'</span></div>'
-    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:14px">0 = nessun limite (riga unica). Aumenta per far andare a capo il testo lungo (es. email).</div>'
+    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:12px">0 = nessun limite. Con una larghezza impostata, il testo si rimpicciolisce da solo per starci dentro (niente a-capo).</div>'
+    html+='<label style="font-size:11px;color:var(--text2)">Dimensione testo</label>'
+    html+='<div style="display:flex;align-items:center;gap:8px;margin:6px 0 4px"><input type="range" id="opz-fs" min="0" max="16" step="0.5" value="'+curFs+'" style="flex:1"><span id="opz-fsv" style="font-size:11px;width:64px;text-align:right">'+(curFs?curFs+' pt':'auto')+'</span></div>'
+    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:8px">0 = automatico (parte da 10 pt e si adatta alla larghezza).</div>'
+    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:4px">Anteprima:</div>'
+    html+='<div id="opz-prev" style="border:0.5px solid var(--border);border-radius:6px;padding:8px;background:#fff;color:#111;overflow:hidden;white-space:nowrap;margin-bottom:14px;font-size:'+(curFs||10)+'px">'+escB(_sampleForMarker(m.tipo, cfg.label))+'</div>'
   }
   html+='<div style="display:flex;gap:8px;justify-content:space-between;align-items:center">'
   html+='<button class="btn btn-sm btn-r" onclick="eliminaMarker('+idx+')">🗑 Elimina campo</button>'
@@ -7602,6 +7614,8 @@ function apriOpzioniCampo(idx){
   if(canWidth){
     const r=document.getElementById('opz-w'), v=document.getElementById('opz-wv')
     r.oninput=()=>{ const val=parseInt(r.value); v.textContent=val?val+'%':'no'; if(val) editorMarkers[editorDocId][idx].w_pct=val; else delete editorMarkers[editorDocId][idx].w_pct; renderEditorMarkers() }
+    const fr=document.getElementById('opz-fs'), fv=document.getElementById('opz-fsv'), pv=document.getElementById('opz-prev')
+    if(fr){ fr.oninput=()=>{ const val=parseFloat(fr.value)||0; fv.textContent=val?val+' pt':'auto'; if(val) editorMarkers[editorDocId][idx].fs=val; else delete editorMarkers[editorDocId][idx].fs; if(pv) pv.style.fontSize=(val||10)+'px' } }
   }
 }
 function _ensureMarkerTip(){
@@ -7758,6 +7772,7 @@ async function salvaCoordinate(){
       y: Math.round((m.y_pct / 100) * H),
     }
     if(m.w_pct) c.w = Math.round((m.w_pct / 100) * W)
+    if(m.fs) c.fs = m.fs
     return c
   })
   
@@ -7801,7 +7816,8 @@ async function loadEditorCoordinate(){
           page: c.p,
           x_pct: (c.x / W) * 100,
           y_pct: (c.y / H) * 100,
-          ...(c.w ? { w_pct: (c.w / W) * 100 } : {})
+          ...(c.w ? { w_pct: (c.w / W) * 100 } : {}),
+          ...(c.fs ? { fs: c.fs } : {})
         }))
       })
     }
