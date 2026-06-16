@@ -1052,6 +1052,9 @@ tbody tr:hover td{background:var(--surface2)}
           </div>
         </div>
 
+        <!-- Riepilogo campi del documento (sotto il PDF, in riga) -->
+        <div id="editor-legend" style="display:none;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:8px;padding:8px 10px;background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;font-size:11px;color:var(--text)"></div>
+
         <!-- Placeholder -->
         <div id="editor-placeholder" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;border:1.5px dashed var(--border);border-radius:8px;min-height:400px">
           ← Seleziona un documento per iniziare
@@ -5733,10 +5736,18 @@ async function renderCedolini(){
      docs.map(d=>'<option value="'+d.id+'"'+(d.id===sel?' selected':'')+'>'+escB(d.label)+'</option>').join('')+'</select>'+
      (docs.length?'':'<div style="font-size:12px;color:var(--red);margin-top:8px">Nessun documento caricato. Vai in Documenti e carica il PDF del cedolino.</div>')+
      '<div style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--text2);flex-wrap:wrap"><label style="margin:0">Passo righe tabella affari (mm):</label><input id="ced-rowh" type="number" min="3" max="15" step="0.1" value="'+(impostazioni['ced_aff_rowh']||6.6)+'" onchange="salvaPassoAffari()" style="width:80px;font-size:13px;padding:5px 8px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)"><span style="color:var(--text3)">default 6,6 \u2014 aumenta se le righe risultano troppo vicine</span></div>'+'</div>'
+  h+='<div class="card" style="margin-bottom:14px"><div style="font-weight:700;margin-bottom:8px">Conto azienda per i bonifici</div>'+
+     '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Dati dell\u0027ordinante (chi paga) inseriti nel file dei bonifici.</div>'+
+     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:660px">'+
+     '<div><label style="font-size:11px;color:var(--text3)">Intestatario</label><input id="bk-int" value="'+escB(impostazioni['banca_intestatario']||'LEONE CONSULTING di Leonardo Angelucci')+'" style="width:100%;font-size:13px;padding:7px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);box-sizing:border-box"></div>'+
+     '<div><label style="font-size:11px;color:var(--text3)">BIC / SWIFT (facoltativo)</label><input id="bk-bic" value="'+escB(impostazioni['banca_bic']||'')+'" placeholder="es. SELBIT2BXXX" style="width:100%;font-size:13px;padding:7px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);box-sizing:border-box"></div>'+
+     '<div style="grid-column:1/3"><label style="font-size:11px;color:var(--text3)">IBAN</label><input id="bk-iban" value="'+escB(impostazioni['banca_iban']||'')+'" placeholder="IT60 X054 2811 1010 0000 0123 456" style="width:100%;font-size:13px;padding:7px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);box-sizing:border-box"></div>'+
+     '</div>'+
+     '<button class="btn btn-sm" style="margin-top:10px" onclick="salvaDatiBanca()">\ud83d\udcbe Salva dati banca</button></div>'
   h+='<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><div style="font-weight:700">Genera cedolini del mese</div>'+
      '<select id="ced-mese-sel" onchange="renderCedoliniRows()" style="font-size:13px;padding:6px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)">'+
      mesi.map(m=>'<option value="'+m+'"'+(m===curM?' selected':'')+'>'+_meseLabelCed(m)+' '+m.split('-')[0]+'</option>').join('')+'</select>'+
-     '<button class="btn btn-sm btn-p" onclick="generaCedoliniTutti()">\u2b07 Genera per tutti gli attivi</button></div>'+
+     '<button class="btn btn-sm btn-p" onclick="generaCedoliniTutti()">\u2b07 Genera per tutti gli attivi</button><button class="btn btn-sm" onclick="esportaBonifici()">\ud83c\udfe6 Esporta bonifici</button></div>'+
      '<table><thead><tr><th>Procacciatore</th><th>Regime</th><th>Affari</th><th>Lordo mese</th><th></th></tr></thead><tbody id="ced-tbody"></tbody></table></div>'
   box.innerHTML=h
   renderCedoliniRows()
@@ -5760,6 +5771,106 @@ async function salvaPassoAffari(){
   const v=parseFloat(document.getElementById('ced-rowh').value)||6.6
   impostazioni['ced_aff_rowh']=v
   try{ await upsertImpostazioni(); toast('Passo righe salvato ('+v+' mm)') }catch(e){ alert('Errore salvataggio: '+(e.message||e)) }
+}
+async function salvaDatiBanca(){
+  impostazioni['banca_intestatario']=(document.getElementById('bk-int').value||'').trim()
+  impostazioni['banca_iban']=(document.getElementById('bk-iban').value||'').replace(/\s+/g,'').toUpperCase()
+  impostazioni['banca_bic']=(document.getElementById('bk-bic').value||'').replace(/\s+/g,'').toUpperCase()
+  try{ await upsertImpostazioni(); toast('Dati banca salvati') }catch(e){ alert('Errore salvataggio: '+(e.message||e)) }
+}
+function _bonificiRows(mese){
+  const out=[]
+  procs.forEach((p,i)=>{
+    const ovr=_ovrMese(p,mese)
+    const vv=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&(v.data||'').startsWith(mese))
+    if(!vv.length && !ovr) return
+    const c=_calcCedolino(p,vv,ovr)
+    const importo=Math.round((c.piva?c.nettoFatt:c.nettoPag)*100)/100
+    if(importo<=0) return
+    const benef=(p.regime==='piva'&&p.ragioneSociale)?p.ragioneSociale:p.nome
+    out.push({ nome:benef, iban:(p.iban||'').replace(/\s+/g,'').toUpperCase(), bic:(p.bic||'').replace(/\s+/g,'').toUpperCase(), importo, causale:'Pagamento provvigioni '+_meseLabelCed(mese)+' '+mese.split('-')[0] })
+  })
+  return out
+}
+function esportaBonifici(){
+  const mese=document.getElementById('ced-mese-sel').value
+  const rows=_bonificiRows(mese)
+  if(!rows.length){ alert('Nessun pagamento da esportare per '+_meseLabelCed(mese)+' '+mese.split('-')[0]+'.'); return }
+  const ibanAz=(impostazioni['banca_iban']||'').replace(/\s+/g,'')
+  if(!ibanAz){ alert('Inserisci prima l\u0027IBAN dell\u0027azienda nella card \u00abConto azienda per i bonifici\u00bb e premi Salva.'); return }
+  const validi=rows.filter(r=>r.iban)
+  const senza=rows.filter(r=>!r.iban)
+  if(!validi.length){ alert('Nessun procacciatore con IBAN. Aggiungi gli IBAN nelle schede.'); return }
+  const tot=validi.reduce((s,r)=>s+r.importo,0)
+  const ov=document.createElement('div')
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:99998'
+  const card=document.createElement('div')
+  card.style.cssText='background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:22px;max-width:460px;width:90%'
+  card.innerHTML='<div style="font-weight:700;font-size:15px;margin-bottom:6px">Esporta bonifici \u2014 '+_meseLabelCed(mese)+' '+mese.split('-')[0]+'</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:'+(senza.length?'6px':'14px')+'">'+validi.length+' pagamenti \u00b7 totale '+fmtE(tot)+'</div>'+
+    (senza.length?'<div style="font-size:12px;color:var(--red);margin-bottom:14px">\u26a0\ufe0f Esclusi (senza IBAN): '+senza.map(r=>escB(r.nome)).join(', ')+'</div>':'')+
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">In che formato vuoi esportare?</div>'
+  const btns=document.createElement('div'); btns.style.cssText='display:flex;gap:10px'
+  const bxml=document.createElement('button'); bxml.className='btn btn-p'; bxml.style.flex='1'; bxml.textContent='XML (SEPA)'
+  const bcsv=document.createElement('button'); bcsv.className='btn btn-p'; bcsv.style.flex='1'; bcsv.textContent='CSV'
+  const bann=document.createElement('button'); bann.className='btn btn-sm'; bann.style.cssText='margin-top:12px;width:100%'; bann.textContent='Annulla'
+  bxml.onclick=()=>{ ov.remove(); _doExportBonifici(validi, mese, 'xml') }
+  bcsv.onclick=()=>{ ov.remove(); _doExportBonifici(validi, mese, 'csv') }
+  bann.onclick=()=>ov.remove()
+  btns.appendChild(bxml); btns.appendChild(bcsv)
+  card.appendChild(btns); card.appendChild(bann)
+  ov.appendChild(card); ov.onclick=(e)=>{ if(e.target===ov) ov.remove() }
+  document.body.appendChild(ov)
+}
+async function _doExportBonifici(rows, mese, fmt){
+  let content, fileName
+  if(fmt==='csv'){ content=_genBonificiCSV(rows); fileName='bonifici_'+mese+'.csv' }
+  else { content=_genBonificiXML(rows, mese); fileName='bonifici_'+mese+'.xml' }
+  try{
+    const bytes=Array.from(new TextEncoder().encode(content))
+    if(window.electronAPI?.salvaFile){
+      const r=await window.electronAPI.salvaFile(bytes, fileName)
+      if(r && r.ok){ toast('File bonifici salvato') }
+      else if(r && r.errore){ alert('Errore salvataggio: '+r.errore) }
+    } else {
+      const url=URL.createObjectURL(new Blob([content],{type:'application/octet-stream'})); const a=document.createElement('a'); a.href=url; a.download=fileName; a.click(); setTimeout(()=>URL.revokeObjectURL(url),2000)
+    }
+  }catch(e){ alert('Errore esportazione: '+(e.message||e)) }
+}
+function _csvCell(s){ s=(s==null?'':String(s)); return /[;"\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s }
+function _genBonificiCSV(rows){
+  const head='Beneficiario;IBAN;BIC;Importo;Causale'
+  const body=rows.map(r=>[_csvCell(r.nome),_csvCell(r.iban),_csvCell(r.bic||''),r.importo.toFixed(2).replace('.',','),_csvCell(r.causale)].join(';'))
+  return [head].concat(body).join('\r\n')+'\r\n'
+}
+function _genBonificiXML(rows, mese){
+  const az=impostazioni['banca_intestatario']||'LEONE CONSULTING di Leonardo Angelucci'
+  const ibanAz=(impostazioni['banca_iban']||'').replace(/\s+/g,'').toUpperCase()
+  const bicAz=(impostazioni['banca_bic']||'').replace(/\s+/g,'').toUpperCase()
+  const now=new Date()
+  const ts=now.toISOString().slice(0,19)
+  const msgId='LC'+now.getTime()
+  const nb=rows.length
+  const ctrl=rows.reduce((s,r)=>s+r.importo,0).toFixed(2)
+  const exec=new Date(now.getTime()+86400000).toISOString().slice(0,10)
+  const esc=(s)=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  const dbtrAgt = bicAz ? '<FinInstnId><BIC>'+esc(bicAz)+'</BIC></FinInstnId>' : '<FinInstnId><Othr><Id>NOTPROVIDED</Id></Othr></FinInstnId>'
+  let tx=''
+  rows.forEach((r,idx)=>{
+    const cdtrAgt = r.bic ? '<CdtrAgt><FinInstnId><BIC>'+esc(r.bic)+'</BIC></FinInstnId></CdtrAgt>' : '<CdtrAgt><FinInstnId><Othr><Id>NOTPROVIDED</Id></Othr></FinInstnId></CdtrAgt>'
+    tx+='<CdtTrfTxInf><PmtId><EndToEndId>'+esc((msgId+'-'+(idx+1)).slice(0,35))+'</EndToEndId></PmtId>'+
+      '<Amt><InstdAmt Ccy="EUR">'+r.importo.toFixed(2)+'</InstdAmt></Amt>'+cdtrAgt+
+      '<Cdtr><Nm>'+esc(String(r.nome).slice(0,70))+'</Nm></Cdtr>'+
+      '<CdtrAcct><Id><IBAN>'+esc(r.iban)+'</IBAN></Id></CdtrAcct>'+
+      '<RmtInf><Ustrd>'+esc(String(r.causale).slice(0,140))+'</Ustrd></RmtInf></CdtTrfTxInf>'
+  })
+  return '<?xml version="1.0" encoding="UTF-8"?>'+
+    '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03"><CstmrCdtTrfInitn>'+
+    '<GrpHdr><MsgId>'+esc(msgId)+'</MsgId><CreDtTm>'+ts+'</CreDtTm><NbOfTxs>'+nb+'</NbOfTxs><CtrlSum>'+ctrl+'</CtrlSum><InitgPty><Nm>'+esc(az)+'</Nm></InitgPty></GrpHdr>'+
+    '<PmtInf><PmtInfId>'+esc(msgId)+'</PmtInfId><PmtMtd>TRF</PmtMtd><BtchBookg>true</BtchBookg><NbOfTxs>'+nb+'</NbOfTxs><CtrlSum>'+ctrl+'</CtrlSum>'+
+    '<PmtTpInf><SvcLvl><Cd>SEPA</Cd></SvcLvl></PmtTpInf><ReqdExctnDt>'+exec+'</ReqdExctnDt>'+
+    '<Dbtr><Nm>'+esc(az)+'</Nm></Dbtr><DbtrAcct><Id><IBAN>'+esc(ibanAz)+'</IBAN></Id></DbtrAcct><DbtrAgt>'+dbtrAgt+'</DbtrAgt><ChrgBr>SLEV</ChrgBr>'+
+    tx+'</PmtInf></CstmrCdtTrfInitn></Document>'
 }
 function _calcCedolino(p, vv, ovr){
   const lordo=vv.reduce((s,v)=>s+v.prov,0)+ovr
@@ -7007,6 +7118,7 @@ async function eliminaDocId(id){
       editorDocId = null
       document.getElementById('editor-toolbar')?.setAttribute('style','display:none')
       document.getElementById('editor-canvas-wrap')?.setAttribute('style','display:none')
+      document.getElementById('editor-legend')?.setAttribute('style','display:none')
       const ph = document.getElementById('editor-placeholder'); if(ph) ph.style.display='flex'
     }
     await caricaDocumentiCustom()
@@ -7499,7 +7611,7 @@ function _moveMarkerTip(ev){ const t=document.getElementById('lc-marker-tip'); i
 function _hideMarkerTip(){ const t=document.getElementById('lc-marker-tip'); if(t)t.style.display='none' }
 function renderEditorMarkers(){
   const layer = document.getElementById('editor-markers-layer')
-  if(!layer || !editorDocId) return
+  if(!layer || !editorDocId){ const lg=document.getElementById('editor-legend'); if(lg){lg.style.display='none'} return }
   layer.innerHTML = ''
   layer.style.pointerEvents = 'auto'
   if(!layer._tipBound){
@@ -7545,10 +7657,10 @@ function renderEditorMarkers(){
       el.style.cssText = `position:absolute;left:${m.x_pct}%;top:${m.y_pct}%;transform:translateY(-50%);${m.w_pct?('width:'+m.w_pct+'%;'):''}min-height:19px;box-sizing:border-box;background:${cfg.color}26;border:1.5px dashed ${cfg.color};border-radius:4px;cursor:grab;z-index:10;display:flex;align-items:center`
       const lab=document.createElement('span')
       lab.textContent=cfg.label
-      lab.style.cssText=`font-size:9px;font-weight:700;color:#fff;background:${cfg.color};padding:1px 6px;border-radius:3px;white-space:nowrap;pointer-events:none`
+      lab.style.cssText=`font-size:9px;font-weight:700;color:#fff;background:${cfg.color};padding:1px 6px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%;pointer-events:none`
       el.appendChild(lab)
       const grip=document.createElement('div')
-      grip.title='Trascina per allungare il campo (il testo lungo va a capo)'
+      grip.title='Trascina per allargare o restringere il campo (il nome si accorcia da solo)'
       grip.style.cssText=`position:absolute;right:-5px;top:0;bottom:0;width:12px;display:flex;align-items:center;justify-content:center;cursor:ew-resize`
       grip.innerHTML=`<div style="width:5px;height:62%;min-height:11px;background:${cfg.color};border:1px solid #fff;border-radius:2px"></div>`
       grip.onmousedown=(e)=>{
@@ -7606,20 +7718,24 @@ function renderEditorMarkers(){
     layer.appendChild(el)
   })
 
-  // Legenda
-  const allTypes = [...new Set((editorMarkers[editorDocId]||[]).map(m=>m.tipo))]
-  if(allTypes.length){
-    const leg = document.createElement('div')
-    leg.style.cssText = 'position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);border-radius:6px;padding:6px 8px;font-size:10px;color:#fff;pointer-events:none'
-    leg.innerHTML = allTypes.map(t => {
-      const cfg = MARKER_COLORS[t]||{color:'#888',label:t}
-      const count = (editorMarkers[editorDocId]||[]).filter(m=>m.tipo===t).length
-      return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
-        <span style="width:10px;height:10px;border-radius:2px;background:${cfg.color};display:inline-block"></span>
-        ${cfg.label} (${count})
-      </div>`
-    }).join('')
-    layer.appendChild(leg)
+  // Riepilogo campi: sotto il PDF, in riga (a capo automatico)
+  const legEl = document.getElementById('editor-legend')
+  if(legEl){
+    const allTypes = [...new Set((editorMarkers[editorDocId]||[]).map(m=>m.tipo))]
+    if(allTypes.length){
+      legEl.innerHTML = `<span style="font-weight:700;color:var(--text2);margin-right:4px">Campi nel documento:</span>` + allTypes.map(t => {
+        const cfg = MARKER_COLORS[t]||{color:'#888',label:t}
+        const count = (editorMarkers[editorDocId]||[]).filter(m=>m.tipo===t).length
+        return `<span style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap">
+          <span style="width:11px;height:11px;border-radius:2px;background:${cfg.color};display:inline-block;flex:none"></span>
+          ${cfg.label} <span style="color:var(--text3)">(${count})</span>
+        </span>`
+      }).join('')
+      legEl.style.display = 'flex'
+    } else {
+      legEl.innerHTML = ''
+      legEl.style.display = 'none'
+    }
   }
 }
 
