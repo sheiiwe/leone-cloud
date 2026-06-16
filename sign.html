@@ -163,7 +163,8 @@ const db = createClient(SUPA_URL, SUPA_KEY)
 const dbAdmin = db
 
 // URL pubblico del contratto su Supabase Storage
-const PDF_URL = SUPA_URL + '/storage/v1/object/public/contratti/contratto_procacciatori_con_privacy.pdf'
+const DEFAULT_PDF_URL = SUPA_URL + '/storage/v1/object/public/contratti/contratto_procacciatori_con_privacy.pdf'
+function pdfUrlPerContratto(){ return (contratto && contratto.pdfPath) ? (SUPA_URL + '/storage/v1/object/public/contratti/' + contratto.pdfPath) : DEFAULT_PDF_URL }
 
 const params = new URLSearchParams(window.location.search)
 const token = params.get('token')
@@ -206,7 +207,7 @@ function mostra(id) {
 // ── PDF ───────────────────────────────────────────────────────
 async function caricaPDF() {
   try {
-    pdfDoc = await pdfjsLib.getDocument(PDF_URL).promise
+    pdfDoc = await pdfjsLib.getDocument(pdfUrlPerContratto()).promise
     document.getElementById('pdf-info').textContent = `${pdfDoc.numPages} pagine`
     await renderAllPages()
   } catch(e) {
