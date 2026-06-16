@@ -56,7 +56,7 @@ const fromFor = (via, smtp, smtpPec) => {
 
 // ── INVIA CONTRATTO PER FIRMA ──────────────────────────────────
 ipcMain.handle('send-contract', async (event, { to, name, contractType, signToken, via, smtp, smtpPec }) => {
-  const signUrl = `https://sheiiwe.github.io/leone-cloud/sign.html?token=${signToken}`
+  const signUrl = `https://firma.leoneconsultingitalia.it/?token=${signToken}`
   const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a18">
   <div style="background:#185FA5;padding:24px;text-align:center"><h1 style="color:#fff;margin:0">Leone Consulting</h1><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:13px">di Leonardo Angelucci</p></div>
   <div style="padding:32px 24px">
