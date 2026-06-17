@@ -161,7 +161,7 @@ tr:last-child td{border-bottom:none}
       <textarea id="adm-post-testo" rows="4" placeholder="Testo della comunicazione..." style="width:100%;padding:11px 12px;border:1px solid #e0ded6;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;box-sizing:border-box;resize:vertical"></textarea>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6b6b66;margin-top:8px;cursor:pointer"><input id="adm-post-pin" type="checkbox" style="width:16px;height:16px"> 📌 Metti in evidenza</label>
       <div style="margin-top:8px"><label style="font-size:12px;color:#6b6b66">📎 Foto / Video <span style="color:#9e9e98">(video max ~45 MB)</span></label><br><input type="file" id="adm-media" accept="image/*,video/*" multiple style="font-size:13px;margin-top:4px"></div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6b6b66;margin-top:8px;cursor:pointer"><input id="adm-email" type="checkbox" checked style="width:16px;height:16px"> 📧 Invia anche via email ai procacciatori</label>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px"><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6b6b66;cursor:pointer"><input id="adm-email" type="checkbox" checked style="width:16px;height:16px"> 📧 Invia anche via email ai procacciatori</label><select id="adm-email-dest" style="font-size:12px;padding:4px 8px;border:1px solid #e0ded6;border-radius:6px;background:#fff;color:#2c2c28;font-family:inherit"><option value="entrambe">Personale + Aziendale</option><option value="personale">Solo personale</option><option value="aziendale">Solo aziendale</option></select></div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px"><button id="btn-adm-annulla" onclick="annullaModificaAdmin()" style="display:none;background:#eee;color:#444;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Annulla</button><button id="btn-adm-pub" onclick="pubblicaPostAdmin()" style="background:#F22015;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Pubblica</button></div>
     </div>
     <div class="card" style="margin-bottom:14px"><div class="notice">Sei collegato come <strong>amministratore</strong>. Qui pubblichi le comunicazioni e vedi i post dei procacciatori. La gestione completa (provvigioni, listino, ecc.) è nell'app desktop.</div></div>
@@ -526,6 +526,7 @@ async function logout(){
 async function avvia(session){
   mostra('v-loading')
   const email = (session?.user?.email || '').toLowerCase()
+  await loadCfgPortale()
   if(email === ADMIN_EMAIL){
     MIO_EMAIL = email
     document.getElementById('adm-email').textContent = email
@@ -1281,13 +1282,21 @@ async function pubblicaPost(){
 }
 async function _emailBachecaTuttiP(titolo, testo){
   try{
+    const dest=(document.getElementById('adm-email-dest')||{}).value||'entrambe'
     const r=await db.from('procacciatori').select('data')
-    const dest=[...new Set((r.data||[]).map(x=>x.data&&x.data.email).filter(e=>e&&(''+e).includes('@')).map(e=>(''+e).trim().toLowerCase()))]
-    if(!dest.length) return
+    const set=new Set()
+    ;(r.data||[]).forEach(x=>{
+      const d=x.data||{}
+      const pe=(''+(d.email||'')).trim().toLowerCase(), ae=(''+(d.email_aziendale||'')).trim().toLowerCase()
+      if((dest==='entrambe'||dest==='personale')&&pe.includes('@')) set.add(pe)
+      if((dest==='entrambe'||dest==='aziendale')&&ae.includes('@')) set.add(ae)
+    })
+    const emails=[...set]
+    if(!emails.length) return
     const portale=location.origin+location.pathname
     const html='<div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a18;font-size:14px;line-height:1.6"><h2 style="color:#F22015;margin:0 0 8px">'+esc(titolo||'Comunicazione')+'</h2><div style="white-space:pre-wrap">'+esc(testo||'')+'</div><p style="margin-top:14px"><a href="'+portale+'" style="background:#3B6D11;color:#fff;text-decoration:none;padding:9px 16px;border-radius:8px">Apri il portale</a></p><p style="font-size:12px;color:#888;margin-top:12px">Leone Consulting \u2014 Portale Procacciatori</p></div>'
     const subject='\ud83d\udce3 '+(titolo||'Nuova comunicazione')+' \u2014 Leone Consulting'
-    const rows=dest.map(e=>({data:{to:e, subject, html}}))
+    const rows=emails.map(e=>({data:{to:e, subject, html}}))
     await db.from('email_queue').insert(rows)
   }catch(e){ console.error('email bacheca portale:',e) }
 }
