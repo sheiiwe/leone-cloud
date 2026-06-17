@@ -1221,8 +1221,10 @@ function renderBacheca(rows, targetId){
   const posts=(rows||[]).map(r=>({ _id:r.id, created:r.created_at, ...(r.data||r) }))
   posts.sort((a,b)=> (b.pin?1:0)-(a.pin?1:0))
   window._bachecaPosts=posts
-  if(!posts.length){ box.innerHTML='<div class="empty">Nessuna comunicazione al momento.</div>'; return }
-  box.innerHTML = posts.map(p=>{
+  const isAdminView=(targetId==='bacheca-lista-admin')
+  const vis = isAdminView ? posts : posts.filter(p=> (p.titolo&&(''+p.titolo).trim()) || (p.testo&&(''+p.testo).trim()) || (p.media&&p.media.length))
+  if(!vis.length){ box.innerHTML='<div class="empty">Nessuna comunicazione al momento.</div>'; return }
+  box.innerHTML = vis.map(p=>{
     const d = p.data || (p.created ? new Date(p.created).toLocaleDateString('it-IT') : '')
     const isAdm = !!p.isAdmin
     const autore = isAdm ? 'Leone Consulting' : (p.autoreNome||'Procacciatore')
