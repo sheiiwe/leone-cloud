@@ -1275,6 +1275,7 @@ async function pubblicaPost(){
   const btn=document.getElementById('btn-post'); if(btn){btn.disabled=true; btn.textContent='Pubblico...'}
   try{
     const media=await _uploadMediaBacheca('post-media')
+    if(!testo && !media.length){ alert('La foto/video non è stata caricata (permesso mancante su Supabase). Il post non è stato pubblicato.'); if(btn){btn.disabled=false; btn.textContent='Pubblica'} return }
     const { error } = await db.from('bacheca').insert({data:{testo, media, autoreNome:MIO_NOME, autoreEmail:MIO_EMAIL, autorePid:MIO_PID, isAdmin:false, data:new Date().toLocaleDateString('it-IT')}})
     if(error) throw error
     document.getElementById('post-testo').value=''
@@ -1312,6 +1313,7 @@ async function pubblicaPostAdmin(){
   const btn=document.getElementById('btn-adm-pub'); if(btn){btn.disabled=true; btn.textContent='Attendi...'}
   try{
     const nuoviMedia=await _uploadMediaBacheca('adm-media')
+    if(!editId && !titolo && !testo && !nuoviMedia.length){ alert('Le foto/video non sono state caricate (permesso mancante su Supabase) e non c\u0027è testo: il post non è stato pubblicato.'); if(btn){btn.disabled=false; btn.textContent='Pubblica'} return }
     if(editId){
       const orig=(window._bachecaPosts||[]).find(x=>x._id===editId)||{}
       const media=[...(orig.media||[]),...nuoviMedia]
