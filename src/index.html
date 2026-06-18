@@ -1018,6 +1018,7 @@ tbody tr:hover td{background:var(--surface2)}
         <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Documenti</div>
         <div id="editor-doc-list" style="flex:1;overflow-y:auto;min-height:0;padding-right:4px"></div>
         <button class="btn btn-p" style="font-size:11px;width:100%;margin-top:8px;flex-shrink:0" onclick="aggiungiDocumento()">+ Aggiungi documento</button>
+        <button class="btn" style="font-size:11px;width:100%;margin-top:6px;flex-shrink:0" onclick="apriCestinoDocs()">🗑 Cestino documenti</button>
         <input type="file" id="upload-doc-input" accept=".pdf" style="display:none" onchange="onDocumentoCaricatoInput(this)">
         <input type="file" id="replace-pdf-input" accept=".pdf" style="display:none" onchange="onReplacePdfInput(this)">
       </div>
@@ -1057,9 +1058,10 @@ tbody tr:hover td{background:var(--surface2)}
             <span id="editor-cf-custom" style="display:contents"></span>
             <button class="btn btn-sm" style="background:#5d6d7e;color:#fff;font-size:11px;padding:3px 7px;font-weight:700" onclick="nuovoCampoCustom()">➕ Campo personalizzato</button>
             <span style="flex-basis:100%;height:0"></span>
-            <span onclick="toggleCedFields(this)" style="font-size:11px;font-weight:700;color:var(--accent);align-self:center;padding:2px 9px;cursor:pointer;user-select:none;border:1px solid var(--accent);border-radius:6px">CEDOLINO ▸</span>
-            <span id="ced-fields" style="display:none">
+            <span onclick="toggleCedFields(this)" style="font-size:11px;font-weight:700;color:var(--accent);align-self:center;padding:2px 9px;cursor:pointer;user-select:none;border:1px solid var(--accent);border-radius:6px">CEDOLINO ▾</span>
+            <span id="ced-fields" style="display:contents">
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('regime_testo')">+ Regime (testo)</button>
+            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_causale')">+ Causale (auto)</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('citta_cap_prov')">+ Città/CAP/Prov</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('codice_ateco')">+ Cod. ATECO</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('solo_piva')">+ Solo P.IVA</button>
@@ -5851,6 +5853,7 @@ async function generaCedolino(idx, mese){
   if(ovr>0) affari.push({n:String(affari.length+1),cliente:'Provvigioni rete',desc:'Override downline',pct:'',lorda:fmtN(ovr)})
   const prodotti=[...new Set(vv.map(v=>v.cat).filter(Boolean))].join(', ')
   const extraBase={
+    ced_causale: (p.nome||'') + ' - Provvigioni ' + _meseLabelCed(mese) + ' ' + mese.split('-')[0],
     ced_mese:_meseLabelCed(mese), ced_anno:mese.split('-')[0], ced_data_emiss:new Date().toLocaleDateString('it-IT'),
     ced_n_prosp: mese.replace('-','')+'-'+String(idx+1).padStart(2,'0'),
     ced_prodotto: prodotti||'Vari prodotti/servizi',
@@ -7144,21 +7147,10 @@ async function confermaRinominaDoc(id){
 }
 async function eliminaDocId(id){
   const label = _docLabel(id)
-  if(!confirm('Sei sicuro di voler eliminare il documento "' + label + '"?\n\nVerranno rimossi anche i campi posizionati su questo documento.')) return
+  if(!confirm('Spostare nel cestino il documento "' + label + '"?\n\nNon viene perso nulla: PDF e campi posizionati restano salvati e potrai ripristinarlo dal cestino.')) return
   try {
-    const isCustom = id.startsWith('CUSTOM_')
-    if(isCustom){
-      const d = editorDocsCustom.find(x=>x.id===id)
-      if(d && d.storageFile){ try{ await db.storage.from('documenti').remove([d.storageFile]) }catch(e){} }
-    } else {
-      impostazioni['dochidden_'+id] = true
-      const sf = impostazioni['docpdf_'+id]
-      if(sf){ try{ await db.storage.from('documenti').remove([sf]) }catch(e){} ; delete impostazioni['docpdf_'+id] }
-    }
-    try { await db.from('editor_coords').delete().eq('doc_id', id) } catch(e){}
-    delete editorMarkers[id]
-    delete impostazioni['docname_'+id]
-    delete impostazioni['pages_'+id]
+    impostazioni['dochidden_'+id] = true
+    impostazioni['docdeleted_'+id] = new Date().toISOString()
     await upsertImpostazioni()
     if(editorDocId === id){
       editorDocId = null
@@ -7166,12 +7158,64 @@ async function eliminaDocId(id){
       document.getElementById('editor-canvas-wrap')?.setAttribute('style','display:none')
       const ph = document.getElementById('editor-placeholder'); if(ph) ph.style.display='flex'
     }
+    renderEditorDocList()
+    toast('🗑 Documento spostato nel cestino')
+  } catch(e){ alert('Errore: ' + e.message) }
+}
+async function ripristinaDocId(id){
+  try{
+    delete impostazioni['dochidden_'+id]
+    delete impostazioni['docdeleted_'+id]
+    await upsertImpostazioni()
     await caricaDocumentiCustom()
     renderEditorDocList()
-    toast('Documento eliminato')
+    const m=document.getElementById('cestino-docs-modal'); if(m){ m.remove(); apriCestinoDocs() }
+    toast('↩ Documento ripristinato')
+  }catch(e){ alert('Errore ripristino: '+e.message) }
+}
+async function eliminaDocDefinitivo(id){
+  const label=_docLabel(id)
+  if(!confirm('ELIMINARE DEFINITIVAMENTE "'+label+'"?\n\nNON è reversibile: verranno cancellati il PDF e i campi posizionati.')) return
+  try{
+    const isCustom = id.startsWith('CUSTOM_')
+    if(isCustom){
+      const d = editorDocsCustom.find(x=>x.id===id)
+      if(d && d.storageFile){ try{ await db.storage.from('documenti').remove([d.storageFile]) }catch(e){} }
+    } else {
+      const sf = impostazioni['docpdf_'+id]
+      if(sf){ try{ await db.storage.from('documenti').remove([sf]) }catch(e){} ; delete impostazioni['docpdf_'+id] }
+    }
+    try { await db.from('editor_coords').delete().eq('doc_id', id) } catch(e){}
+    delete editorMarkers[id]
+    delete impostazioni['docname_'+id]
+    delete impostazioni['pages_'+id]
+    delete impostazioni['docdeleted_'+id]
+    impostazioni['dochidden_'+id] = true
+    await upsertImpostazioni()
+    await caricaDocumentiCustom()
+    renderEditorDocList()
+    const m=document.getElementById('cestino-docs-modal'); if(m){ m.remove(); apriCestinoDocs() }
+    toast('Documento eliminato definitivamente')
   } catch(e){ alert('Errore eliminazione: ' + e.message) }
 }
-
+function apriCestinoDocs(){
+  const allDocs=[...EDITOR_DOCS, ...editorDocsCustom]
+  const seen={}; let hidden=allDocs.filter(d=>{ if(seen[d.id])return false; seen[d.id]=1; return impostazioni['dochidden_'+d.id] })
+  hidden.sort((a,b)=> String(impostazioni['docdeleted_'+b.id]||'').localeCompare(String(impostazioni['docdeleted_'+a.id]||'')))
+  let body
+  if(!hidden.length){ body='<div style="padding:16px;color:var(--text2);text-align:center">Il cestino è vuoto.</div>' }
+  else body=hidden.map(d=>{
+    const label=impostazioni['docname_'+d.id]||d.label||d.id
+    const _dd=impostazioni['docdeleted_'+d.id]
+    const when=_dd?('🗑 Eliminato il '+new Date(_dd).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})):'data sconosciuta'
+    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px"><div style="flex:1;min-width:0;font-size:13px"><div style="font-weight:600">'+escB(label)+'</div><div style="color:var(--text3);font-size:11px;margin-top:2px">'+when+'</div></div><button class="btn btn-sm btn-p" onclick="ripristinaDocId(\''+d.id+'\')" style="white-space:nowrap">↩ Ripristina</button><button class="btn btn-sm btn-r" onclick="eliminaDocDefinitivo(\''+d.id+'\')" style="white-space:nowrap">🗑 Elimina</button></div>'
+  }).join('')
+  const div=document.createElement('div'); div.id='cestino-docs-modal'
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px'
+  div.innerHTML='<div style="background:var(--surface);border-radius:12px;max-width:540px;width:100%;max-height:80vh;overflow:auto;padding:18px" onclick="event.stopPropagation()"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-weight:700;font-size:16px">🗑 Cestino documenti</div><button class="btn btn-sm" onclick="document.getElementById(\'cestino-docs-modal\').remove()">✕ Chiudi</button></div>'+body+'</div>'
+  div.onclick=()=>div.remove()
+  document.body.appendChild(div)
+}
 async function scaricaDocumentoStorage(storageFile){
   try {
     const { data } = await db.storage.from('documenti').download(storageFile)
@@ -7304,13 +7348,29 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
     const yTop = (m.y_pct/100) * ph
     if(m.tipo==='tabella_affari'){
       const aff=(extra && extra.__affari)||[]
-      const cols=[{k:'n',x:6.5},{k:'cliente',x:12},{k:'desc',x:41.5},{k:'pct',x:72},{k:'lorda',x:82}]
-      const rowH=20.6
+      const x0=x
+      const yHead=ph - yTop - 4
+      const tableW = (m.w_pct ? (m.w_pct/100)*pw : (pw - x0 - 36))
+      const cols=[
+        {k:'n',      t:'N\u00b0',              w:0.07},
+        {k:'cliente',t:'Cliente',             w:0.27},
+        {k:'desc',   t:'Descrizione',         w:0.34},
+        {k:'pct',    t:'Provvigione',         w:0.15},
+        {k:'lorda',  t:'Provv. lorda (\u20ac)', w:0.17}
+      ]
+      let acc=0; cols.forEach(c=>{ c.off=acc; acc+=c.w })
+      const rowH=18
+      cols.forEach(c=>{ pg.drawText(c.t, { x:x0 + c.off*tableW, y:yHead, size:8.5, font:fontBold, color:PDFLib.rgb(0.10,0.10,0.10) }) })
+      pg.drawLine({ start:{x:x0,y:yHead-4}, end:{x:x0+tableW,y:yHead-4}, thickness:0.8, color:PDFLib.rgb(0.40,0.40,0.40) })
       aff.forEach((rr,ri)=>{
+        const yy=yHead - (ri+1)*rowH
         cols.forEach(c=>{
-          const val=(rr[c.k]==null?'':String(rr[c.k]))
-          if(val) pg.drawText(val, { x:(c.x/100)*pw, y: ph - yTop - 4 - ri*rowH, size:9, font, color:PDFLib.rgb(0.05,0.05,0.05) })
+          let val=(rr[c.k]==null?'':String(rr[c.k]))
+          const maxChars=Math.max(3, Math.floor((c.w*tableW)/4.4))
+          if(val.length>maxChars) val=val.slice(0,maxChars-1)+'\u2026'
+          if(val) pg.drawText(val, { x:x0 + c.off*tableW, y:yy, size:8.5, font, color:PDFLib.rgb(0.05,0.05,0.05) })
         })
+        pg.drawLine({ start:{x:x0,y:yy-4}, end:{x:x0+tableW,y:yy-4}, thickness:0.3, color:PDFLib.rgb(0.82,0.82,0.82) })
       })
       return
     }
