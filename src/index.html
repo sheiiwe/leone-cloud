@@ -404,6 +404,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="pg-title">Listino prodotti</div>
   <div style="margin-bottom:12px"><button class="btn btn-p" onclick="filterList('Telefonia & Internet')" style="font-size:13.5px;padding:9px 18px">📱 Mostra solo Telefonia &amp; Cellulari</button> <button class="btn" onclick="filterList('')" style="font-size:13px;padding:9px 14px">Tutti i prodotti</button></div>
   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center" id="listino-cats"></div>
+  <div id="listino-subfilter" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center"></div>
   <input id="listino-search" type="text" oninput="filterList(activeCat)" placeholder="🔍 Cerca prodotto o categoria..." style="width:100%;max-width:420px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:1rem;background:var(--surface);color:var(--text);box-sizing:border-box">
   <div class="card"><div class="card-hdr"><h3 id="listino-title">Tutti i prodotti</h3><button class="btn btn-p" onclick="openM('m-prodotto')">+ Nuovo prodotto</button></div>
     <div class="tbl-wrap"><table>
@@ -1248,6 +1249,9 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="fr">
       <div class="fg"><label>Oppure nuova categoria</label><input id="pd-cat-new" type="text" placeholder="es. Assicurazioni"></div>
+      <div class="fg"><label>Tipo cliente <span style="font-size:10px;color:var(--text3)">(per il filtro Privati/Business)</span></label>
+        <select id="pd-tipo-cliente"><option value="entrambi">Entrambi (privati e business)</option><option value="privati">Solo privati</option><option value="business">Solo business</option></select>
+      </div>
       <div class="fg"><label>Piattaforma</label>
         <select id="pd-piatt">
           <option value="P.S.">P.S.</option>
@@ -2493,6 +2497,7 @@ function openM(id){
     document.getElementById('pd-costo').value=''
     document.getElementById('pd-margine-perc').value=''
     document.getElementById('pd-email-notifica').value=''
+    {const e=document.getElementById('pd-tipo-cliente'); if(e) e.value='entrambi'}
     document.getElementById('pd-edit-pid').value=''
     document.getElementById('pd-tipo').value='fisso'
     toggleTipoFields()
@@ -5235,6 +5240,8 @@ function renderDipDash(){
 
 // ── LISTINO ───────────────────────────────────────────────────
 let activeCat=''
+let activeTipoCliente=''
+function filterTipoCliente(k){ activeTipoCliente=k; filterList(activeCat) }
 function renderListino(){
   const el=document.getElementById('listino-cats')
   if(!el) return
@@ -5247,8 +5254,18 @@ function renderListino(){
 }
 function filterList(cat,silent){
   activeCat=cat;if(!silent)renderListino()
+  // sotto-filtro Privati/Business: vale per TUTTO il listino, resta impostato cambiando categoria
+  const sf=document.getElementById('listino-subfilter')
+  if(sf){
+    sf.style.display='flex'
+    const b=(k,l)=>'<button class="btn btn-sm'+(activeTipoCliente===k?' btn-p':'')+'" style="border-radius:20px" onclick="filterTipoCliente(\''+k+'\')">'+l+'</button>'
+    sf.innerHTML='<span style="font-size:12px;color:var(--text2);margin-right:4px">Cliente:</span>'+b('','Tutti e due')+b('privati','Privati')+b('business','Business')
+  }
   const q=(document.getElementById('listino-search')?.value||'').toLowerCase().trim()
   let filtered=cat?LISTINO.filter(p=>p.cat===cat):LISTINO.slice()
+  if(activeTipoCliente){
+    filtered=filtered.filter(p=>{ const tc=(p.tipoCliente||'entrambi'); return tc===activeTipoCliente || tc==='entrambi' })
+  }
   if(q) filtered=filtered.filter(p=>(p.nome||'').toLowerCase().includes(q)||(p.cat||'').toLowerCase().includes(q))
   document.getElementById('listino-title').textContent=(cat||'Tutti i prodotti')+(q?' · ricerca "'+q+'"':'')
   _liA=0
@@ -5340,6 +5357,7 @@ function editProdotto(idx){
   document.getElementById('pd-costo').value=(p.costo!=null?p.costo:'')
   document.getElementById('pd-margine-perc').value=(p.marginePerc!=null?p.marginePerc:'')
   document.getElementById('pd-email-notifica').value=p.emailNotifica||''
+  {const e=document.getElementById('pd-tipo-cliente'); if(e) e.value=p.tipoCliente||'entrambi'}
   document.getElementById('pd-edit-pid').value=p.pid
   toggleTipoFields()
   openM('m-prodotto')
@@ -5367,6 +5385,7 @@ function saveProdotto(){
   const mpRaw=document.getElementById('pd-margine-perc').value.trim()
   const marginePerc=mpRaw===''?null:(parseFloat(mpRaw)||0)
   const emailNotifica=document.getElementById('pd-email-notifica').value.trim()
+  const tipoCliente=document.getElementById('pd-tipo-cliente')?.value||'entrambi'
   const editPid=document.getElementById('pd-edit-pid').value
   const pid=editPid||'custom_'+Date.now()
   const prev=editPid?LISTINO.find(p=>p.pid===editPid):null
@@ -5376,7 +5395,7 @@ function saveProdotto(){
     margine = (prezzo!=null && costo!=null) ? +(prezzo-costo).toFixed(2) : (prev&&prev.margine!=null?prev.margine:null)
     if(margine!=null) guadagno = +(margine-prov).toFixed(2)
   }
-  const obj={pid,nome,cat,piatt,prov,tipo,emailNotifica,prezzo,costo,margine,guadagno,marginePerc}
+  const obj={pid,nome,cat,piatt,prov,tipo,emailNotifica,tipoCliente,prezzo,costo,margine,guadagno,marginePerc}
   if(editPid){
     const idx=LISTINO.findIndex(p=>p.pid===editPid)
     if(idx>=0) LISTINO[idx]=obj
@@ -6058,8 +6077,53 @@ async function renderCedolini(){
      '<button class="btn btn-sm btn-p" onclick="generaCedoliniTutti()">\u2b07 Genera per tutti gli attivi</button>'+
      '<input id="ced-search" type="text" placeholder="\ud83d\udd0d Cerca procacciatore..." oninput="renderCedoliniRows()" style="font-size:13px;padding:6px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);flex:1;min-width:160px"></div>'+
      '<div class="tbl-wrap"><table><thead><tr><th>Procacciatore</th><th>Regime</th><th>Affari</th><th>Lordo mese</th><th></th></tr></thead><tbody id="ced-tbody"></tbody></table></div></div>'
+  h+='<div class="card" style="margin-top:14px"><div class="card-hdr"><h3>Storico cedolini generati</h3></div><div id="cedolini-storico-box" style="font-size:13px"></div></div>'
   box.innerHTML=h
   renderCedoliniRows()
+  renderStoricoCedolini()
+}
+function renderStoricoCedolini(){
+  const box=document.getElementById('cedolini-storico-box'); if(!box) return
+  const lista=Array.isArray(impostazioni['cedolini_storico'])?impostazioni['cedolini_storico']:[]
+  if(!lista.length){ box.innerHTML='<div style="color:var(--text2);padding:6px 2px">Nessun cedolino generato finora. Quando ne generi uno, compare qui (con possibilit\u00e0 di scaricarlo o eliminarlo).</div>'; return }
+  const esc=s=>(s||'').toString().replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))
+  const eur=v=>'\u20ac '+(Math.round((+v||0)*100)/100).toFixed(2).replace('.',',')
+  box.innerHTML='<div class="tbl-wrap"><table><thead><tr><th>Procacciatore</th><th>Mese</th><th>Lordo</th><th>Netto</th><th>Generato il</th><th></th></tr></thead><tbody>'+
+    lista.map(r=>'<tr><td style="font-weight:600">'+esc(r.nome)+'</td><td>'+esc(_meseLabelCed(r.mese)+' '+(r.mese||'').split('-')[0])+'</td><td>'+eur(r.lordo)+'</td><td>'+eur(r.netto)+'</td><td style="color:var(--text2)">'+(r.data?new Date(r.data).toLocaleString('it-IT'):'\u2014')+'</td><td class="acts">'+(r.path?'<button class="btn btn-sm" onclick="scaricaStoricoCedolino(\''+r.id+'\')" title="Scarica">\u2b07 PDF</button> ':'')+'<button class="btn btn-sm btn-r" onclick="eliminaStoricoCedolino(\''+r.id+'\')" title="Elimina">\ud83d\uddd1</button></td></tr>').join('')+
+    '</tbody></table></div>'
+}
+async function scaricaStoricoCedolino(id){
+  const lista=Array.isArray(impostazioni['cedolini_storico'])?impostazioni['cedolini_storico']:[]
+  const r=lista.find(x=>x.id===id); if(!r||!r.path){ alert('PDF non disponibile per questo cedolino.'); return }
+  try{
+    const dl=await db.storage.from('documenti').download(r.path)
+    if(dl.error||!dl.data) throw new Error(dl.error?.message||'file non trovato')
+    const buf=await dl.data.arrayBuffer()
+    if(window.electronAPI?.apriFileTmp){ await window.electronAPI.apriFileTmp(Array.from(new Uint8Array(buf)), r.fileName||'cedolino.pdf') }
+    else { const url=URL.createObjectURL(new Blob([buf],{type:'application/pdf'})); const a=document.createElement('a'); a.href=url; a.download=r.fileName||'cedolino.pdf'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1500) }
+  }catch(e){ alert('Errore: '+e.message) }
+}
+async function eliminaStoricoCedolino(id){
+  let lista=Array.isArray(impostazioni['cedolini_storico'])?impostazioni['cedolini_storico']:[]
+  const r=lista.find(x=>x.id===id); if(!r) return
+  if(!confirm('Eliminare questo cedolino dallo storico'+(r.nome?(' di '+r.nome):'')+'?')) return
+  if(r.path){ try{ await db.storage.from('documenti').remove([r.path]) }catch(e){} }
+  impostazioni['cedolini_storico']=lista.filter(x=>x.id!==id)
+  try{ await upsertImpostazioni() }catch(e){ alert('Errore salvataggio: '+e.message); return }
+  renderStoricoCedolini()
+  toast('Cedolino eliminato dallo storico')
+}
+async function _salvaStoricoCedolino(p, mese, c, outBytes, fileName){
+  try{
+    let saved=''
+    const path='cedolini/'+(mese||'x')+'_'+((p.email||p.email_aziendale||p.nome||'x').replace(/[^a-zA-Z0-9]+/g,'_'))+'_'+Date.now()+'.pdf'
+    try{ const up=await db.storage.from('documenti').upload(path, new Blob([outBytes],{type:'application/pdf'}), {upsert:true, contentType:'application/pdf'}); if(!up.error) saved=path }catch(e){}
+    const rec={ id:'ced_'+Date.now()+'_'+Math.floor(Math.random()*1000), nome:p.nome||'', email:(p.email||p.email_aziendale||''), mese, lordo:c.lordo, netto:(c.piva?c.nettoFatt:c.nettoPag), data:new Date().toISOString(), path:saved, fileName }
+    const lista=Array.isArray(impostazioni['cedolini_storico'])?impostazioni['cedolini_storico']:[]
+    lista.unshift(rec)
+    impostazioni['cedolini_storico']=lista.slice(0,300)
+    await upsertImpostazioni()
+  }catch(e){ console.error('storico cedolino:',e) }
 }
 function renderCedoliniRows(){
   const tb=document.getElementById('ced-tbody'); if(!tb) return
@@ -6137,6 +6201,8 @@ async function generaCedolino(idx, mese){
     const fileName='Cedolino_'+_meseLabelCed(mese)+'_'+mese.split('-')[0]+'_'+(p.nome||'').replace(/[^a-zA-Z0-9]+/g,'_')+'.pdf'
     if(window.electronAPI?.apriFileTmp){ await window.electronAPI.apriFileTmp(arr, fileName) }
     else { const blob=new Blob([outBytes],{type:'application/pdf'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=fileName; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000) }
+    await _salvaStoricoCedolino(p, mese, c, outBytes, fileName)
+    if(typeof renderStoricoCedolini==='function') renderStoricoCedolini()
     toast('\u2705 Cedolino generato: '+p.nome)
   }catch(e){ alert('Errore generazione cedolino: '+(e.message||e)) }
 }
