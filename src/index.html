@@ -392,6 +392,7 @@ tbody tr:hover td{background:var(--surface2)}
 
 <div class="page" id="page-listino">
   <div class="pg-title">Listino prodotti</div>
+  <div style="margin-bottom:12px"><button class="btn btn-p" onclick="filterList('Telefonia & Internet')" style="font-size:13.5px;padding:9px 18px">📱 Mostra solo Telefonia &amp; Cellulari</button> <button class="btn" onclick="filterList('')" style="font-size:13px;padding:9px 14px">Tutti i prodotti</button></div>
   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center" id="listino-cats"></div>
   <input id="listino-search" type="text" oninput="filterList(activeCat)" placeholder="🔍 Cerca prodotto o categoria..." style="width:100%;max-width:420px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:1rem;background:var(--surface);color:var(--text);box-sizing:border-box">
   <div class="card"><div class="card-hdr"><h3 id="listino-title">Tutti i prodotti</h3><button class="btn btn-p" onclick="openM('m-prodotto')">+ Nuovo prodotto</button></div>
@@ -2976,6 +2977,7 @@ async function inviaDocumento(){
         <div style="padding:24px">
           <p>Gentile ${p.nome},</p>
           <p>in allegato trovi il documento <strong>${nomeDoc}</strong>, compilato con i tuoi dati.</p>
+          <p style="background:#FAEEDA;border-left:4px solid #D4920B;padding:10px 14px;border-radius:6px;margin:14px 0"><strong>⚠️ Mi raccomando:</strong> stampa il documento, <strong>firmalo</strong> e <strong>rinvialo nuovamente a noi</strong> via email a <a href="mailto:amministrazione@leoneconsultingitalia.it">amministrazione@leoneconsultingitalia.it</a>.</p>
           <p style="color:#666;font-size:12px">Data invio: ${oggi}</p>
         </div>
         <div style="background:#f5f5f0;padding:16px 24px;font-size:11px;color:#888">Leone Consulting di Leonardo Angelucci — amministrazione@leoneconsultingitalia.it</div>
