@@ -295,6 +295,7 @@ ipcMain.handle('aggiornamento-rapido', async () => {
     { url: '/sheiiwe/leone-cloud/main/compila_documento.py', dest: path.join(baseDir, 'compila_documento.py') },
     { url: '/sheiiwe/leone-cloud/main/ipc-handlers.js', dest: path.join(baseDir, 'ipc-handlers.js') },
     { url: '/sheiiwe/leone-cloud/main/preload.js', dest: path.join(baseDir, 'preload.js') },
+    { url: '/sheiiwe/leone-cloud/main/email-server.js', dest: path.join(baseDir, 'email-server.js') },
     { url: '/sheiiwe/leone-cloud/main/package.json', dest: path.join(baseDir, 'package.json') },
   ]
 
@@ -305,14 +306,14 @@ ipcMain.handle('aggiornamento-rapido', async () => {
       headers: { 'User-Agent': 'leone-cloud' }
     }
     https.get(options, (res) => {
-      if(res.statusCode !== 200){ console.warn('Salto file non trovato (HTTP '+res.statusCode+'): '+urlPath); res.resume(); resolve(); return }
+      if(res.statusCode !== 200){ reject(new Error(`HTTP ${res.statusCode}`)); return }
       let data = ''
       res.on('data', chunk => data += chunk)
       res.on('end', () => {
         fs.writeFileSync(dest, data, 'utf8')
         resolve()
       })
-    }).on('error', ()=>{ console.warn('Errore rete su '+urlPath); resolve() })
+    }).on('error', reject)
   })
 
   try {
@@ -364,14 +365,21 @@ ipcMain.handle('get-version', () => {
 })
 
 // ── SEND MAIL GENERICO (notifiche admin firma) ────────────────
-ipcMain.handle('sendMail', async (event, { to, subject, html, smtp, smtpPec, via, attachments }) => {
-  const v = via || 'email'
-  const msg = { from: fromFor(v, smtp, smtpPec), to, subject, html }
-  if (Array.isArray(attachments) && attachments.length) {
-    msg.attachments = attachments.map(a => ({ filename: a.filename, content: Buffer.from(a.content) }))
+ipcMain.handle('sendMail', async (event, { to, subject, html, smtp, attachments }) => {
+  try {
+    const msg = { from: fromFor('email', smtp), to, subject, html }
+    if (Array.isArray(attachments) && attachments.length) {
+      msg.attachments = attachments.map(a => ({
+        ...a,
+        content: Buffer.isBuffer(a.content) ? a.content : Buffer.from(a.content)
+      }))
+    }
+    await makeTransport('email', smtp).sendMail(msg)
+    return { ok: true }
+  } catch(e) {
+    console.error('sendMail error:', e)
+    return { ok: false, errore: e.message }
   }
-  await makeTransport(v, smtp, smtpPec).sendMail(msg)
-  return { ok: true }
 })
 
 // ── SUONO NOTIFICA SISTEMA ────────────────────────────────────
@@ -420,25 +428,4 @@ ipcMain.handle('salva-file', async (event, { buffer, fileName }) => {
   } catch(e) {
     return { ok: false, errore: e.message }
   }
-})
-
-// ── SCARICA URL (per leggere fogli Google pubblici, niente CORS) ──
-ipcMain.handle('fetch-url', async (event, { url }) => {
-  return await new Promise((resolve) => {
-    const https = require('https')
-    const get = (u, depth) => {
-      if(depth > 6){ resolve({ ok:false, errore:'Troppi redirect' }); return }
-      try{
-        https.get(u, { headers:{ 'User-Agent':'Mozilla/5.0' } }, (res) => {
-          if(res.statusCode >= 300 && res.statusCode < 400 && res.headers.location){ get(res.headers.location, depth+1); return }
-          if(res.statusCode !== 200){ resolve({ ok:false, errore:'HTTP '+res.statusCode }); return }
-          let data = ''
-          res.setEncoding('utf8')
-          res.on('data', c => data += c)
-          res.on('end', () => resolve({ ok:true, body:data }))
-        }).on('error', e => resolve({ ok:false, errore:e.message }))
-      }catch(e){ resolve({ ok:false, errore:e.message }) }
-    }
-    get(url, 0)
-  })
 })

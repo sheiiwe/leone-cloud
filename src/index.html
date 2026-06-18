@@ -237,6 +237,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('cedolini',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 4v16"/></svg>Cedolini
     </div>
+    <div class="nav-item" onclick="sp('doc-comm',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Documenti commerciali
+    </div>
     <div class="nav-item" onclick="sp('portale-link',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Portale procacciatori
     </div>
@@ -379,6 +382,7 @@ tbody tr:hover td{background:var(--surface2)}
       <h3>Invia contratto per firma</h3>
       <button class="btn btn-p" onclick="openM('m-invia-contratto')">✉ Invia contratto</button>
     </div>
+    <input id="contr-search" type="text" placeholder="🔍 Cerca contratto (nome, email, tipo, stato...)" oninput="renderContratti()" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div class="tbl-wrap"><table>
       <thead><tr><th>Destinatario</th><th>Tipo contratto</th><th>Inviato via</th><th>Data invio</th><th>Stato firma</th><th>Data firma</th><th>Azioni</th></tr></thead>
       <tbody id="tbl-contratti"><tr><td style=\"white-space:nowrap\"><button class=\"btn btn-sm\" onclick=\"editProc(${i})\" title=\"Modifica\">✎</button> <button class=\"btn btn-sm\" onclick=\"apriAnagrafica(${i},&apos;proc&apos;)\" title=\"Archivio\">📁</button> <button class=\"btn btn-sm btn-r\" onclick=\"eliminaProc(${i})\" title=\"Elimina\">✕</button></td></tr></tbody>
@@ -403,8 +407,8 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="info-card">Offerte caricate dal foglio fornitori. Le <strong>scadute</strong> restano qui marcate "DA RINNOVARE" ma <strong>spariscono ai procacciatori</strong> nel portale. Aggiorna la data di scadenza quando il fornitore rinnova.</div>
   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center" id="offerte-cats"></div>
   <div class="card">
-    <div class="card-hdr"><h3 id="offerte-title">Tutte le offerte</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" id="btn-ai-sync" onclick="sincronizzaOfferteAI()" title="L'AI legge tutti i fogli Google dell'azienda e aggiorna le offerte (prezzi, nuove, scadenze, eliminate)">🤖 Aggiorna offerte con AI</button><button class="btn" id="btn-sync-google" onclick="sincronizzaScadenzeDaGoogle(false)" title="Solo date di scadenza, senza AI">🔄 Solo scadenze</button><button class="btn" id="btn-cat-off" onclick="aggiornaOfferteDaCatalogo()" title="Carica e aggiorna tutte le offerte dal catalogo interno (no doppioni)">📥 Aggiorna da catalogo</button><button class="btn btn-p" onclick="apriOfferta()">+ Nuova offerta</button></div></div>
-    <div id="cat-url-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 0 10px;font-size:12px;color:var(--text2)"><span style="white-space:nowrap">Link foglio scadenze (azienda):</span><input id="cat-url" placeholder="incolla qui il link del foglio Google delle scadenze" style="flex:1;min-width:240px;font-size:12px;padding:6px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)"><button class="btn btn-sm" onclick="salvaLinkScadenze()">💾 Salva link</button></div>
+    <div class="card-hdr"><h3 id="offerte-title">Tutte le offerte</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="btn-cat-off" onclick="aggiornaOfferteDaCatalogo()" title="Carica e aggiorna tutte le offerte dal catalogo Team Evolution (no doppioni)">📥 Aggiorna da catalogo</button><button class="btn btn-p" onclick="apriOfferta()">+ Nuova offerta</button></div></div>
+    <input id="off-search" type="text" placeholder="🔍 Cerca offerta (nome, fornitore, categoria...)" oninput="renderOfferte()" style="width:100%;padding:9px 12px;margin:8px 0 4px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div id="offerte-lista" style="padding:4px 0"></div>
   </div>
 </div>
@@ -550,10 +554,10 @@ tbody tr:hover td{background:var(--surface2)}
 
   <!-- Storico invii -->
   <div class="card" style="margin-top:1rem">
-    <div class="card-hdr"><h3>Documenti inviati di recente</h3></div>
+    <div class="card-hdr"><h3>Documenti inviati di recente</h3><input id="inv-storico-search" type="text" placeholder="🔍 Cerca per procacciatore, documento o email..." oninput="renderStoricoDocs()" style="padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);width:280px;max-width:50%"></div>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>Procacciatore</th><th>Documento</th><th>Inviato a</th><th>Via</th><th>Data</th></tr></thead>
-      <tbody id="tbl-inv-storico"><tr><td colspan="5" class="empty">Nessun documento inviato</td></tr></tbody>
+      <thead><tr><th>Procacciatore</th><th>Documento</th><th>Inviato a</th><th>Via</th><th>Data</th><th>Azioni</th></tr></thead>
+      <tbody id="tbl-inv-storico"><tr><td colspan="6" class="empty">Nessun documento inviato</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -562,6 +566,28 @@ tbody tr:hover td{background:var(--surface2)}
 <div class="page" id="page-cedolini">
   <div class="pg-title">Cedolini</div>
   <div id="cedolini-body"></div>
+</div>
+
+<!-- DOCUMENTI COMMERCIALI -->
+<div class="page" id="page-doc-comm">
+  <div class="pg-title">Documenti commerciali</div>
+  <div style="max-width:900px">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-hdr"><h3>Carica un documento</h3></div>
+      <div style="display:flex;flex-direction:column;gap:10px;padding:6px 0">
+        <input id="dc-nome" type="text" placeholder="Nome documento (es. Brochure Energia 2026)" style="width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box">
+        <input id="dc-cat" type="text" placeholder="Categoria (es. Brochure, Listini, Modulistica)" list="dc-cat-list" style="width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box">
+        <datalist id="dc-cat-list"><option value="Brochure"><option value="Listini"><option value="Modulistica"><option value="Contrattualistica"><option value="Marketing"><option value="Formazione"></datalist>
+        <textarea id="dc-desc" rows="2" placeholder="Descrizione (facoltativa)" style="width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box;resize:vertical;font-family:inherit"></textarea>
+        <div><input type="file" id="dc-file" style="font-size:13px"></div>
+        <div><button class="btn btn-p" id="btn-dc-up" onclick="uploadDocComm()">⬆ Carica documento</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h3>Documenti caricati</h3><input id="dc-search" type="text" placeholder="🔍 Cerca documento..." oninput="renderDocCommApp()" style="padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);width:260px;max-width:50%"></div>
+      <div id="doc-comm-lista" style="padding:4px 0"></div>
+    </div>
+  </div>
 </div>
 
 <!-- PORTALE PROCACCIATORI -->
@@ -577,7 +603,7 @@ tbody tr:hover td{background:var(--surface2)}
       <button class="btn" id="btn-portale-edit" onclick="modificaPortaleLink()">✏️ Modifica</button>
       <button class="btn btn-p" onclick="copiaLink(document.getElementById('portale-url').value)">📋 Copia link</button>
     </div>
-    <div style="font-size:12px;color:var(--text2);margin-top:12px">Questo \u00e8 il link del portale da dare ai procacciatori.</div>
+    <div style="font-size:12px;color:var(--text2);margin-top:12px">Quando avrai il tuo dominio personalizzato, cambieremo questo link con il tuo (es. <em>portale.leoneconsultingitalia.it</em>) e tutto continuerà a funzionare allo stesso modo.</div>
   </div>
 </div>
 
@@ -594,12 +620,15 @@ tbody tr:hover td{background:var(--surface2)}
     <strong>Come funziona:</strong> quello che pubblichi qui compare nel <strong>portale dei procacciatori</strong> (tab 📣 Bacheca), in tempo reale. Usalo per avvisi, novità, promozioni, scadenze.
   </div>
   <div class="card">
-    <div class="card-hdr"><h3>Nuova comunicazione</h3></div>
+    <div class="card-hdr"><h3 id="bch-form-title">Nuova comunicazione</h3></div>
     <div style="display:flex;flex-direction:column;gap:10px;padding:6px 0">
+      <input type="hidden" id="bch-edit-id" value="">
       <input id="bch-titolo" type="text" placeholder="Titolo" style="width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box">
       <textarea id="bch-testo" rows="5" placeholder="Testo della comunicazione..." style="width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box;resize:vertical;font-family:inherit"></textarea>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input id="bch-pin" type="checkbox" style="width:16px;height:16px"> 📌 Metti in evidenza (in cima alla bacheca)</label>
-      <div><button class="btn btn-p" id="btn-bch-pub" onclick="pubblicaBacheca()">📣 Pubblica</button></div>
+      <div><label style="font-size:13px;color:var(--text2)">📎 Foto / Video <span style="font-size:11px;color:var(--text3)">(anche più di uno; video max ~45 MB)</span></label><br><input type="file" id="bch-media" accept="image/*,video/*" multiple style="font-size:13px;margin-top:4px"></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input id="bch-email" type="checkbox" checked style="width:16px;height:16px"> 📧 Invia anche via email ai procacciatori</label><select id="bch-email-dest" style="font-size:12px;padding:4px 8px;border:0.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit"><option value="entrambe">Personale + Aziendale</option><option value="personale">Solo personale</option><option value="aziendale">Solo aziendale</option></select></div>
+      <div style="display:flex;gap:8px"><button class="btn btn-p" id="btn-bch-pub" onclick="pubblicaBacheca()">📣 Pubblica</button><button class="btn" id="btn-bch-annulla" onclick="annullaModificaBacheca()" style="display:none">Annulla modifica</button></div>
     </div>
   </div>
   <div class="card">
@@ -676,6 +705,7 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="card" style="margin-top:1rem">
     <div class="card-hdr"><h3>Storico bonus inviati</h3></div>
+    <input id="bonus-search" type="text" placeholder="🔍 Cerca per nome o cliente segnalato..." oninput="renderBonus()" style="width:100%;padding:9px 12px;margin:0 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div class="tbl-wrap"><table>
       <thead><tr><th>Nome</th><th>Cliente segnalato</th><th>Compenso</th><th>Netto</th><th>Data</th><th>Stato</th></tr></thead>
       <tbody id="tbl-bonus"><tr><td colspan="6" class="empty">Nessun bonus inviato</td></tr></tbody>
@@ -951,6 +981,24 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
   </div>
 
+  <!-- 6b. LOGO / FOTO PROFILO PORTALE -->
+  <div class="acc-hdr" onclick="toggleAcc('acc-logo-portale',this)">
+    <h3>🌐 Logo / foto profilo del portale</h3>
+    <span class="acc-arrow">▼</span>
+  </div>
+  <div class="acc-body" id="acc-logo-portale">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Questa immagine appare sul portale procacciatori (al posto del cerchio "LC") e come logo in cima alle pagine. Puoi cambiarla quando vuoi.</div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <img id="prev-logo-portale" src="../assets/icon.png" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid var(--border)">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <input type="file" id="file-logo-portale" accept="image/*" style="display:none" onchange="caricaLogo(this,'portale_logo','prev-logo-portale')">
+        <button class="btn btn-g" onclick="document.getElementById('file-logo-portale').click()">📁 Carica immagine portale</button>
+        <button id="btn-salva-portale_logo" class="btn btn-g" style="display:none;background:#27ae60" onclick="salvaLogo('portale_logo','prev-logo-portale')">💾 Salva</button>
+        <button class="btn btn-sm" onclick="rimuoviLogo('portale_logo','prev-logo-portale')">✕ Rimuovi</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 7. GESTIONE FIRMA / EDITOR CAMPI -->
   <div class="acc-hdr" onclick="toggleAcc('acc-editor-doc',this)">
     <h3>📝 Gestione campi documenti</h3>
@@ -991,6 +1039,7 @@ tbody tr:hover td{background:var(--surface2)}
             <button class="btn btn-sm" style="background:#7f8c8d;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('data_inizio')">+ Inizio</button>
             <button class="btn btn-sm" style="background:#7f8c8d;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('data_fine')">+ Fine</button>
             <button class="btn btn-sm" style="background:#922b21;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('data_firma')">+ Firma</button>
+            <button class="btn btn-sm" style="background:#7d3c98;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('data_cessazione')">+ Data cessazione (recesso)</button>
             <button class="btn btn-sm" style="background:#154360;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('iban')">+ IBAN</button>
             <button class="btn btn-sm" style="background:#154360;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('banca')">+ Banca</button>
             <button class="btn btn-sm" style="background:#0b3a5e;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('bic')">+ BIC/SWIFT</button>
@@ -1006,35 +1055,34 @@ tbody tr:hover td{background:var(--surface2)}
             <span id="editor-cf-custom" style="display:contents"></span>
             <button class="btn btn-sm" style="background:#5d6d7e;color:#fff;font-size:11px;padding:3px 7px;font-weight:700" onclick="nuovoCampoCustom()">➕ Campo personalizzato</button>
             <span style="flex-basis:100%;height:0"></span>
-            <span style="font-size:11px;font-weight:700;color:var(--accent);align-self:center;padding:0 4px">CEDOLINO ▸</span>
-            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('regime_testo')">+ Regime fiscale</button>
+            <span onclick="toggleCedFields(this)" style="font-size:11px;font-weight:700;color:var(--accent);align-self:center;padding:2px 9px;cursor:pointer;user-select:none;border:1px solid var(--accent);border-radius:6px">CEDOLINO ▸</span>
+            <span id="ced-fields" style="display:none">
+            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('regime_testo')">+ Regime (testo)</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('citta_cap_prov')">+ Città/CAP/Prov</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('codice_ateco')">+ Cod. ATECO</button>
-            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('solo_piva')">+ Partita IVA</button>
-            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('solo_cf')">+ Codice fiscale</button>
+            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('solo_piva')">+ Solo P.IVA</button>
+            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('solo_cf')">+ Solo CF</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('num_contratto')">+ N° contratto</button>
-            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('area_geo')">+ Area geografica</button>
-            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('tel_email')">+ Telefono / Email</button>
+            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('area_geo')">+ Area/Zona</button>
+            <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('tel_email')">+ Tel/Email</button>
             <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_mese')">+ Mese</button>
             <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_anno')">+ Anno</button>
-            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_data_emiss')">+ Data emissione</button>
-            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_n_prosp')">+ Numero prospetto</button>
-            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_causale')">+ Causale (auto)</button>
-            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_prov_base')">+ Provvigione base %</button>
-            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_prov_super')">+ Super premio %</button>
+            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_data_emiss')">+ Data emiss.</button>
+            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_n_prosp')">+ N° prospetto</button>
+            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_prodotto')">+ Prodotto</button>
+            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_prov_base')">+ % Prov. base</button>
+            <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_prov_super')">+ % Superpremio</button>
             <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('tabella_affari')">+ Tabella affari (auto)</button>
-            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_num')">+ Colonna N°</button>
-            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_cliente')">+ Colonna Cliente</button>
-            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_desc')">+ Colonna Descrizione</button>
-            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_pct')">+ Colonna Provvigione %</button>
-            <button class="btn btn-sm" style="background:#1f8a70;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('aff_lorda')">+ Colonna Provvigione lorda</button>
-            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_imponibile')">+ Totale lordo</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_tot_lorde')">+ Tot. lorde</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_rimborsi')">+ Rimborsi</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_imponibile')">+ Imponibile</button>
             <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_iva')">+ IVA 22%</button>
-            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_tot_fattura')">+ Totale fattura</button>
-            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_base_rit')">+ Base imponibile 50%</button>
-            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_ritenuta')">+ Ritenuta d'acconto</button>
-            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_bollo')">+ Marca da bollo</button>
-            <button class="btn btn-sm" style="background:#0b5345;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_netto')">+ Totale netto</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_base_rit')">+ Base 50%</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_ritenuta')">+ Ritenuta</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_bollo')">+ Marca bollo</button>
+            <button class="btn btn-sm" style="background:#0b5345;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_netto_fattura')">+ Netto fattura</button>
+            <button class="btn btn-sm" style="background:#0b5345;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_netto_pagare')">+ Netto a pagare</button>
+            </span>
           </div>
           <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
             <button class="btn btn-sm" onclick="editorPrevPage()">◀ Pag</button>
@@ -1051,10 +1099,8 @@ tbody tr:hover td{background:var(--surface2)}
             <img id="editor-pdf-img" style="display:block;width:100%;height:auto">
             <div id="editor-markers-layer" style="position:absolute;inset:0;pointer-events:none"></div>
           </div>
+          <div id="editor-markers-layer" style="position:absolute;inset:0;pointer-events:none"></div>
         </div>
-
-        <!-- Riepilogo campi del documento (sotto il PDF, in riga) -->
-        <div id="editor-legend" style="display:none;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:8px;padding:8px 10px;background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;font-size:11px;color:var(--text)"></div>
 
         <!-- Placeholder -->
         <div id="editor-placeholder" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;border:1.5px dashed var(--border);border-radius:8px;min-height:400px">
@@ -1454,9 +1500,8 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="fg"><label id="pr-cf-lbl">Codice fiscale</label><div style="display:flex;gap:6px"><input id="pr-cf" type="text" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase;flex:1" oninput="{const e=document.getElementById('pr-cf2'); if(e)e.value=this.value}"><button type="button" class="btn btn-sm" onclick="apriCalcoloCF()">Calcola</button></div></div>
     </div>
     <div id="box-rit" style="background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--rsm);padding:.75rem 1rem;margin-bottom:10px;font-size:11.5px;color:var(--text2);line-height:1.5"><strong style="color:var(--text)">Ritenuta d'acconto — Art. 25 DPR 600/73</strong><br>Ritenuta 20% applicata da Leone Consulting quale sostituto d'imposta.</div>
-    <div id="box-piva" style="display:none;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--rsm);padding:.75rem 1rem;margin-bottom:10px;font-size:11.5px;color:var(--text2);line-height:1.5"><strong style="color:var(--text)">Partita IVA</strong><br><span id="box-piva-txt"><b>Ordinario:</b> fattura con IVA 22% e ritenuta 11,5% (23% su 50%, art. 25-bis DPR 600/73).</span></div>
-    <div id="pr-piva-wrap" class="fr" style="display:none"><div class="fg"><label>Partita IVA</label><input id="pr-piva" type="text" placeholder="01234567890"></div><div class="fg"><label>Tipo regime P.IVA</label><select id="pr-piva-tipo" onchange="onPivaTipo()"><option value="ordinario">Ordinario</option><option value="forfettario">Forfettario</option></select></div></div>
-    <div id="pr-rs-wrap" class="fr" style="display:none"><div class="fg"><label>Ragione sociale (se diversa dal nome — opzionale)</label><input id="pr-ragione-sociale" type="text" placeholder="es. Rossi Mario S.r.l. / ditta individuale"></div></div>
+    <div id="box-piva" style="display:none;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--rsm);padding:.75rem 1rem;margin-bottom:10px;font-size:11.5px;color:var(--text2);line-height:1.5"><strong style="color:var(--text)">Partita IVA</strong><br>Il procacciatore emette fattura. Nessuna ritenuta applicata.</div>
+    <div id="pr-piva-wrap" class="fr" style="display:none"><div class="fg"><label>Partita IVA</label><input id="pr-piva" type="text" placeholder="01234567890"></div></div>
     <div class="msec">Qualifica</div>
     <div class="fr">
       <div class="fg"><label>Qualifica (auto o forzata)</label><select id="pr-qual"><option value="auto">🔄 Automatica dal fatturato</option><option value="base">Forza: Agente Base — 8%</option><option value="tl">Forza: Team Leader — 10%</option><option value="am">Forza: Area Manager — 11%</option><option value="sp">Forza: Senior Partner — 12%</option></select></div>
@@ -1920,7 +1965,7 @@ async function generaPdfCredenziali(nome, email, password){
   page.drawRectangle({x:40,y:y-92,width:515,height:96,color:rgb(0.985,0.955,0.95),borderColor:red,borderWidth:1})
   let by=y-16
   const KV=(k,v,vb=false)=>{ page.drawText(k,{x:54,y:by,size:11,font:bold,color:dark}); page.drawText(v,{x:200,y:by,size:11,font:vb?bold:font,color:dark}); by-=26 }
-  KV('Indirizzo portale:', 'portale.leoneconsultingitalia.it/')
+  KV('Indirizzo portale:', 'portale.leoneconsultingitalia.it')
   KV('Email (login):', email)
   KV('Password:', password, true)
   y-=112
@@ -2349,7 +2394,7 @@ function sp(id,el){
   if(el)el.classList.add('active')
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
-  const renders={dashboard:renderDash,proc:renderProc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={dashboard:renderDash,proc:renderProc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':caricaDocComm,'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -2619,22 +2664,14 @@ const LISTINO_VERSION=3
 // ── PROC FORM ─────────────────────────────────────────────────
 function onRegime(){
   const v=document.getElementById('pr-regime').value
-  document.getElementById('pr-cf-lbl').textContent='Codice fiscale'
-  document.getElementById('pr-cf').placeholder='RSSMRA80A01H501U'
+  document.getElementById('pr-cf-lbl').textContent=v==='piva'?'Partita IVA':'Codice fiscale'
+  document.getElementById('pr-cf').placeholder=v==='piva'?'12345678901':'RSSMRA80A01H501U'
   document.getElementById('box-rit').style.display=v==='piva'?'none':'block'
   document.getElementById('box-piva').style.display=v==='piva'?'block':'none'
   {const w=document.getElementById('pr-piva-wrap'); if(w) w.style.display=v==='piva'?'flex':'none'}
-  {const r=document.getElementById('pr-rs-wrap'); if(r) r.style.display=v==='piva'?'flex':'none'}
-  onPivaTipo()
-}
-function onPivaTipo(){
-  const t=document.getElementById('pr-piva-tipo'); const box=document.getElementById('box-piva-txt')
-  if(!t||!box) return
-  if(t.value==='forfettario') box.innerHTML='<b>Forfettario:</b> nessuna IVA n\u00e9 ritenuta (operazione in franchigia, L. 190/2014). Sul cedolino IVA e ritenuta risultano \u20ac 0,00.'
-  else box.innerHTML='<b>Ordinario:</b> fattura con IVA 22% e ritenuta 11,5% (23% su 50%, art. 25-bis DPR 600/73).'
 }
 function resetProcForm(){
-  ['pr-nome','pr-email','pr-email-az','pr-tel','pr-iban','pr-cf','pr-cf2','pr-nascita','pr-luogonascita','pr-indirizzo','pr-citta','pr-cap','pr-prov','pr-ateco','pr-doc-id','pr-doc-ril','pr-doc-scad','pr-zona','pr-ncontratto','pr-piva','pr-ragione-sociale','pr-email-az-pwd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
+  ['pr-nome','pr-email','pr-email-az','pr-tel','pr-iban','pr-cf','pr-cf2','pr-nascita','pr-luogonascita','pr-indirizzo','pr-citta','pr-cap','pr-prov','pr-ateco','pr-doc-id','pr-doc-ril','pr-doc-scad','pr-zona','pr-ncontratto','pr-piva','pr-email-az-pwd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
   {const _tc=document.getElementById('pr-tipo-conto'); if(_tc)_tc.value='bancario'}
   document.getElementById('pr-inizio').value=''
   document.getElementById('pr-fine').value=''
@@ -2653,7 +2690,6 @@ function resetProcForm(){
   document.getElementById('pr-foto-input').value=''
   window._procFoto=null
   document.getElementById('pr-regime').value='ritenuta'
-  {const _pt=document.getElementById('pr-piva-tipo'); if(_pt)_pt.value='ordinario'}
   document.getElementById('pr-qual').value='auto'
   document.getElementById('pr-stato').value='Attivo'
   document.getElementById('pr-edit-id').value=''
@@ -2938,14 +2974,21 @@ async function inviaDocumento(){
         </div>
         <div style="background:#f5f5f0;padding:16px 24px;font-size:11px;color:#888">Leone Consulting di Leonardo Angelucci — amministrazione@leoneconsultingitalia.it</div>
       </body></html>`
-      await window.electronAPI.sendMail({..._ec(),
+      const _rinv = await window.electronAPI.sendMail({..._ec(),
         via, to: emailDest,
         subject: `${nomeDoc} — Leone Consulting`,
         html,
         attachments: [{ filename: nomeDoc.replace(/[^a-zA-Z0-9]+/g,'_') + '.pdf', content: buf }]
       })
+      if(!_rinv || _rinv.ok===false) throw new Error((_rinv&&_rinv.errore)||'Invio non riuscito. Controlla la configurazione Email in Impostazioni (host, porta, utente, password Aruba).')
+      let _docUrl=''
+      try{
+        const _p='inviati/'+Date.now()+'_'+nomeDoc.replace(/[^a-zA-Z0-9]+/g,'_')+'.pdf'
+        const _u=await db.storage.from('documenti').upload(_p, new Blob([out],{type:'application/pdf'}), {upsert:true, contentType:'application/pdf'})
+        if(!_u.error){ _docUrl=db.storage.from('documenti').getPublicUrl(_p).data.publicUrl }
+      }catch(e){ console.error('upload storico:',e) }
       const storico = JSON.parse(localStorage.getItem('leone_inv_storico')||'[]')
-      storico.unshift({proc:p.nome, doc:nomeDoc, email:emailDest, via, data:oggi})
+      storico.unshift({proc:p.nome, doc:nomeDoc, email:emailDest, via, data:oggi, url:_docUrl})
       localStorage.setItem('leone_inv_storico', JSON.stringify(storico.slice(0,50)))
       renderStoricoDocs()
       alert('✅ Documento compilato inviato a ' + emailDest)
@@ -2984,15 +3027,16 @@ async function inviaDocumento(){
         </div>
         <div style="background:#f5f5f0;padding:16px 24px;font-size:11px;color:#888">Leone Consulting di Leonardo Angelucci — amministrazione@leoneconsultingitalia.it</div>
       </body></html>`
-      await window.electronAPI.sendMail({..._ec(),
+      const _rinv2 = await window.electronAPI.sendMail({..._ec(),
         via, to: emailDest,
         subject: `${doc.nome} — Leone Consulting`,
         html,
         attachments: [{filename: doc.fileName||doc.nome, content: buf}]
       })
+      if(!_rinv2 || _rinv2.ok===false) throw new Error((_rinv2&&_rinv2.errore)||'Invio non riuscito. Controlla la configurazione Email in Impostazioni (host, porta, utente, password Aruba).')
       // Salva storico
       const storico = JSON.parse(localStorage.getItem('leone_inv_storico')||'[]')
-      storico.unshift({proc:p.nome, doc:doc.nome, email:emailDest, via, data:oggi})
+      storico.unshift({proc:p.nome, doc:doc.nome, email:emailDest, via, data:oggi, url:(db.storage.from('documenti').getPublicUrl(doc.storagePath)?.data?.publicUrl||'')})
       localStorage.setItem('leone_inv_storico', JSON.stringify(storico.slice(0,50)))
       renderStoricoDocs()
       alert('✅ Documento inviato con successo a ' + emailDest)
@@ -3061,14 +3105,25 @@ function renderStoricoDocs(){
   const tb = document.getElementById('tbl-inv-storico')
   if(!tb) return
   const storico = JSON.parse(localStorage.getItem('leone_inv_storico')||'[]')
-  if(!storico.length){ tb.innerHTML='<tr><td colspan="5" class="empty">Nessun documento inviato</td></tr>'; return }
-  tb.innerHTML = storico.map(s=>`<tr>
-    <td style="font-weight:600">${s.proc}</td>
-    <td style="font-size:12px">${s.doc}</td>
-    <td style="color:var(--text2)">${s.email}</td>
+  const q = (document.getElementById('inv-storico-search')?.value||'').trim().toLowerCase()
+  const righe = storico.map((s,i)=>({s,i})).filter(({s})=> !q || ((s.proc||'')+' '+(s.doc||'')+' '+(s.email||'')).toLowerCase().includes(q))
+  if(!storico.length){ tb.innerHTML='<tr><td colspan="6" class="empty">Nessun documento inviato</td></tr>'; return }
+  if(!righe.length){ tb.innerHTML='<tr><td colspan="6" class="empty">Nessun risultato per la ricerca</td></tr>'; return }
+  tb.innerHTML = righe.map(({s,i})=>`<tr>
+    <td style="font-weight:600">${escB(s.proc||'')}</td>
+    <td style="font-size:12px">${escB(s.doc||'')}</td>
+    <td style="color:var(--text2)">${escB(s.email||'')}</td>
     <td><span class="pill">${s.via==='pec'?'PEC':'Email'}</span></td>
-    <td style="color:var(--text2)">${s.data}</td>
+    <td style="color:var(--text2)">${escB(s.data||'')}</td>
+    <td style="white-space:nowrap">${s.url?`<button class="btn btn-sm" onclick="window.open('${s.url}','_blank')" title="Visualizza">👁</button> `:''}<button class="btn btn-sm btn-r" onclick="eliminaStorico(${i})" title="Elimina dalla lista">🗑</button></td>
   </tr>`).join('')
+}
+function eliminaStorico(i){
+  if(!confirm('Rimuovere questa voce dallo storico invii?')) return
+  const storico = JSON.parse(localStorage.getItem('leone_inv_storico')||'[]')
+  storico.splice(i,1)
+  localStorage.setItem('leone_inv_storico', JSON.stringify(storico))
+  renderStoricoDocs()
 }
 
 function onReteTipoProc(){
@@ -3246,8 +3301,6 @@ async function saveProc(){
   regime:document.getElementById('pr-regime').value,
   cf:document.getElementById('pr-cf').value.trim().toUpperCase(),
   piva:(document.getElementById('pr-piva')?.value||'').trim(),
-  pivaTipo:(document.getElementById('pr-piva-tipo')?.value||'ordinario'),
-  ragioneSociale:(document.getElementById('pr-ragione-sociale')?.value||'').trim(),
   qualForce:document.getElementById('pr-qual').value,
   stato:document.getElementById('pr-stato').value,
   rete:[...tempNet],
@@ -3312,8 +3365,6 @@ function editProc(i){
   {const _tc=document.getElementById('pr-tipo-conto'); if(_tc)_tc.value=p.tipo_conto||'bancario'}
   document.getElementById('pr-regime').value=p.regime
   {const e=document.getElementById('pr-piva'); if(e)e.value=p.piva||''}
-  {const e=document.getElementById('pr-piva-tipo'); if(e)e.value=p.pivaTipo||'ordinario'}
-  {const e=document.getElementById('pr-ragione-sociale'); if(e)e.value=p.ragioneSociale||''}
   document.getElementById('pr-cf').value=p.cf||''
   {const e=document.getElementById('pr-cf2'); if(e)e.value=p.cf||''}
   document.getElementById('pr-qual').value=p.qualForce||'auto'
@@ -3514,7 +3565,7 @@ function apriProfilo(i){
         <button onclick="document.getElementById('profilo-overlay').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2)">✕</button>
       </div>
       <div style="padding:20px 24px;max-height:60vh;overflow:auto">
-        ${sez('Anagrafica', row('Codice fiscale', p.cf)+(p.regime==='piva'?(row('Partita IVA', p.piva||p.cf)+(p.ragioneSociale?row('Ragione sociale', p.ragioneSociale):'')):'')+row('Data di nascita', p.nascita)+row('Luogo di nascita', p.luogonascita)+row('Regime fiscale', regLabel))}
+        ${sez('Anagrafica', row('Codice fiscale', p.cf)+row('Data di nascita', p.nascita)+row('Luogo di nascita', p.luogonascita)+row('Regime fiscale', regLabel))}
         ${sez('Contatti', row('Email personale', p.email)+row('Email aziendale', p.email_aziendale)+row('Telefono', p.tel)+row('Indirizzo', p.indirizzo)+row('Città', citta)+row('Zona', p.zona))}
         ${sez('Documento di identità', row('Tipo', p.doc_tipo)+row('Numero', p.doc_num)+row('Rilasciato da', p.doc_rilasciato)+row('Data rilascio', p.doc_rildata)+row('Scadenza', p.doc_scadenza))}
         ${sez('Dati bancari', row('IBAN', p.iban)+row('Tipo di conto', tcLabel))}
@@ -3541,7 +3592,7 @@ function renderProc(){
     const fat=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&v.data.startsWith(m)).reduce((s,v)=>s+v.val,0)
     const rete=p.rete||[]
     const scadenza=p.fine?controllaScadenza(p.fine):''
-    return`<tr style="cursor:pointer" ondblclick="apriProfilo(${i})"><td><div class="ar"><div class="av ${avc(i)}">${avatarImg(i,32)}</div><div style="min-width:0;max-width:200px"><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.nome}${(p.regime==='piva'&&p.ragioneSociale)?' ('+p.ragioneSociale+')':''}">${p.nome}${(p.regime==='piva'&&p.ragioneSociale)?` <span style="font-weight:400;color:var(--text2)">(${p.ragioneSociale})</span>`:''}</div>${p.email?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email}">${p.email}</div>`:''}${p.email_aziendale?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email_aziendale}">🏢 ${p.email_aziendale}</div>`:''}</div></div></td><td>${qualBadge(q,isAuto)}</td><td style="font-weight:600">${q.prov}%</td><td style="font-size:11px;color:var(--text2)">${rete.length>0?rete.map(n=>`${procs[n.idx]?.nome||'?'}: ${n.pct}%`).join(', '):'—'}</td><td>${regimeBadge(p.regime)}</td><td style="font-size:11px;color:var(--text2)">${p.cf||'—'}</td><td>${fmtE(fat)}</td><td><span style="cursor:pointer" onclick="apriPopupStato(${i},event)">${statoBadge(p.stato)}</span></td><td style="font-size:11px;color:var(--text2)">${p.inizio||'—'}</td><td style="font-size:11px">${p.fine?`${p.fine}${scadenza}`:'—'}</td><td style="vertical-align:middle"><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:flex-start"><button class="btn btn-sm" onclick="editProc(${i})" title="Modifica">✎</button><button class="btn btn-sm" onclick="apriAnagrafica(${i},'proc')" title="Archivio">📁</button><button class="btn btn-sm btn-r" onclick="eliminaProc(${i})" title="Elimina">✕</button></div></td></tr>`
+    return`<tr style="cursor:pointer" ondblclick="apriProfilo(${i})"><td><div class="ar"><div class="av ${avc(i)}">${avatarImg(i,32)}</div><div style="min-width:0;max-width:200px"><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.nome}">${p.nome}</div>${p.email?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email}">${p.email}</div>`:''}${p.email_aziendale?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email_aziendale}">🏢 ${p.email_aziendale}</div>`:''}</div></div></td><td>${qualBadge(q,isAuto)}</td><td style="font-weight:600">${q.prov}%</td><td style="font-size:11px;color:var(--text2)">${rete.length>0?rete.map(n=>`${procs[n.idx]?.nome||'?'}: ${n.pct}%`).join(', '):'—'}</td><td>${regimeBadge(p.regime)}</td><td style="font-size:11px;color:var(--text2)">${p.cf||'—'}</td><td>${fmtE(fat)}</td><td><span style="cursor:pointer" onclick="apriPopupStato(${i},event)">${statoBadge(p.stato)}</span></td><td style="font-size:11px;color:var(--text2)">${p.inizio||'—'}</td><td style="font-size:11px">${p.fine?`${p.fine}${scadenza}`:'—'}</td><td style="vertical-align:middle"><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:flex-start"><button class="btn btn-sm" onclick="editProc(${i})" title="Modifica">✎</button><button class="btn btn-sm" onclick="apriAnagrafica(${i},'proc')" title="Archivio">📁</button><button class="btn btn-sm btn-r" onclick="eliminaProc(${i})" title="Elimina">✕</button></div></td></tr>`
   }).join('')
 }
 
@@ -3611,7 +3662,7 @@ async function saveVend(){
   let bolletta=null
   if(req.bolletta){ const up=await uploadBollettaApp(cnome+' '+ccognome); if(up.err){ alert(up.err); btn.disabled=false; btn.innerHTML='Salva'; return } bolletta=up }
   const _pv=isAzienda?{}:(procs[parseInt(pidx)]||{})
-  const obj={pidx:isAzienda?null:parseInt(pidx),procId:isAzienda?null:(_pv._id||null),procEmail:isAzienda?'':(_pv.email||'').trim().toLowerCase(),azienda:isAzienda,prod:prod.nome,cat:prod.cat,piatt:prod.piatt,val,prov,provTipo:prod.tipo,provPct:(prod.tipo==='fisso'?null:prod.prov),cliente:(cnome+' '+ccognome).trim(),cliNome:cnome,cliCognome:ccognome,cliTel:ccell,cliEmail:cemail,stato:document.getElementById('vd-stato').value,note:document.getElementById('vd-note').value,leadId:(_convLeadId||null),data:document.getElementById('vd-data').value||today()}
+  const obj={pidx:isAzienda?null:parseInt(pidx),procId:isAzienda?null:(_pv._id||null),procEmail:isAzienda?'':(_pv.email||'').trim().toLowerCase(),azienda:isAzienda,prod:prod.nome,cat:prod.cat,piatt:prod.piatt,val,prov,cliente:(cnome+' '+ccognome).trim(),cliNome:cnome,cliCognome:ccognome,cliTel:ccell,cliEmail:cemail,stato:document.getElementById('vd-stato').value,note:document.getElementById('vd-note').value,leadId:(_convLeadId||null),data:document.getElementById('vd-data').value||today()}
   Object.assign(obj, exv.v)
   if(bolletta){ obj.bollettaUrl=bolletta.url; obj.bollettaPath=bolletta.path }
   try{syncStatus('syncing','Salvataggio...');await db.from('vendite').insert({data:obj});if(_convLeadId){try{const lr=leads.find(x=>x._id===_convLeadId);if(lr){const {_id,...ldata}=lr;ldata.stato='Acquisito';await db.from('leads').update({data:ldata}).eq('id',_id)}}catch(e){console.error('convert lead:',e)}_convLeadId=null}closeM('m-vend');['vd-val','vd-cliente','vd-cognome','vd-cell','vd-email','vd-note'].forEach(id=>{const e=document.getElementById(id); if(e) e.value=''});const _ex=document.getElementById('vd-extra'); if(_ex) _ex.innerHTML='';await loadAll();renderVendite();renderLead()}
@@ -3838,8 +3889,8 @@ function statoOff(scad){
 const CATALOGO_OFFERTE=[
  // LUCE FISSO
  {cat:'Luce Fisso',forn:'Enel',nome:'Enel Fix Web Luce',prezzo:'0,149 \u20ac/kWh',pcv:'144 \u20ac',validita:'36 mesi',fatt:'Mensile',scad:'2026-06-25',pagamento:'RID + bolletta web, no Postepay',azioni:'Switch',promo:'Se ha gas Enel: 0,139 \u20ac/kWh per 36 mesi'},
- {cat:'Luce Fisso',forn:'Plenitude',nome:'Fixa Time Base',prezzo:'0,1329 \u20ac/kWh',pcv:'144 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-15',pagamento:'RID, no Postepay',azioni:'Switch/Voltura',promo:'no over 85; sconto 20% gia incluso + 5% RID (iniziale 0,1749)'},
- {cat:'Luce Fisso',forn:'Plenitude',nome:'Fixa Time Smart',prezzo:'0,144 \u20ac/kWh',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-15',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; senza RID 0,1694'},
+ {cat:'Luce Fisso',forn:'Plenitude',nome:'Fixa Time Base',prezzo:'0,1329 \u20ac/kWh',pcv:'144 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID, no Postepay',azioni:'Switch/Voltura',promo:'no over 85; sconto 20% gia incluso + 5% RID (iniziale 0,1749)'},
+ {cat:'Luce Fisso',forn:'Plenitude',nome:'Fixa Time Smart',prezzo:'0,144 \u20ac/kWh',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; senza RID 0,1694'},
  {cat:'Luce Fisso',forn:'Acea',nome:'Acea Fix',prezzo:'0,125 \u20ac/kWh',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-16',pagamento:'RID + bolletta web',azioni:'Switch',promo:'no over 75'},
  {cat:'Luce Fisso',forn:'Illumia',nome:'Energia Lunga Luce Easy',prezzo:'0,118 \u20ac/kWh',pcv:'144 \u20ac',validita:'36 mesi',fatt:'Bimestrale',scad:'2026-07-10',pagamento:'RID',azioni:'Switch/Subentro',promo:'bonus 75 euro al 12 mese; dal 37 mese PUN+0,03; penali 150/100/50'},
  {cat:'Luce Fisso',forn:'Iren',nome:'Iren Stay Connettivita',prezzo:'18,99 \u20ac x12 mesi',pcv:'dal 13 mese 20,99 \u20ac',validita:'60 mesi',fatt:'Mensile',scad:'',pagamento:'RID',azioni:'Switch/Subentro',promo:'solo con Iren Stay Luce Fisso 0,1528 e CCV 159; attivazione 49,99 con gas'},
@@ -3859,8 +3910,8 @@ const CATALOGO_OFFERTE=[
  {cat:'Luce Variabile',forn:'A2A',nome:'A2A Easy',prezzo:'PUN',pcv:'150 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID',azioni:'Switch',promo:''},
  // GAS FISSO
  {cat:'Gas Fisso',forn:'Enel',nome:'Enel Fix Web Gas',prezzo:'0,70 \u20ac/Smc',pcv:'144 \u20ac',validita:'36 mesi',fatt:'Mensile',scad:'2026-06-25',pagamento:'RID, no Postepay',azioni:'Switch',promo:'se ha luce Enel: 0,49 \u20ac/Smc per 36 mesi'},
- {cat:'Gas Fisso',forn:'Plenitude',nome:'Fixa Time Base',prezzo:'0,5525 \u20ac/Smc',pcv:'144 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-15',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; sconto 20% + 5% RID; iniziale 0,727'},
- {cat:'Gas Fisso',forn:'Plenitude',nome:'Fixa Time Smart',prezzo:'0,5678 \u20ac/Smc',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-15',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; senza RID 0,668'},
+ {cat:'Gas Fisso',forn:'Plenitude',nome:'Fixa Time Base',prezzo:'0,5525 \u20ac/Smc',pcv:'144 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; sconto 20% + 5% RID; iniziale 0,727'},
+ {cat:'Gas Fisso',forn:'Plenitude',nome:'Fixa Time Smart',prezzo:'0,5678 \u20ac/Smc',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID, no Postepay',azioni:'Switch',promo:'no over 85; senza RID 0,668'},
  {cat:'Gas Fisso',forn:'Acea',nome:'Acea Fix',prezzo:'0,52 \u20ac/Smc',pcv:'90 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'2026-06-16',pagamento:'RID + bolletta web',azioni:'Switch',promo:'no over 75'},
  {cat:'Gas Fisso',forn:'Illumia',nome:'Energia Lunga Gas Easy',prezzo:'0,52 \u20ac/Smc',pcv:'144 \u20ac',validita:'36 mesi',fatt:'Mensile',scad:'2026-07-10',pagamento:'RID',azioni:'Switch/Subentro',promo:'bonus 35 euro al 12 mese; dal 37 mese PSV+0,20'},
  {cat:'Gas Fisso',forn:'Iren',nome:'Iren Prima Scelta',prezzo:'0,46 \u20ac/Smc',pcv:'120 \u20ac',validita:'indeterminata',fatt:'Mensile',scad:'2026-07-02',pagamento:'RID',azioni:'Switch',promo:'no over 85'},
@@ -3878,8 +3929,8 @@ const CATALOGO_OFFERTE=[
  {cat:'Gas Variabile',forn:'A2A',nome:'Smart',prezzo:'PSV + 0,12 \u20ac/Smc',pcv:'114 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID',azioni:'Switch',promo:''},
  {cat:'Gas Variabile',forn:'A2A',nome:'Easy',prezzo:'PSV',pcv:'150 \u20ac',validita:'12 mesi',fatt:'Bimestrale',scad:'',pagamento:'RID',azioni:'Switch',promo:''},
  // BUSINESS
- {cat:'Business',forn:'Eni',nome:'Trend Business Luce',prezzo:'Spread 0,0253 \u20ac/kWh',pcv:'192 \u20ac',validita:'',fatt:'Mensile',scad:'2026-06-15',pagamento:'',azioni:'Switch',promo:'fino 30.000 kWh/anno'},
- {cat:'Business',forn:'Eni',nome:'Trend Business Gas',prezzo:'Spread 0,1150 \u20ac/Smc',pcv:'192 \u20ac',validita:'',fatt:'Mensile',scad:'2026-06-15',pagamento:'',azioni:'Switch',promo:'fino 10.000 Smc/anno'},
+ {cat:'Business',forn:'Eni',nome:'Trend Business Luce',prezzo:'Spread 0,0253 \u20ac/kWh',pcv:'192 \u20ac',validita:'',fatt:'Mensile',scad:'',pagamento:'',azioni:'Switch',promo:'fino 30.000 kWh/anno'},
+ {cat:'Business',forn:'Eni',nome:'Trend Business Gas',prezzo:'Spread 0,1150 \u20ac/Smc',pcv:'192 \u20ac',validita:'',fatt:'Mensile',scad:'',pagamento:'',azioni:'Switch',promo:'fino 10.000 Smc/anno'},
  {cat:'Business',forn:'Iren',nome:'Tua Azienda Mono Luce Variabile',prezzo:'Spread 0,0198 \u20ac/kWh',pcv:'180 \u20ac',validita:'',fatt:'Mensile',scad:'2026-09-13',pagamento:'',azioni:'Switch/Subentro',promo:'100% rinnovabili'},
  {cat:'Business',forn:'Iren',nome:'Tua Azienda Gas Variabile',prezzo:'Spread 0,14 \u20ac/Smc',pcv:'180 \u20ac',validita:'',fatt:'Mensile',scad:'2026-09-13',pagamento:'',azioni:'Switch/Subentro',promo:'100% rinnovabili'},
  {cat:'Business',forn:'Enel',nome:'Business Super Luce 3-25 kW',prezzo:'0,16100 \u20ac/kWh',pcv:'180 \u20ac',validita:'24 mesi',fatt:'Mensile',scad:'2026-06-25',pagamento:'',azioni:'Switch',promo:'100% rinnovabili'},
@@ -3946,98 +3997,6 @@ async function aggiornaOfferteDaCatalogo(){
     alert('Catalogo aggiornato.\n\nOfferte aggiornate: '+agg+'\nOfferte nuove aggiunte: '+nuovi+'\n\nRicorda: Fastweb Energia e le Eni sono scadute/in scadenza.')
   }catch(e){ alert('Errore durante l\u0027aggiornamento: '+(e.message||e)) }
   finally{ if(btn){btn.disabled=false; btn.innerHTML='\ud83d\udce5 Aggiorna da catalogo'} }
-}
-function _csvToRows(text){
-  const rows=[]; let row=[]; let cur=''; let q=false
-  text=String(text).replace(/\r\n/g,'\n').replace(/\r/g,'\n')
-  for(let i=0;i<text.length;i++){
-    const ch=text[i]
-    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++} else q=false } else cur+=ch }
-    else { if(ch==='"') q=true; else if(ch===','){ row.push(cur); cur='' } else if(ch==='\n'){ row.push(cur); rows.push(row); row=[]; cur='' } else cur+=ch }
-  }
-  if(cur!==''||row.length){ row.push(cur); rows.push(row) }
-  return rows.filter(r=>r.some(c=>(c||'').trim()!==''))
-}
-function _normData(s){
-  s=(s||'').trim(); if(!s) return ''
-  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
-  const m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/); if(m) return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2)
-  return ''
-}
-const SCAD_URL_DEFAULT='https://docs.google.com/spreadsheets/d/1kOvepVi-yJ1fdBY1-Lyv_bGFICeTxFvW/export?format=csv&gid=2060193380'
-function _toCsvUrl(u){
-  u=(u||'').trim(); if(!u) return SCAD_URL_DEFAULT
-  const id=(u.match(/\/d\/([a-zA-Z0-9_-]+)/)||[])[1]
-  const gid=(u.match(/[?&#]gid=(\d+)/)||[])[1]||'0'
-  return id ? ('https://docs.google.com/spreadsheets/d/'+id+'/export?format=csv&gid='+gid) : u
-}
-function _normy(s){ return (s||'').toString().toLowerCase().replace(/\([^)]*\)/g,' ').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim() }
-function _parseScadenze(text){
-  const rows=_csvToRows(text); const out=[]
-  for(const r of rows){
-    let di=-1, dv=''
-    for(let i=0;i<r.length;i++){ const d=_normData(r[i]); if(d){ di=i; dv=d; break } }
-    if(di<0) continue
-    let nome=''
-    for(let i=di-1;i>=0;i--){ if((r[i]||'').trim()){ nome=r[i].trim(); break } }
-    if(!nome) continue
-    if(/scadenz|fornitor|nota|allegare|offerta/i.test(nome) && !/[a-z]{2,}\s+[a-z]{2,}/i.test(nome)) continue
-    out.push({nome, scad:dv})
-  }
-  return out
-}
-const _SUP_ALIAS={ eni:['eni','plenitude'], plenitude:['plenitude','eni'] }
-function _matchOfferta(scadName, o){
-  const tks=_normy(scadName).split(' ').filter(Boolean); if(!tks.length) return false
-  const fornOff=_normy(o.forn), nomeOff=_normy(o.nome), catOff=_normy(o.cat)
-  const sup=tks[0], aliases=_SUP_ALIAS[sup]||[sup]
-  if(!aliases.some(a=>fornOff.split(' ').includes(a)||fornOff.includes(a))) return false
-  const hasEnergia=_normy(scadName).includes('energia')
-  if(hasEnergia && !(catOff.includes('luce')||catOff.includes('gas'))) return false
-  const stop=['offerte','e','di','del','la','il','energia']
-  const rest=tks.slice(1).filter(t=>t.length>2 && !stop.includes(t))
-  if(!rest.length) return !catOff.includes('telefonia')
-  if(rest.includes('smart')) return nomeOff.includes('smart')
-  if(rest.includes('time') && !rest.includes('smart')) return nomeOff.includes('time') && !nomeOff.includes('smart')
-  return rest.every(t=>nomeOff.includes(t))
-}
-async function salvaLinkScadenze(){
-  impostazioni['scadenze_csv_url']=(document.getElementById('cat-url')||{}).value.trim()
-  try{ await upsertImpostazioni(); toast('Link foglio salvato') }catch(e){ alert('Errore: '+(e.message||e)) }
-}
-async function sincronizzaScadenzeDaGoogle(silent){
-  if(!window.electronAPI?.fetchUrl){ if(!silent) alert('Questa versione non supporta la sincronizzazione. Reinstalla l\u0027app.'); return }
-  const url=_toCsvUrl(impostazioni['scadenze_csv_url']||SCAD_URL_DEFAULT)
-  const btn=document.getElementById('btn-sync-google'); if(btn&&!silent){btn.disabled=true;btn.innerHTML='<div class="spinner"></div>'}
-  try{
-    const r=await window.electronAPI.fetchUrl(url)
-    if(!r||!r.ok) throw new Error((r&&r.errore)||'download fallito')
-    const sc=_parseScadenze(r.body)
-    if(!sc.length) throw new Error('Nessuna scadenza trovata nel foglio (controlla che il link sia condiviso e sia la scheda scadenze)')
-    await caricaOfferte()
-    let upd=0; const nonTrovate=[]
-    for(const row of sc){
-      const matched=OFFERTE.filter(o=>_matchOfferta(row.nome,o))
-      if(!matched.length){ nonTrovate.push(row.nome+' ('+row.scad.split('-').reverse().join('/')+')'); continue }
-      for(const o of matched){ if(o.scad!==row.scad){ const {_id,...d}=o; await db.from('offerte').update({data:Object.assign({},d,{scad:row.scad})}).eq('id',o._id); upd++ } }
-    }
-    impostazioni['scadenze_last_sync']=today(); await upsertImpostazioni()
-    await caricaOfferte(); renderOfferte()
-    if(!silent) alert('Scadenze aggiornate dal foglio Google.\n\nDate aggiornate: '+upd+(nonTrovate.length?('\n\n\u26a0\ufe0f Non abbinate automaticamente (verifica a mano):\n- '+nonTrovate.join('\n- ')):''))
-  }catch(e){ if(!silent) alert('Errore sincronizzazione: '+(e.message||e)); else console.error('sync scadenze:',e) }
-  finally{ if(btn&&!silent){btn.disabled=false;btn.innerHTML='\ud83d\udd04 Aggiorna scadenze da Google'} }
-}
-async function sincronizzaOfferteAI(){
-  const btn=document.getElementById('btn-ai-sync'); const old=btn?btn.innerHTML:''
-  if(btn){btn.disabled=true;btn.innerHTML='<div class="spinner"></div> AI in corso...'}
-  try{
-    const {data,error}=await db.functions.invoke('sync-offerte-ai',{body:{}})
-    if(error) throw error
-    if(!data||!data.ok) throw new Error((data&&data.errore)||'errore AI')
-    await caricaOfferte(); renderOfferte()
-    alert('Offerte aggiornate con AI dai fogli Google.\n\nLette: '+data.totale+'\nAggiornate: '+data.aggiornate+'\nNuove: '+data.nuove+'\nEliminate: '+data.eliminate)
-  }catch(e){ alert('Errore AI: '+(e.message||e)) }
-  finally{ if(btn){btn.disabled=false;btn.innerHTML=old||'\ud83e\udd16 Aggiorna offerte con AI'} }
 }
 async function caricaOfferte(){
   try{
@@ -4116,10 +4075,11 @@ function _offSorter(a,b){
 }
 function renderOfferte(){
   const box=document.getElementById('offerte-lista'); if(!box) return
-  const cu=document.getElementById('cat-url'); if(cu && document.activeElement!==cu) cu.value=impostazioni['scadenze_csv_url']||''
   const t=document.getElementById('offerte-title'); if(t) t.textContent=_offFilter==='Tutte'?'Tutte le offerte':_offFilter
   let list=OFFERTE.filter(o=>_offFilter==='Tutte'||o.cat===_offFilter)
-  if(!list.length){ box.innerHTML='<div style="padding:16px;color:var(--text2)">Nessuna offerta. Esegui <b>offerte.sql</b> su Supabase per caricarle.</div>'; return }
+  const _oq=(document.getElementById('off-search')&&document.getElementById('off-search').value||'').trim().toLowerCase()
+  if(_oq) list=list.filter(o=>((o.nome||'')+' '+(o.forn||'')+' '+(o.cat||'')+' '+(o.tipo||'')+' '+(o.promo||'')).toLowerCase().includes(_oq))
+  if(!list.length){ box.innerHTML='<div style="padding:16px;color:var(--text2)">'+(_oq?'Nessuna offerta trovata per la ricerca.':'Nessuna offerta. Esegui <b>offerte.sql</b> su Supabase per caricarle.')+'</div>'; return }
   const grp={}; list.forEach(o=>{ (grp[o.cat]=grp[o.cat]||[]).push(o) })
   const sortSel='<div style="margin:4px 0 10px"><label style="font-size:12px;color:var(--text2)">Ordina per: </label><select onchange="setOffSort(this.value)" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-family:inherit">'+
     '<option value="forn"'+(_offSort==='forn'?' selected':'')+'>Fornitore (A-Z)</option>'+
@@ -4300,7 +4260,7 @@ function renderProvv(){
     const vv=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&(!mf||v.data.startsWith(mf)))
     const fat=vv.reduce((s,v)=>s+v.val,0),provPers=vv.reduce((s,v)=>s+v.prov,0)
     let ovr=0;(p.rete||[]).forEach(n=>{const vNet=vendite.filter(v=>v.pidx===n.idx&&v.stato==='Incassato'&&(!mf||v.data.startsWith(mf)));ovr+=vNet.reduce((s,v)=>s+v.val,0)*(n.pct/100)})
-    const lordo=provPers+ovr,rit=p.regime==='ritenuta'?lordo*0.115:0
+    const lordo=provPers+ovr,rit=p.regime==='ritenuta'?lordo*0.20:0
     totL+=lordo;totR+=rit
     const q=getQual(p,i,mf||curMese()),isAuto=!p.qualForce||p.qualForce==='auto'
     return{p,i,fat,provPers,ovr,lordo,rit,netto:lordo-rit,q,isAuto,mese:mf||curMese()}
@@ -4322,8 +4282,10 @@ function renderRete(){
 // ── CONTRATTI & FIRME ─────────────────────────────────────────
 function renderContratti(){
   const tb=document.getElementById('tbl-contratti')
-  const ct=contratti.filter(c=>c.sezione==='proc')
-  if(!ct.length){tb.innerHTML='<tr><td colspan="7" class="empty">Nessun contratto inviato</td></tr>';return}
+  let ct=contratti.filter(c=>c.sezione==='proc')
+  const _cq=(document.getElementById('contr-search')&&document.getElementById('contr-search').value||'').trim().toLowerCase()
+  if(_cq) ct=ct.filter(c=>((c.nomeDestinatario||'')+' '+(c.emailDestinatario||'')+' '+(c.tipoContratto||'')+' '+(c.statoFirma||'')).toLowerCase().includes(_cq))
+  if(!ct.length){tb.innerHTML='<tr><td colspan="7" class="empty">'+(_cq?'Nessun contratto trovato per la ricerca':'Nessun contratto inviato')+'</td></tr>';return}
   tb.innerHTML=ct.map(c=>`<tr><td><strong style="font-weight:600">${c.nomeDestinatario}</strong><br><span style="font-size:11px;color:var(--text2)">${c.emailDestinatario}</span></td><td style="font-size:12px">${c.tipoContratto}</td><td><span class="badge ${c.via==='pec'?'bp':'bb'}">${c.via==='pec'?'🔒 PEC':'📧 Email'}</span></td><td style="color:var(--text2)">${c.dataInvio}</td><td>${statoBadge(c.statoFirma)}</td><td style="color:var(--text2)">${c.dataFirma||'—'}</td><td class="acts">${c.statoFirma==='Firmato'?`<button class="btn btn-sm btn-p" onclick="creaProcDaFirma('${c._id}')" title="Crea scheda procacciatore dai dati della firma">➕ Proc.</button>`:''}${c.pdfFirmatoPath?`<button class="btn btn-sm" onclick="apriPdfFirmato('${c._id}')" title="Apri PDF firmato">📄 PDF</button>`:(c.statoFirma==='Firmato'?`<button class="btn btn-sm" onclick="generaEApriPdfFirmato('${c._id}')" title="Genera il PDF firmato">📄 Genera PDF</button>`:'')}${(c.documentiCaricati&&Object.keys(c.documentiCaricati).length)?`<button class="btn btn-sm" onclick="apriAllegatiFirma('${c._id}')" title="Documenti del firmatario">📎 Doc.</button>`:''}<button class="btn btn-sm" onclick="reinviaContratto('${c._id}')">↺ Reinvia</button><button class="btn btn-sm btn-r" onclick="eliminaContratto('${c._id}')" title="Elimina">✕</button></td></tr>`).join('')
 }
 function renderContrattiDip(){
@@ -5797,11 +5759,11 @@ function genReport(i,mese){
   const vv=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&v.data.startsWith(mese))
   const fat=vv.reduce((s,v)=>s+v.val,0),provPers=vv.reduce((s,v)=>s+v.prov,0)
   let ovr=0;(p.rete||[]).forEach(n=>{const vNet=vendite.filter(v=>v.pidx===n.idx&&v.stato==='Incassato'&&v.data.startsWith(mese));ovr+=vNet.reduce((s,v)=>s+v.val,0)*(n.pct/100)})
-  const lordo=provPers+ovr,rit=p.regime==='ritenuta'?lordo*0.115:0,netto=lordo-rit
+  const lordo=provPers+ovr,rit=p.regime==='ritenuta'?lordo*0.20:0,netto=lordo-rit
   const q=getQual(p,i,mese)
   const html=`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Report ${p.nome} — ${mese}</title><style>body{font-family:-apple-system,'Helvetica Neue',sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#1a1a18;font-size:13px}.hdr{display:flex;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid #185FA5}.logo{font-size:18px;font-weight:700;color:#185FA5}.sub{font-size:12px;color:#6b6b66;margin-top:2px}h2{font-size:15px;font-weight:600;margin:1.5rem 0 .5rem}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:1rem}th{background:#f0efe9;padding:7px 10px;text-align:left;font-weight:600;border-bottom:1px solid #ddd}td{padding:7px 10px;border-bottom:.5px solid #eee}.tot{background:#f5f5f0;border-radius:8px;padding:1rem 1.25rem;margin-top:1.5rem}.tr{display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid #ddd;font-size:13px}.tr:last-child{border-bottom:none;font-weight:700;font-size:15px}.foot{margin-top:2rem;padding-top:1rem;border-top:.5px solid #ddd;font-size:11px;color:#9e9e98;text-align:center}</style></head><body>
   <div class="hdr"><div><div class="logo">Leone Consulting</div><div class="sub">di Leonardo Angelucci · Via Pia 42, 00049 Velletri (RM)</div><div class="sub">P.IVA 18231181001</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:600">Report Provvigioni</div><div style="color:#6b6b66;font-size:12px">Periodo: ${mese}</div></div></div>
-  <h2>Procacciatore</h2><table><tr><td><strong>Nome:</strong></td><td>${p.nome}</td><td><strong>Qualifica:</strong></td><td>${q.label} (${q.prov}%)</td></tr><tr><td><strong>${p.regime==='piva'?'P.IVA':'CF'}:</strong></td><td>${(p.regime==='piva'?(p.piva||p.cf):p.cf)||'—'}</td><td><strong>IBAN:</strong></td><td>${p.iban||'—'}</td></tr></table>
+  <h2>Procacciatore</h2><table><tr><td><strong>Nome:</strong></td><td>${p.nome}</td><td><strong>Qualifica:</strong></td><td>${q.label} (${q.prov}%)</td></tr><tr><td><strong>${p.regime==='piva'?'P.IVA':'CF'}:</strong></td><td>${p.cf||'—'}</td><td><strong>IBAN:</strong></td><td>${p.iban||'—'}</td></tr></table>
   <h2>Vendite ${mese}</h2>${vv.length?`<table><thead><tr><th>Data</th><th>Prodotto</th><th>Cliente</th><th style="text-align:right">Valore</th><th style="text-align:right">Provvigione</th></tr></thead><tbody>${vv.map(v=>`<tr><td>${v.data}</td><td>${v.prod}</td><td>${v.cliente||'—'}</td><td style="text-align:right">${v.val>0?fmtE(v.val):'—'}</td><td style="text-align:right;font-weight:600">${fmtE(v.prov)}</td></tr>`).join('')}</tbody></table>`:'<p style="color:#9e9e98">Nessuna vendita in questo periodo.</p>'}
   <div class="tot"><div class="tr"><span>Provvigione personale</span><span>${fmtE(provPers)}</span></div>${ovr>0?`<div class="tr"><span>Override rete</span><span>+${fmtE(ovr)}</span></div>`:''}<div class="tr"><span style="font-weight:600">Totale lordo</span><span style="font-weight:600">${fmtE(lordo)}</span></div>${p.regime==='ritenuta'?`<div class="tr"><span style="color:#A32D2D">Ritenuta 20%</span><span style="color:#A32D2D">−${fmtE(rit)}</span></div>`:''}<div class="tr"><span>NETTO</span><span style="color:#3B6D11">${fmtE(netto)}</span></div></div>
   ${p.regime==='ritenuta'&&lordo>77.47?'<p style="font-size:11px;color:#9e9e98;margin-top:.75rem">⚠ Applicare marca da bollo €2,00 sulla ricevuta.</p>':''}
@@ -5828,21 +5790,13 @@ async function renderCedolini(){
      '<div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6">Scegli il PDF a 2 pagine (pag.1 = Partita IVA, pag.2 = Ritenuta d\u0027acconto). Caricalo da <b>Documenti</b> col pulsante \ud83d\udd04, poi posiziona i campi del gruppo <b>CEDOLINO</b> nell\u0027editor. In generazione scelgo io la pagina giusta in base al regime.</div>'+
      '<select id="ced-doc" onchange="salvaCedolinoDoc()" style="font-size:13px;padding:7px 10px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);min-width:300px"><option value="">\u2014 Seleziona documento \u2014</option>'+
      docs.map(d=>'<option value="'+d.id+'"'+(d.id===sel?' selected':'')+'>'+escB(d.label)+'</option>').join('')+'</select>'+
-     (docs.length?'':'<div style="font-size:12px;color:var(--red);margin-top:8px">Nessun documento caricato. Vai in Documenti e carica il PDF del cedolino.</div>')+
-     '<div style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--text2);flex-wrap:wrap"><label style="margin:0">Passo righe tabella affari (mm):</label><input id="ced-rowh" type="number" min="3" max="15" step="0.1" value="'+(impostazioni['ced_aff_rowh']||6.6)+'" onchange="salvaPassoAffari()" style="width:80px;font-size:13px;padding:5px 8px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)"><span style="color:var(--text3)">default 6,6 \u2014 aumenta se le righe risultano troppo vicine</span></div>'+'</div>'
-  h+='<div class="card" style="margin-bottom:14px"><div style="font-weight:700;margin-bottom:8px">Conto azienda per i bonifici</div>'+
-     '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Dati dell\u0027ordinante (chi paga) inseriti nel file dei bonifici.</div>'+
-     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:660px">'+
-     '<div><label style="font-size:11px;color:var(--text3)">Intestatario</label><input id="bk-int" value="'+escB(impostazioni['banca_intestatario']||'LEONE CONSULTING di Leonardo Angelucci')+'" style="width:100%;font-size:13px;padding:7px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);box-sizing:border-box"></div>'+
-     '<div><label style="font-size:11px;color:var(--text3)">BIC / SWIFT (facoltativo)</label><input id="bk-bic" value="'+escB(impostazioni['banca_bic']||'')+'" placeholder="es. SELBIT2BXXX" style="width:100%;font-size:13px;padding:7px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);box-sizing:border-box"></div>'+
-     '<div style="grid-column:1/3"><label style="font-size:11px;color:var(--text3)">IBAN</label><input id="bk-iban" value="'+escB(impostazioni['banca_iban']||'')+'" placeholder="IT60 X054 2811 1010 0000 0123 456" style="width:100%;font-size:13px;padding:7px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);box-sizing:border-box"></div>'+
-     '</div>'+
-     '<button class="btn btn-sm" style="margin-top:10px" onclick="salvaDatiBanca()">\ud83d\udcbe Salva dati banca</button></div>'
+     (docs.length?'':'<div style="font-size:12px;color:var(--red);margin-top:8px">Nessun documento caricato. Vai in Documenti e carica il PDF del cedolino.</div>')+'</div>'
   h+='<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><div style="font-weight:700">Genera cedolini del mese</div>'+
      '<select id="ced-mese-sel" onchange="renderCedoliniRows()" style="font-size:13px;padding:6px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)">'+
      mesi.map(m=>'<option value="'+m+'"'+(m===curM?' selected':'')+'>'+_meseLabelCed(m)+' '+m.split('-')[0]+'</option>').join('')+'</select>'+
-     '<button class="btn btn-sm btn-p" onclick="generaCedoliniTutti()">\u2b07 Genera per tutti gli attivi</button><button class="btn btn-sm" onclick="esportaBonifici()">\ud83c\udfe6 Esporta bonifici</button></div>'+
-     '<table><thead><tr><th>Procacciatore</th><th>Regime</th><th>Affari</th><th>Lordo mese</th><th></th></tr></thead><tbody id="ced-tbody"></tbody></table></div>'
+     '<button class="btn btn-sm btn-p" onclick="generaCedoliniTutti()">\u2b07 Genera per tutti gli attivi</button>'+
+     '<input id="ced-search" type="text" placeholder="\ud83d\udd0d Cerca procacciatore..." oninput="renderCedoliniRows()" style="font-size:13px;padding:6px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);flex:1;min-width:160px"></div>'+
+     '<div class="tbl-wrap"><table><thead><tr><th>Procacciatore</th><th>Regime</th><th>Affari</th><th>Lordo mese</th><th></th></tr></thead><tbody id="ced-tbody"></tbody></table></div></div>'
   box.innerHTML=h
   renderCedoliniRows()
 }
@@ -5855,135 +5809,25 @@ function renderCedoliniRows(){
     return {p,i,lordo,n:vv.length}
   })
   if(!rows.length){ tb.innerHTML='<tr><td colspan="5" class="empty">Nessun procacciatore</td></tr>'; return }
-  tb.innerHTML=rows.map(r=>'<tr><td>'+escB(r.p.nome)+'</td><td>'+regimeBadge(r.p.regime)+'</td><td>'+r.n+'</td><td style="font-weight:600">'+(r.lordo>0?fmtE(r.lordo):'\u2014')+'</td><td><button class="btn btn-sm btn-p" onclick="generaCedolino('+r.i+',\''+mese+'\')">\u2b07 Cedolino</button></td></tr>').join('')
+  const q=(document.getElementById('ced-search')?.value||'').trim().toLowerCase()
+  const vis = q ? rows.filter(r=>(r.p.nome||'').toLowerCase().includes(q)) : rows
+  if(!vis.length){ tb.innerHTML='<tr><td colspan="5" class="empty">Nessun risultato per la ricerca</td></tr>'; return }
+  tb.innerHTML=vis.map(r=>'<tr><td>'+escB(r.p.nome)+'</td><td>'+regimeBadge(r.p.regime)+'</td><td>'+r.n+'</td><td style="font-weight:600">'+(r.lordo>0?fmtE(r.lordo):'\u2014')+'</td><td><button class="btn btn-sm btn-p" onclick="generaCedolino('+r.i+',\''+mese+'\')">\u2b07 Cedolino</button></td></tr>').join('')
 }
 async function salvaCedolinoDoc(){
   impostazioni['cedolino_docid']=document.getElementById('ced-doc').value
   try{ await upsertImpostazioni(); toast('Modello cedolino salvato') }catch(e){ alert('Errore salvataggio: '+(e.message||e)) }
 }
-async function salvaPassoAffari(){
-  const v=parseFloat(document.getElementById('ced-rowh').value)||6.6
-  impostazioni['ced_aff_rowh']=v
-  try{ await upsertImpostazioni(); toast('Passo righe salvato ('+v+' mm)') }catch(e){ alert('Errore salvataggio: '+(e.message||e)) }
-}
-async function salvaDatiBanca(){
-  impostazioni['banca_intestatario']=(document.getElementById('bk-int').value||'').trim()
-  impostazioni['banca_iban']=(document.getElementById('bk-iban').value||'').replace(/\s+/g,'').toUpperCase()
-  impostazioni['banca_bic']=(document.getElementById('bk-bic').value||'').replace(/\s+/g,'').toUpperCase()
-  try{ await upsertImpostazioni(); toast('Dati banca salvati') }catch(e){ alert('Errore salvataggio: '+(e.message||e)) }
-}
-function _bonificiRows(mese){
-  const out=[]
-  procs.forEach((p,i)=>{
-    const ovr=_ovrMese(p,mese)
-    const vv=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&(v.data||'').startsWith(mese))
-    if(!vv.length && !ovr) return
-    const c=_calcCedolino(p,vv,ovr)
-    const importo=Math.round((c.piva?c.nettoFatt:c.nettoPag)*100)/100
-    if(importo<=0) return
-    const benef=(p.regime==='piva'&&p.ragioneSociale)?p.ragioneSociale:p.nome
-    out.push({ nome:benef, iban:(p.iban||'').replace(/\s+/g,'').toUpperCase(), bic:(p.bic||'').replace(/\s+/g,'').toUpperCase(), importo, causale:'Pagamento provvigioni '+_meseLabelCed(mese)+' '+mese.split('-')[0] })
-  })
-  return out
-}
-function esportaBonifici(){
-  const mese=document.getElementById('ced-mese-sel').value
-  const rows=_bonificiRows(mese)
-  if(!rows.length){ alert('Nessun pagamento da esportare per '+_meseLabelCed(mese)+' '+mese.split('-')[0]+'.'); return }
-  const ibanAz=(impostazioni['banca_iban']||'').replace(/\s+/g,'')
-  if(!ibanAz){ alert('Inserisci prima l\u0027IBAN dell\u0027azienda nella card \u00abConto azienda per i bonifici\u00bb e premi Salva.'); return }
-  const validi=rows.filter(r=>r.iban)
-  const senza=rows.filter(r=>!r.iban)
-  if(!validi.length){ alert('Nessun procacciatore con IBAN. Aggiungi gli IBAN nelle schede.'); return }
-  const tot=validi.reduce((s,r)=>s+r.importo,0)
-  const ov=document.createElement('div')
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:99998'
-  const card=document.createElement('div')
-  card.style.cssText='background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:22px;max-width:460px;width:90%'
-  card.innerHTML='<div style="font-weight:700;font-size:15px;margin-bottom:6px">Esporta bonifici \u2014 '+_meseLabelCed(mese)+' '+mese.split('-')[0]+'</div>'+
-    '<div style="font-size:13px;color:var(--text2);margin-bottom:'+(senza.length?'6px':'14px')+'">'+validi.length+' pagamenti \u00b7 totale '+fmtE(tot)+'</div>'+
-    (senza.length?'<div style="font-size:12px;color:var(--red);margin-bottom:14px">\u26a0\ufe0f Esclusi (senza IBAN): '+senza.map(r=>escB(r.nome)).join(', ')+'</div>':'')+
-    '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">In che formato vuoi esportare?</div>'
-  const btns=document.createElement('div'); btns.style.cssText='display:flex;gap:10px'
-  const bxml=document.createElement('button'); bxml.className='btn btn-p'; bxml.style.flex='1'; bxml.textContent='XML (SEPA)'
-  const bcsv=document.createElement('button'); bcsv.className='btn btn-p'; bcsv.style.flex='1'; bcsv.textContent='CSV'
-  const bann=document.createElement('button'); bann.className='btn btn-sm'; bann.style.cssText='margin-top:12px;width:100%'; bann.textContent='Annulla'
-  bxml.onclick=()=>{ ov.remove(); _doExportBonifici(validi, mese, 'xml') }
-  bcsv.onclick=()=>{ ov.remove(); _doExportBonifici(validi, mese, 'csv') }
-  bann.onclick=()=>ov.remove()
-  btns.appendChild(bxml); btns.appendChild(bcsv)
-  card.appendChild(btns); card.appendChild(bann)
-  ov.appendChild(card); ov.onclick=(e)=>{ if(e.target===ov) ov.remove() }
-  document.body.appendChild(ov)
-}
-async function _doExportBonifici(rows, mese, fmt){
-  let content, fileName
-  if(fmt==='csv'){ content=_genBonificiCSV(rows); fileName='bonifici_'+mese+'.csv' }
-  else { content=_genBonificiXML(rows, mese); fileName='bonifici_'+mese+'.xml' }
-  try{
-    const bytes=Array.from(new TextEncoder().encode(content))
-    if(window.electronAPI?.salvaFile){
-      const r=await window.electronAPI.salvaFile(bytes, fileName)
-      if(r && r.ok){ toast('File bonifici salvato') }
-      else if(r && r.errore){ alert('Errore salvataggio: '+r.errore) }
-    } else {
-      const url=URL.createObjectURL(new Blob([content],{type:'application/octet-stream'})); const a=document.createElement('a'); a.href=url; a.download=fileName; a.click(); setTimeout(()=>URL.revokeObjectURL(url),2000)
-    }
-  }catch(e){ alert('Errore esportazione: '+(e.message||e)) }
-}
-function _csvCell(s){ s=(s==null?'':String(s)); return /[;"\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s }
-function _genBonificiCSV(rows){
-  const head='Beneficiario;IBAN;BIC;Importo;Causale'
-  const body=rows.map(r=>[_csvCell(r.nome),_csvCell(r.iban),_csvCell(r.bic||''),r.importo.toFixed(2).replace('.',','),_csvCell(r.causale)].join(';'))
-  return [head].concat(body).join('\r\n')+'\r\n'
-}
-function _genBonificiXML(rows, mese){
-  const az=impostazioni['banca_intestatario']||'LEONE CONSULTING di Leonardo Angelucci'
-  const ibanAz=(impostazioni['banca_iban']||'').replace(/\s+/g,'').toUpperCase()
-  const bicAz=(impostazioni['banca_bic']||'').replace(/\s+/g,'').toUpperCase()
-  const now=new Date()
-  const ts=now.toISOString().slice(0,19)
-  const msgId='LC'+now.getTime()
-  const nb=rows.length
-  const ctrl=rows.reduce((s,r)=>s+r.importo,0).toFixed(2)
-  const exec=new Date(now.getTime()+86400000).toISOString().slice(0,10)
-  const esc=(s)=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-  const dbtrAgt = bicAz ? '<FinInstnId><BIC>'+esc(bicAz)+'</BIC></FinInstnId>' : '<FinInstnId><Othr><Id>NOTPROVIDED</Id></Othr></FinInstnId>'
-  let tx=''
-  rows.forEach((r,idx)=>{
-    const cdtrAgt = r.bic ? '<CdtrAgt><FinInstnId><BIC>'+esc(r.bic)+'</BIC></FinInstnId></CdtrAgt>' : '<CdtrAgt><FinInstnId><Othr><Id>NOTPROVIDED</Id></Othr></FinInstnId></CdtrAgt>'
-    tx+='<CdtTrfTxInf><PmtId><EndToEndId>'+esc((msgId+'-'+(idx+1)).slice(0,35))+'</EndToEndId></PmtId>'+
-      '<Amt><InstdAmt Ccy="EUR">'+r.importo.toFixed(2)+'</InstdAmt></Amt>'+cdtrAgt+
-      '<Cdtr><Nm>'+esc(String(r.nome).slice(0,70))+'</Nm></Cdtr>'+
-      '<CdtrAcct><Id><IBAN>'+esc(r.iban)+'</IBAN></Id></CdtrAcct>'+
-      '<RmtInf><Ustrd>'+esc(String(r.causale).slice(0,140))+'</Ustrd></RmtInf></CdtTrfTxInf>'
-  })
-  return '<?xml version="1.0" encoding="UTF-8"?>'+
-    '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03"><CstmrCdtTrfInitn>'+
-    '<GrpHdr><MsgId>'+esc(msgId)+'</MsgId><CreDtTm>'+ts+'</CreDtTm><NbOfTxs>'+nb+'</NbOfTxs><CtrlSum>'+ctrl+'</CtrlSum><InitgPty><Nm>'+esc(az)+'</Nm></InitgPty></GrpHdr>'+
-    '<PmtInf><PmtInfId>'+esc(msgId)+'</PmtInfId><PmtMtd>TRF</PmtMtd><BtchBookg>true</BtchBookg><NbOfTxs>'+nb+'</NbOfTxs><CtrlSum>'+ctrl+'</CtrlSum>'+
-    '<PmtTpInf><SvcLvl><Cd>SEPA</Cd></SvcLvl></PmtTpInf><ReqdExctnDt>'+exec+'</ReqdExctnDt>'+
-    '<Dbtr><Nm>'+esc(az)+'</Nm></Dbtr><DbtrAcct><Id><IBAN>'+esc(ibanAz)+'</IBAN></Id></DbtrAcct><DbtrAgt>'+dbtrAgt+'</DbtrAgt><ChrgBr>SLEV</ChrgBr>'+
-    tx+'</PmtInf></CstmrCdtTrfInitn></Document>'
-}
 function _calcCedolino(p, vv, ovr){
   const lordo=vv.reduce((s,v)=>s+v.prov,0)+ovr
   const piva=p.regime==='piva'
-  const forf=piva && p.pivaTipo==='forfettario'
-  const iva=(piva && !forf)?lordo*0.22:0
-  const ritenuta=forf?0:lordo*0.115
+  const iva=piva?lordo*0.22:0
+  const ritenuta=lordo*0.115
   const baseRit=piva?0:lordo*0.5
   const bollo=(!piva && lordo>77.47)?2:0
   const nettoFatt=piva?(lordo+iva-ritenuta):0
   const nettoPag=piva?0:(lordo-ritenuta-bollo)
-  return {lordo,iva,ritenuta,baseRit,bollo,nettoFatt,nettoPag,piva,forf}
-}
-// Colonna "Provv. %" del cedolino: "fissa" per i prodotti a compenso fisso, la percentuale per quelli a %.
-function _affPct(v){
-  if(v && v.provTipo){ return v.provTipo==='fisso' ? 'fissa' : ((v.provPct!=null?v.provPct:'')+'%') }
-  const lp=(typeof LISTINO!=='undefined') ? (LISTINO.find(x=>x.nome===v.prod && (!v.cat||x.cat===v.cat)) || LISTINO.find(x=>x.nome===v.prod)) : null
-  if(lp){ return lp.tipo==='fisso' ? 'fissa' : (lp.prov+'%') }
-  return 'fissa'
+  return {lordo,iva,ritenuta,baseRit,bollo,nettoFatt,nettoPag,piva}
 }
 async function generaCedolino(idx, mese){
   const docId=impostazioni['cedolino_docid']
@@ -5995,21 +5839,18 @@ async function generaCedolino(idx, mese){
   if(c.lordo<=0 && !confirm('Nessuna provvigione incassata per '+p.nome+' in '+_meseLabelCed(mese)+'.\nGenero comunque il cedolino?')) return
   const q=(typeof getQual==='function')?getQual(p,idx,mese):{prov:null}
   const fmtN=n=>(n||0).toFixed(2).replace('.',',')
-  const affari=vv.map((v,k)=>({n:String(k+1),cliente:(v.cliente||'').slice(0,30),desc:(v.prod||'').slice(0,34),pct:_affPct(v),lorda:fmtN(v.prov)}))
+  const affari=vv.map((v,k)=>({n:String(k+1),cliente:(v.cliente||'').slice(0,30),desc:(v.prod||'').slice(0,34),pct:(v.val>0?(Math.round(v.prov/v.val*1000)/10)+'%':''),lorda:fmtN(v.prov)}))
   if(ovr>0) affari.push({n:String(affari.length+1),cliente:'Provvigioni rete',desc:'Override downline',pct:'',lorda:fmtN(ovr)})
   const prodotti=[...new Set(vv.map(v=>v.cat).filter(Boolean))].join(', ')
-  const extraBase={ nome:(p.regime==='piva' && p.ragioneSociale)?p.ragioneSociale:(p.nome||''),
-    ced_causale:'Pagamento provvigioni '+_meseLabelCed(mese)+' '+mese.split('-')[0]+' \u2013 '+((p.regime==='piva' && p.ragioneSociale)?p.ragioneSociale:(p.nome||'')),
+  const extraBase={
     ced_mese:_meseLabelCed(mese), ced_anno:mese.split('-')[0], ced_data_emiss:new Date().toLocaleDateString('it-IT'),
     ced_n_prosp: mese.replace('-','')+'-'+String(idx+1).padStart(2,'0'),
     ced_prodotto: prodotti||'Vari prodotti/servizi',
     ced_prov_base: (q&&q.prov!=null)?(q.prov+'%'):'', ced_prov_super:'',
     ced_tot_lorde:'\u20ac '+fmtN(c.lordo), ced_rimborsi:'\u20ac 0,00',
     ced_imponibile:'\u20ac '+fmtN(c.lordo), ced_iva:'\u20ac '+fmtN(c.iva),
-    ced_tot_fattura:(c.piva?'\u20ac '+fmtN(c.lordo+c.iva):''),
     ced_base_rit:'\u20ac '+fmtN(c.baseRit), ced_ritenuta:'\u20ac '+fmtN(c.ritenuta),
-    ced_bollo:(c.bollo>0?'\u20ac '+fmtN(c.bollo):'\u2014'),
-    ced_netto:'\u20ac '+fmtN(c.piva?c.nettoFatt:c.nettoPag),
+    ced_bollo:'\u20ac '+fmtN(c.bollo),
     ced_netto_fattura:'\u20ac '+fmtN(c.nettoFatt), ced_netto_pagare:'\u20ac '+fmtN(c.nettoPag)
   }
   const keepPage=c.piva?1:2
@@ -6043,6 +5884,64 @@ async function generaCedoliniTutti(){
   if(!attivi.length) return alert('Nessun procacciatore attivo.')
   if(!confirm('Genero il cedolino di '+_meseLabelCed(mese)+' per '+attivi.length+' procacciatori attivi?')) return
   for(const x of attivi){ await generaCedolino(x.i, mese) }
+}
+
+// ── DOCUMENTI COMMERCIALI ──────────────────────────────────────
+let docCommList=[]
+async function caricaDocComm(){
+  const box=document.getElementById('doc-comm-lista'); if(box) box.innerHTML='<div style="padding:12px;color:var(--text2)">Caricamento\u2026</div>'
+  try{ const r=await db.from('documenti_commerciali').select('*').order('created_at',{ascending:false}); if(r.error) throw r.error; docCommList=(r.data||[]).map(x=>({_id:x.id,created:x.created_at,...(x.data||{})})) }
+  catch(e){ docCommList=[]; if(box) box.innerHTML='<div style="padding:12px;color:var(--red)">Sezione non ancora attiva: manca la tabella su Supabase. Lancia la SQL che ti ho dato e ricarica.</div>'; return }
+  renderDocCommApp()
+}
+function _iconDC(ext){ ext=(ext||'').toLowerCase(); if(ext==='pdf')return '\ud83d\udcd5'; if(['doc','docx'].includes(ext))return '\ud83d\udcd8'; if(['xls','xlsx','csv'].includes(ext))return '\ud83d\udcd7'; if(['ppt','pptx'].includes(ext))return '\ud83d\udcd9'; if(['jpg','jpeg','png','gif','webp'].includes(ext))return '\ud83d\uddbc\ufe0f'; if(['zip','rar'].includes(ext))return '\ud83d\udddc\ufe0f'; if(['mp4','mov','avi'].includes(ext))return '\ud83c\udfac'; return '\ud83d\udcc4' }
+function _fmtSizeDC(b){ b=Number(b)||0; if(b<1024)return b+' B'; if(b<1048576)return Math.round(b/1024)+' KB'; return (Math.round(b/104857.6)/10)+' MB' }
+function renderDocCommApp(){
+  const box=document.getElementById('doc-comm-lista'); if(!box) return
+  const q=(document.getElementById('dc-search')?.value||'').trim().toLowerCase()
+  const lista=docCommList.filter(d=> !q || ((d.nome||'')+' '+(d.categoria||'')+' '+(d.descrizione||'')).toLowerCase().includes(q))
+  if(!docCommList.length){ box.innerHTML='<div style="padding:12px;color:var(--text2)">Nessun documento caricato.</div>'; return }
+  if(!lista.length){ box.innerHTML='<div style="padding:12px;color:var(--text2)">Nessun risultato per la ricerca.</div>'; return }
+  box.innerHTML=lista.map(d=>'<div style="display:flex;align-items:center;gap:12px;border:0.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--surface)">'+
+    '<div style="font-size:24px">'+_iconDC(d.ext)+'</div>'+
+    '<div style="flex:1;min-width:0"><div style="font-weight:600">'+escB(d.nome||'Documento')+(d.categoria?' <span class="pill">'+escB(d.categoria)+'</span>':'')+'</div>'+
+    (d.descrizione?'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+escB(d.descrizione)+'</div>':'')+
+    '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+escB((d.ext||'').toUpperCase())+(d.size?' \u00b7 '+_fmtSizeDC(d.size):'')+(d.data?' \u00b7 '+escB(d.data):'')+'</div></div>'+
+    '<a href="'+escB(d.url)+'" target="_blank" class="btn btn-sm">\u2b07 Apri</a>'+
+    '<button class="btn btn-sm btn-r" onclick="eliminaDocComm(\''+d._id+'\')">\ud83d\uddd1</button>'+
+  '</div>').join('')
+}
+async function uploadDocComm(){
+  const inp=document.getElementById('dc-file'); const f=inp&&inp.files&&inp.files[0]
+  if(!f) return alert('Seleziona un file da caricare.')
+  const nome=document.getElementById('dc-nome').value.trim()||f.name
+  const categoria=document.getElementById('dc-cat').value.trim()
+  const descrizione=document.getElementById('dc-desc').value.trim()
+  const ext=(f.name.split('.').pop()||'').toLowerCase()
+  const btn=document.getElementById('btn-dc-up'); btn.disabled=true; btn.innerHTML='<div class="spinner"></div>'
+  try{
+    const path='commerciali/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext
+    const up=await db.storage.from('documenti').upload(path, f, {upsert:true, contentType:f.type||'application/octet-stream'})
+    if(up.error) throw up.error
+    const pub=db.storage.from('documenti').getPublicUrl(path)
+    const url=(pub&&pub.data&&pub.data.publicUrl)||''
+    const ins=await db.from('documenti_commerciali').insert({data:{nome,categoria,descrizione,url,path,ext,size:f.size,data:new Date().toLocaleDateString('it-IT')}})
+    if(ins.error) throw ins.error
+    document.getElementById('dc-nome').value=''; document.getElementById('dc-cat').value=''; document.getElementById('dc-desc').value=''; inp.value=''
+    await caricaDocComm()
+    toast('\u2705 Documento caricato')
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+  finally{ btn.disabled=false; btn.innerHTML='\u2b06 Carica documento' }
+}
+async function eliminaDocComm(id){
+  if(!confirm('Eliminare questo documento? I procacciatori non lo vedranno più.')) return
+  try{
+    const d=docCommList.find(x=>x._id===id)
+    if(d&&d.path){ try{ await db.storage.from('documenti').remove([d.path]) }catch(e){} }
+    await db.from('documenti_commerciali').delete().eq('id',id)
+    await caricaDocComm()
+    toast('Documento eliminato')
+  }catch(e){ alert('Errore: '+(e.message||e)) }
 }
 
 // ── INIT ─────────────────────────────────────────────────────
@@ -6363,8 +6262,10 @@ function resetBonus(){
 
 function renderBonus(){
   const tb=document.getElementById('tbl-bonus')
-  const bonus=JSON.parse(localStorage.getItem('leone_bonus')||'[]')
-  if(!bonus.length){tb.innerHTML='<tr><td colspan="6" class="empty">Nessun bonus inviato</td></tr>';return}
+  let bonus=JSON.parse(localStorage.getItem('leone_bonus')||'[]')
+  const _bq=(document.getElementById('bonus-search')&&document.getElementById('bonus-search').value||'').trim().toLowerCase()
+  if(_bq) bonus=bonus.filter(b=>((b.nome||'')+' '+(b.clienteSeg||'')).toLowerCase().includes(_bq))
+  if(!bonus.length){tb.innerHTML='<tr><td colspan="6" class="empty">'+(_bq?'Nessun risultato per la ricerca':'Nessun bonus inviato')+'</td></tr>';return}
   const fe=n=>'€ '+parseFloat(n).toFixed(2).replace('.',',')
   tb.innerHTML=bonus.map(b=>`<tr><td style="font-weight:600">${b.nome}</td><td style="color:var(--text2)">${b.clienteSeg||'—'}</td><td>${fe(b.lordo)}</td><td style="color:var(--green);font-weight:600">${fe(b.netto)}</td><td style="color:var(--text2)">${b.data}</td><td>${statoBadge(b.stato)}</td></tr>`).join('')
 }
@@ -6491,7 +6392,7 @@ function renderImpostazioni(){
     if(el && impostazioni[chiave]) el.value = impostazioni[chiave]
   })
   // Popola anteprime logo
-  ;[['logo_giorno','prev-logo-giorno'],['logo_notte','prev-logo-notte'],['logo_entrambi','prev-logo-entrambi'],['logo_splash','prev-logo-splash']].forEach(([chiave,prevId])=>{
+  ;[['logo_giorno','prev-logo-giorno'],['logo_notte','prev-logo-notte'],['logo_entrambi','prev-logo-entrambi'],['logo_splash','prev-logo-splash'],['portale_logo','prev-logo-portale']].forEach(([chiave,prevId])=>{
     const el = document.getElementById(prevId)
     if(el && impostazioni[chiave]) el.src = impostazioni[chiave]
   })
@@ -6665,7 +6566,7 @@ async function caricaBacheca(){
 }
 function renderBachecaApp(){
   const box=document.getElementById('bch-lista'); if(!box) return
-  const posts=[...bachecaPosts].sort((a,b)=>(b.pin?1:0)-(a.pin?1:0))
+  const posts=[...bachecaPosts].sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)).filter(p=>((p.titolo||'').trim()||(p.testo||'').trim()||(p.media&&p.media.length)))
   if(!posts.length){ box.innerHTML='<div style="padding:16px;color:var(--text2)">Nessuna comunicazione pubblicata.</div>'; return }
   box.innerHTML=posts.map(p=>{
     const d=p.data||(p.created?new Date(p.created).toLocaleDateString('it-IT'):'')
@@ -6674,24 +6575,93 @@ function renderBachecaApp(){
         '<strong style="font-size:15px">'+(p.pin?'📌 ':'')+escB(p.titolo||'Comunicazione')+'</strong>'+
         '<span style="font-size:12px;color:var(--text2);white-space:nowrap">'+escB(d)+'</span></div>'+
       '<div style="margin-top:6px;color:var(--text2);white-space:pre-wrap;line-height:1.5;font-size:13px">'+escB(p.testo||'')+'</div>'+
-      '<div style="margin-top:10px"><button class="btn btn-sm btn-r" onclick="eliminaBacheca(\''+p._id+'\')">🗑 Elimina</button></div>'+
+      ((p.media&&p.media.length)?'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'+p.media.map(m=>m.t==='vid'?'<video controls preload="metadata" src="'+m.url+'" style="max-width:260px;max-height:200px;border-radius:8px;background:#000"></video>':'<img src="'+m.url+'" style="max-width:200px;max-height:200px;border-radius:8px;object-fit:cover;cursor:pointer" onclick="window.open(\''+m.url+'\')">').join('')+'</div>':'')+
+      '<div style="margin-top:10px;display:flex;gap:6px"><button class="btn btn-sm" onclick="modificaBacheca(\''+p._id+'\')">✎ Modifica</button><button class="btn btn-sm btn-r" onclick="eliminaBacheca(\''+p._id+'\')">🗑 Elimina</button></div>'+
     '</div>'
   }).join('')
+}
+async function _uploadMediaBacheca(inputId){
+  const inp=document.getElementById(inputId); const files=(inp&&inp.files)?Array.from(inp.files):[]
+  const media=[]
+  for(const f of files){
+    if(f.size>45*1024*1024){ alert('Il file "'+f.name+'" supera 45 MB e potrebbe non caricarsi: saltato.'); continue }
+    const ext=(f.name.split('.').pop()||'bin').toLowerCase()
+    const path='bacheca/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext
+    try{
+      const up=await db.storage.from('documenti').upload(path, f, {upsert:true, contentType:f.type||'application/octet-stream'})
+      if(up.error){ alert('Errore caricamento '+f.name+': '+up.error.message); continue }
+      const pub=db.storage.from('documenti').getPublicUrl(path)
+      const url=(pub&&pub.data&&pub.data.publicUrl)||''
+      if(url) media.push({t:(f.type||'').startsWith('video')?'vid':'img', url})
+    }catch(e){ alert('Errore caricamento '+f.name+': '+(e.message||e)) }
+  }
+  if(inp) inp.value=''
+  return media
+}
+async function _emailBachecaTutti(titolo, testo){
+  const dest=(document.getElementById('bch-email-dest')||{}).value||'entrambe'
+  const set=new Set()
+  procs.forEach(p=>{
+    const pe=(''+(p.email||'')).trim().toLowerCase(), ae=(''+(p.email_aziendale||'')).trim().toLowerCase()
+    if((dest==='entrambe'||dest==='personale')&&pe.includes('@')) set.add(pe)
+    if((dest==='entrambe'||dest==='aziendale')&&ae.includes('@')) set.add(ae)
+  })
+  const emails=[...set]
+  if(!emails.length) return
+  const portale='https://portale.leoneconsultingitalia.it/'
+  const html='<div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a18;font-size:14px;line-height:1.6"><h2 style="color:#F22015;margin:0 0 8px">'+escB(titolo||'Comunicazione')+'</h2><div style="white-space:pre-wrap">'+escB(testo||'')+'</div><p style="margin-top:14px"><a href="'+portale+'" style="background:#3B6D11;color:#fff;text-decoration:none;padding:9px 16px;border-radius:8px">Apri il portale</a></p><p style="font-size:12px;color:#888;margin-top:12px">Leone Consulting \u2014 Portale Procacciatori</p></div>'
+  const subject='\ud83d\udce3 '+(titolo||'Nuova comunicazione')+' \u2014 Leone Consulting'
+  const rows=emails.map(e=>({data:{to:e, subject, html}}))
+  try{ await db.from('email_queue').insert(rows); toast('\ud83d\udce7 Email in coda per '+rows.length+' indirizzi') }catch(e){ console.error('email bacheca:',e) }
 }
 async function pubblicaBacheca(){
   const titolo=document.getElementById('bch-titolo').value.trim()
   const testo=document.getElementById('bch-testo').value.trim()
   const pin=document.getElementById('bch-pin').checked
-  if(!titolo&&!testo) return alert('Scrivi almeno un titolo o un testo.')
+  const editId=document.getElementById('bch-edit-id').value
+  const hasFiles=(document.getElementById('bch-media')||{}).files
+  if(!titolo&&!testo&&!(hasFiles&&hasFiles.length)) return alert('Scrivi un titolo/testo o allega una foto o un video.')
   const btn=document.getElementById('btn-bch-pub'); btn.disabled=true; btn.innerHTML='<div class="spinner"></div>'
   try{
-    syncStatus('syncing','Pubblicazione...')
-    await db.from('bacheca').insert({data:{titolo,testo,pin,data:new Date().toLocaleDateString('it-IT'),autore:'Leone Consulting',autoreNome:'Leone Consulting',autoreEmail:'amministrazione@leoneconsultingitalia.it',isAdmin:true}})
-    document.getElementById('bch-titolo').value=''; document.getElementById('bch-testo').value=''; document.getElementById('bch-pin').checked=false
-    await caricaBacheca()
-    syncStatus('ok','Pubblicato'); toast('📣 Comunicazione pubblicata sul portale')
+    const nuoviMedia=await _uploadMediaBacheca('bch-media')
+    if(!editId && !titolo && !testo && !nuoviMedia.length){ alert('Le foto/video non sono stati caricati (probabile permesso mancante su Supabase) e non c\u0027è testo: il post non è stato pubblicato.'); btn.disabled=false; btn.innerHTML='📣 Pubblica'; return }
+    if(editId){
+      const orig=bachecaPosts.find(x=>x._id===editId)||{}
+      const media=[...(orig.media||[]),...nuoviMedia]
+      const data={titolo,testo,pin,media,data:orig.data||new Date().toLocaleDateString('it-IT'),modificato:new Date().toLocaleDateString('it-IT'),autore:'Leone Consulting',autoreNome:'Leone Consulting',autoreEmail:'amministrazione@leoneconsultingitalia.it',isAdmin:true}
+      syncStatus('syncing','Aggiornamento...')
+      await db.from('bacheca').update({data}).eq('id',editId)
+      annullaModificaBacheca()
+      await caricaBacheca()
+      syncStatus('ok','Aggiornato'); toast('✏️ Comunicazione aggiornata')
+    } else {
+      syncStatus('syncing','Pubblicazione...')
+      await db.from('bacheca').insert({data:{titolo,testo,pin,media:nuoviMedia,data:new Date().toLocaleDateString('it-IT'),autore:'Leone Consulting',autoreNome:'Leone Consulting',autoreEmail:'amministrazione@leoneconsultingitalia.it',isAdmin:true}})
+      if(document.getElementById('bch-email')&&document.getElementById('bch-email').checked){ await _emailBachecaTutti(titolo, testo) }
+      document.getElementById('bch-titolo').value=''; document.getElementById('bch-testo').value=''; document.getElementById('bch-pin').checked=false
+      await caricaBacheca()
+      syncStatus('ok','Pubblicato'); toast('📣 Comunicazione pubblicata sul portale')
+    }
   }catch(e){ syncStatus('err','Errore: '+e.message); alert('Errore: '+e.message) }
-  finally{ btn.disabled=false; btn.innerHTML='📣 Pubblica' }
+  finally{ btn.disabled=false; btn.innerHTML=document.getElementById('bch-edit-id').value?'💾 Salva modifiche':'📣 Pubblica' }
+}
+function modificaBacheca(id){
+  const p=bachecaPosts.find(x=>x._id===id); if(!p) return
+  document.getElementById('bch-edit-id').value=id
+  document.getElementById('bch-titolo').value=p.titolo||''
+  document.getElementById('bch-testo').value=p.testo||''
+  document.getElementById('bch-pin').checked=!!p.pin
+  document.getElementById('bch-form-title').textContent='Modifica comunicazione'
+  document.getElementById('btn-bch-pub').innerHTML='💾 Salva modifiche'
+  document.getElementById('btn-bch-annulla').style.display=''
+  document.getElementById('bch-titolo').scrollIntoView({behavior:'smooth',block:'center'})
+}
+function annullaModificaBacheca(){
+  document.getElementById('bch-edit-id').value=''
+  document.getElementById('bch-titolo').value=''; document.getElementById('bch-testo').value=''; document.getElementById('bch-pin').checked=false
+  document.getElementById('bch-form-title').textContent='Nuova comunicazione'
+  document.getElementById('btn-bch-pub').innerHTML='📣 Pubblica'
+  document.getElementById('btn-bch-annulla').style.display='none'
 }
 async function eliminaBacheca(id){
   if(!confirm('Eliminare questa comunicazione?')) return
@@ -6805,39 +6775,6 @@ const MARKER_COLORS = {
   rec_impresa:        { color:'#922b21', label:'☑ Recesso: impresa' },
   rec_personali:      { color:'#922b21', label:'☑ Recesso: personali' },
   rec_altro:          { color:'#922b21', label:'✏️ Recesso: altro' },
-  regime_testo:   { color:'#0e6655', label:'Regime fiscale' },
-  citta_cap_prov: { color:'#0e6655', label:'Città/CAP/Prov' },
-  codice_ateco:   { color:'#0e6655', label:'Cod. ATECO' },
-  solo_piva:      { color:'#0e6655', label:'Partita IVA' },
-  solo_cf:        { color:'#0e6655', label:'Codice fiscale' },
-  num_contratto:  { color:'#0e6655', label:'N° contratto' },
-  area_geo:       { color:'#0e6655', label:'Area geografica' },
-  tel_email:      { color:'#0e6655', label:'Telefono / Email' },
-  tabella_affari: { color:'#1f8a70', label:'Tabella affari (auto)' },
-  aff_num:        { color:'#1f8a70', label:'Colonna N°' },
-  aff_cliente:    { color:'#1f8a70', label:'Colonna Cliente' },
-  aff_desc:       { color:'#1f8a70', label:'Colonna Descrizione' },
-  aff_pct:        { color:'#1f8a70', label:'Colonna Provvigione %' },
-  aff_lorda:      { color:'#1f8a70', label:'Colonna Provvigione lorda' },
-  ced_causale:    { color:'#117a65', label:'Causale (auto)' },
-  ced_mese:       { color:'#117a65', label:'Mese' },
-  ced_anno:       { color:'#117a65', label:'Anno' },
-  ced_data_emiss: { color:'#117a65', label:'Data emissione' },
-  ced_n_prosp:    { color:'#117a65', label:'Numero prospetto' },
-  ced_prodotto:   { color:'#117a65', label:'Prodotto' },
-  ced_prov_base:  { color:'#117a65', label:'Provvigione base %' },
-  ced_prov_super: { color:'#117a65', label:'Super premio %' },
-  ced_tot_lorde:  { color:'#148f77', label:'Totale lorde' },
-  ced_rimborsi:   { color:'#148f77', label:'Rimborsi' },
-  ced_imponibile: { color:'#148f77', label:'Totale lordo' },
-  ced_iva:        { color:'#148f77', label:'IVA 22%' },
-  ced_tot_fattura:{ color:'#148f77', label:'Totale fattura' },
-  ced_base_rit:   { color:'#148f77', label:'Base imponibile 50%' },
-  ced_ritenuta:   { color:'#148f77', label:"Ritenuta d'acconto" },
-  ced_bollo:      { color:'#148f77', label:'Marca da bollo' },
-  ced_netto:      { color:'#0b5345', label:'Totale netto' },
-  ced_netto_fattura: { color:'#0b5345', label:'Netto fattura (P.IVA)' },
-  ced_netto_pagare:  { color:'#0b5345', label:'Netto a pagare (Ritenuta)' },
 }
 // Campi che l'utente SCEGLIE al momento di generare (non dipendono dalla scheda)
 const CAMPI_SCELTA = {
@@ -7219,7 +7156,6 @@ async function eliminaDocId(id){
       editorDocId = null
       document.getElementById('editor-toolbar')?.setAttribute('style','display:none')
       document.getElementById('editor-canvas-wrap')?.setAttribute('style','display:none')
-      document.getElementById('editor-legend')?.setAttribute('style','display:none')
       const ph = document.getElementById('editor-placeholder'); if(ph) ph.style.display='flex'
     }
     await caricaDocumentiCustom()
@@ -7247,11 +7183,12 @@ function risolviCampo(tipo, p, oggi){
   if(tipo==='regime_testo')  return { testo: p.regime==='piva'?'Titolare di Partita IVA':"Ritenuta d'acconto" }
   if(tipo==='citta_cap_prov') return { testo: [p.citta, p.cap, p.prov?('('+p.prov+')'):''].filter(Boolean).join(' ') }
   if(tipo==='codice_ateco')  return { testo: p.ateco||'' }
-  if(tipo==='solo_piva')     return { testo: p.regime==='piva'?(p.piva||p.cf||''):'' }
+  if(tipo==='solo_piva')     return { testo: p.regime==='piva'?(p.piva||''):'' }
   if(tipo==='solo_cf')       return { testo: p.cf||'' }
   if(tipo==='num_contratto') return { testo: p.nContratto||'' }
   if(tipo==='area_geo')      return { testo: p.zona||'' }
   if(tipo==='tel_email')     return { testo: [p.tel, p.email].filter(Boolean).join(' / ') }
+  if(tipo==='data_cessazione') return { testo: p.dataCessazione||p.data_cessazione||'' }
   if(tipo==='conto_bancario') return { spunta: p.tipo_conto==='bancario' }
   if(tipo==='conto_postale')  return { spunta: p.tipo_conto==='postale' }
   if(tipo==='conto_estero')   return { spunta: p.tipo_conto==='estero' }
@@ -7315,23 +7252,16 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
   const pdfDoc = await PDFLib.PDFDocument.load(bytes)
   const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica)
   const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold)
-  const fontTimes = await pdfDoc.embedFont(PDFLib.StandardFonts.TimesRoman)
-  const fontCourier = await pdfDoc.embedFont(PDFLib.StandardFonts.Courier)
-  const FONTS = { helv:font, times:fontTimes, courier:fontCourier }
   const oggi = new Date().toLocaleDateString('it-IT')
   const pages = pdfDoc.getPages()
-  // Stampa testo. Rimpicciolisce SOLO se il campo ha "Adatta alla larghezza" attivo; altrimenti usa la dimensione fissa.
-  const drawTxt = (pg, t, x, ph, yTop, wpct, col, fs, autofit, fkey) => {
-    const cc = col || PDFLib.rgb(0.05,0.05,0.05)
-    const f = FONTS[fkey] || font
-    const str = String(t)
-    let size = fs || 10
-    if(autofit && wpct){
-      const maxW = (wpct/100)*pg.getWidth()
-      const w = f.widthOfTextAtSize(str, size)
-      if(w > maxW) size = Math.max(5, size * maxW / w)
+  // Stampa testo con eventuale a-capo automatico se il campo ha una larghezza (w_pct)
+  const drawTxt = (pg, t, x, ph, yTop, wpct) => {
+    const maxW = wpct ? (wpct/100)*pg.getWidth() : 0
+    if(maxW>0){
+      wrapPdfText(t, font, 10, maxW).forEach((ln,i)=> pg.drawText(ln, { x, y: ph - yTop - 4 - i*12, size:10, font, color: PDFLib.rgb(0.05,0.05,0.05) }))
+    } else {
+      pg.drawText(t, { x, y: ph - yTop - 4, size:10, font, color: PDFLib.rgb(0.05,0.05,0.05) })
     }
-    pg.drawText(str, { x, y: ph - yTop - 4, size, font:f, color: cc })
   }
   markers.forEach(m => {
     if(skip.indexOf(m.tipo)!==-1) return
@@ -7342,7 +7272,7 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
     if(m.tipo==='tabella_affari'){
       const aff=(extra && extra.__affari)||[]
       const cols=[{k:'n',x:6.5},{k:'cliente',x:12},{k:'desc',x:41.5},{k:'pct',x:72},{k:'lorda',x:82}]
-      const rowH=(impostazioni && impostazioni.ced_aff_rowh) ? Number(impostazioni.ced_aff_rowh)*2.83465 : 18.7
+      const rowH=20.6
       aff.forEach((rr,ri)=>{
         cols.forEach(c=>{
           const val=(rr[c.k]==null?'':String(rr[c.k]))
@@ -7351,23 +7281,9 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
       })
       return
     }
-    {
-      const AFF_COLS={aff_num:'n',aff_cliente:'cliente',aff_desc:'desc',aff_pct:'pct',aff_lorda:'lorda'}
-      if(AFF_COLS[m.tipo]){
-        const aff=(extra && extra.__affari)||[]
-        const key=AFF_COLS[m.tipo]
-        const rowH=(impostazioni && impostazioni.ced_aff_rowh) ? Number(impostazioni.ced_aff_rowh)*2.83465 : 18.7
-        aff.forEach((rr,ri)=>{
-          const val=(rr[key]==null?'':String(rr[key]))
-          if(val) pg.drawText(val, { x, y: ph - yTop - 4 - ri*rowH, size:9, font, color:PDFLib.rgb(0.05,0.05,0.05) })
-        })
-        return
-      }
-    }
     if(Object.prototype.hasOwnProperty.call(extra, m.tipo)){
       const t=(extra[m.tipo]==null?'':extra[m.tipo]).toString()
-      const _white=['ced_tot_fattura','ced_netto','ced_netto_fattura','ced_netto_pagare'].indexOf(m.tipo)!==-1
-      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, _white?PDFLib.rgb(1,1,1):null, m.fs, m.autofit, m.font)
+      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct)
       return
     }
     if(CAMPI_SCELTA[m.tipo]){
@@ -7377,7 +7293,7 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
         if(on) pg.drawText('X', { x: x-4, y: ph - yTop - 5, size: 12, font: fontBold, color: PDFLib.rgb(0,0,0) })
       } else {
         const t = (scelte[m.tipo]||'').toString()
-        if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, null, m.fs, m.autofit, m.font)
+        if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct)
       }
       return
     }
@@ -7387,7 +7303,7 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
       pg.drawText('X', { x: x-4, y: ph - yTop - 5, size: 12, font: fontBold, color: PDFLib.rgb(0,0,0) })
     } else if(r.testo!==undefined){
       const t = (r.testo||'').toString()
-      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, null, m.fs, m.autofit, m.font)
+      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct)
     }
   })
   if(keepPage){ for(let pi=pdfDoc.getPageCount()-1; pi>=0; pi--){ if(pi!==(keepPage-1)) pdfDoc.removePage(pi) } }
@@ -7653,6 +7569,12 @@ async function eliminaCampoCustom(key){
   toast('Campo eliminato')
 }
 
+function toggleCedFields(el){
+  const g=document.getElementById('ced-fields'); if(!g) return
+  const show = (g.style.display==='none' || !g.style.display)
+  g.style.display = show ? 'contents' : 'none'
+  el.textContent = 'CEDOLINO ' + (show ? '▾' : '▸')
+}
 function addMarker(tipo){
   if(!editorDocId) return
   if(!editorMarkers[editorDocId]) editorMarkers[editorDocId] = []
@@ -7679,10 +7601,6 @@ function eliminaMarker(idx){
   renderEditorMarkers()
 }
 // Doppio clic su un campo: opzioni (larghezza testo / elimina)
-function _sampleForMarker(tipo, label){
-  const s={ nome:'Alessandro Di Bartolomeo', solo_piva:'IT 18231181001', solo_cf:'DBTLSN90A01H501Z', citta_cap_prov:'00049 Velletri (RM)', tel_email:'379 126 4864 / nome.cognome@email.it', area_geo:'Lazio \u2013 Roma Sud', num_contratto:'PRO-001/2026', codice_ateco:'46.18.91', regime_testo:'Prestazione occasionale', ced_causale:'Pagamento provvigioni Maggio 2026', ced_n_prosp:'CED-001/2026', ced_data_emiss:'16/06/2026' }
-  return s[tipo] || label || 'Testo di esempio'
-}
 function apriOpzioniCampo(idx){
   const arr = editorMarkers[editorDocId]||[]; const m = arr[idx]; if(!m) return
   const cfg = MARKER_COLORS[m.tipo] || { color:'#888', label:m.tipo }
@@ -7694,21 +7612,9 @@ function apriOpzioniCampo(idx){
   let html='<div style="font-size:13px;font-weight:700;margin-bottom:12px">'+cfg.label.replace(/^\u2611\s*/,'').replace(/^\u270f\ufe0f\s*/,'')+'</div>'
   if(canWidth){
     const cur = m.w_pct ? Math.round(m.w_pct) : 0
-    const curFs = m.fs || 0
-    const curFont = m.font || 'helv'
-    const _ff = {helv:'sans-serif', times:'serif', courier:'monospace'}
-    html+='<label style="font-size:11px;color:var(--text2)">Larghezza del campo</label>'
+    html+='<label style="font-size:11px;color:var(--text2)">Larghezza del campo (a-capo automatico)</label>'
     html+='<div style="display:flex;align-items:center;gap:8px;margin:6px 0 4px"><input type="range" id="opz-w" min="0" max="90" step="2" value="'+cur+'" style="flex:1"><span id="opz-wv" style="font-size:11px;width:48px;text-align:right">'+(cur?cur+'%':'no')+'</span></div>'
-    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:12px">Riferimento per l\u0027opzione \u00abAdatta alla larghezza\u00bb qui sotto.</div>'
-    html+='<label style="font-size:11px;color:var(--text2)">Font</label>'
-    html+='<select id="opz-font" style="width:100%;font-size:13px;padding:6px 9px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);margin:6px 0 12px"><option value="helv"'+(curFont==='helv'?' selected':'')+'>Helvetica (predefinito)</option><option value="times"'+(curFont==='times'?' selected':'')+'>Times</option><option value="courier"'+(curFont==='courier'?' selected':'')+'>Courier</option></select>'
-    html+='<label style="font-size:11px;color:var(--text2)">Dimensione testo</label>'
-    html+='<div style="display:flex;align-items:center;gap:8px;margin:6px 0 4px"><input type="range" id="opz-fs" min="0" max="16" step="0.5" value="'+curFs+'" style="flex:1"><span id="opz-fsv" style="font-size:11px;width:78px;text-align:right">'+(curFs?curFs+' pt':'10 (default)')+'</span></div>'
-    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:10px">0 = 10 pt. Imposta i punti per avere i campi tutti uguali.</div>'
-    html+='<label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text);margin-bottom:6px;cursor:pointer"><input type="checkbox" id="opz-af"'+(m.autofit?' checked':'')+' style="margin-top:2px"> Adatta il testo alla larghezza (rimpicciolisce solo questo campo se troppo lungo)</label>'
-    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:10px">Lascialo spento per tenere tutti i campi della stessa dimensione.</div>'
-    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:4px">Anteprima:</div>'
-    html+='<div id="opz-prev" style="border:0.5px solid var(--border);border-radius:6px;padding:8px;background:#fff;color:#111;overflow:hidden;white-space:nowrap;margin-bottom:14px;font-family:'+_ff[curFont]+';font-size:'+(curFs||10)+'px">'+escB(_sampleForMarker(m.tipo, cfg.label))+'</div>'
+    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:14px">0 = nessun limite (riga unica). Aumenta per far andare a capo il testo lungo (es. email).</div>'
   }
   html+='<div style="display:flex;gap:8px;justify-content:space-between;align-items:center">'
   html+='<button class="btn btn-sm btn-r" onclick="eliminaMarker('+idx+')">🗑 Elimina campo</button>'
@@ -7718,36 +7624,13 @@ function apriOpzioniCampo(idx){
   if(canWidth){
     const r=document.getElementById('opz-w'), v=document.getElementById('opz-wv')
     r.oninput=()=>{ const val=parseInt(r.value); v.textContent=val?val+'%':'no'; if(val) editorMarkers[editorDocId][idx].w_pct=val; else delete editorMarkers[editorDocId][idx].w_pct; renderEditorMarkers() }
-    const fr=document.getElementById('opz-fs'), fv=document.getElementById('opz-fsv'), pv=document.getElementById('opz-prev')
-    const ff=document.getElementById('opz-font'), af=document.getElementById('opz-af')
-    const ffmap={helv:'sans-serif', times:'serif', courier:'monospace'}
-    if(fr){ fr.oninput=()=>{ const val=parseFloat(fr.value)||0; fv.textContent=val?val+' pt':'10 (default)'; if(val) editorMarkers[editorDocId][idx].fs=val; else delete editorMarkers[editorDocId][idx].fs; if(pv) pv.style.fontSize=(val||10)+'px' } }
-    if(ff){ ff.onchange=()=>{ const val=ff.value; if(val&&val!=='helv') editorMarkers[editorDocId][idx].font=val; else delete editorMarkers[editorDocId][idx].font; if(pv) pv.style.fontFamily=ffmap[val]||ffmap.helv } }
-    if(af){ af.onchange=()=>{ if(af.checked) editorMarkers[editorDocId][idx].autofit=true; else delete editorMarkers[editorDocId][idx].autofit } }
   }
 }
-function _ensureMarkerTip(){
-  let t=document.getElementById('lc-marker-tip')
-  if(!t){
-    t=document.createElement('div'); t.id='lc-marker-tip'
-    t.style.cssText='position:fixed;z-index:99999;pointer-events:none;background:#0f1115;color:#fff;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.55);white-space:nowrap;display:none;border:1px solid rgba(255,255,255,.15)'
-    document.body.appendChild(t)
-  }
-  return t
-}
-function _showMarkerTip(ev,label){ const t=_ensureMarkerTip(); t.textContent=label||''; t.style.display='block'; _moveMarkerTip(ev) }
-function _moveMarkerTip(ev){ const t=document.getElementById('lc-marker-tip'); if(!t||t.style.display==='none')return; let x=ev.clientX+14, y=ev.clientY+18; const w=t.offsetWidth,h=t.offsetHeight; if(x+w>window.innerWidth-8)x=window.innerWidth-8-w; if(y+h>window.innerHeight-8)y=ev.clientY-18-h; t.style.left=x+'px'; t.style.top=y+'px' }
-function _hideMarkerTip(){ const t=document.getElementById('lc-marker-tip'); if(t)t.style.display='none' }
 function renderEditorMarkers(){
   const layer = document.getElementById('editor-markers-layer')
-  if(!layer || !editorDocId){ const lg=document.getElementById('editor-legend'); if(lg){lg.style.display='none'} return }
+  if(!layer || !editorDocId) return
   layer.innerHTML = ''
   layer.style.pointerEvents = 'auto'
-  if(!layer._tipBound){
-    layer._tipBound = true
-    layer.addEventListener('mousemove', (e)=>{ const m=e.target.closest('[data-tip]'); if(m){ _showMarkerTip(e, m.dataset.tip) } else { _hideMarkerTip() } })
-    layer.addEventListener('mouseleave', ()=>_hideMarkerTip())
-  }
   const markers = (editorMarkers[editorDocId]||[]).filter(m => m.page === editorPage)
   const allMarkers = editorMarkers[editorDocId]||[]
 
@@ -7756,8 +7639,6 @@ function renderEditorMarkers(){
     const cfg = MARKER_COLORS[m.tipo] || { color:'#888', label: m.tipo }
     const isCheck = (cfg.label||'').trim().startsWith('\u2611') // etichette "☑ ..." = caselle dove si stampa la X
     const el = document.createElement('div')
-    el.title = cfg.label
-    el.dataset.tip = cfg.label
     if(isCheck){
       // Casellina ✕ centrata sul punto ESATTO di stampa; etichetta sulla stessa riga, a destra
       el.style.cssText = `position:absolute;left:${m.x_pct}%;top:${m.y_pct}%;transform:translate(-50%,-50%);width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:${cfg.color};border:1.5px solid #fff;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:grab;z-index:10;`
@@ -7786,10 +7667,10 @@ function renderEditorMarkers(){
       el.style.cssText = `position:absolute;left:${m.x_pct}%;top:${m.y_pct}%;transform:translateY(-50%);${m.w_pct?('width:'+m.w_pct+'%;'):''}min-height:19px;box-sizing:border-box;background:${cfg.color}26;border:1.5px dashed ${cfg.color};border-radius:4px;cursor:grab;z-index:10;display:flex;align-items:center`
       const lab=document.createElement('span')
       lab.textContent=cfg.label
-      lab.style.cssText=`font-size:9px;font-weight:700;color:#fff;background:${cfg.color};padding:1px 6px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%;pointer-events:none`
+      lab.style.cssText=`font-size:9px;font-weight:700;color:#fff;background:${cfg.color};padding:1px 6px;border-radius:3px;white-space:nowrap;pointer-events:none`
       el.appendChild(lab)
       const grip=document.createElement('div')
-      grip.title='Trascina per allargare o restringere il campo (il nome si accorcia da solo)'
+      grip.title='Trascina per allungare il campo (il testo lungo va a capo)'
       grip.style.cssText=`position:absolute;right:-5px;top:0;bottom:0;width:12px;display:flex;align-items:center;justify-content:center;cursor:ew-resize`
       grip.innerHTML=`<div style="width:5px;height:62%;min-height:11px;background:${cfg.color};border:1px solid #fff;border-radius:2px"></div>`
       grip.onmousedown=(e)=>{
@@ -7847,24 +7728,20 @@ function renderEditorMarkers(){
     layer.appendChild(el)
   })
 
-  // Riepilogo campi: sotto il PDF, in riga (a capo automatico)
-  const legEl = document.getElementById('editor-legend')
-  if(legEl){
-    const allTypes = [...new Set((editorMarkers[editorDocId]||[]).map(m=>m.tipo))]
-    if(allTypes.length){
-      legEl.innerHTML = `<span style="font-weight:700;color:var(--text2);margin-right:4px">Campi nel documento:</span>` + allTypes.map(t => {
-        const cfg = MARKER_COLORS[t]||{color:'#888',label:t}
-        const count = (editorMarkers[editorDocId]||[]).filter(m=>m.tipo===t).length
-        return `<span style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap">
-          <span style="width:11px;height:11px;border-radius:2px;background:${cfg.color};display:inline-block;flex:none"></span>
-          ${cfg.label} <span style="color:var(--text3)">(${count})</span>
-        </span>`
-      }).join('')
-      legEl.style.display = 'flex'
-    } else {
-      legEl.innerHTML = ''
-      legEl.style.display = 'none'
-    }
+  // Legenda
+  const allTypes = [...new Set((editorMarkers[editorDocId]||[]).map(m=>m.tipo))]
+  if(allTypes.length){
+    const leg = document.createElement('div')
+    leg.style.cssText = 'position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);border-radius:6px;padding:6px 8px;font-size:10px;color:#fff;pointer-events:none'
+    leg.innerHTML = allTypes.map(t => {
+      const cfg = MARKER_COLORS[t]||{color:'#888',label:t}
+      const count = (editorMarkers[editorDocId]||[]).filter(m=>m.tipo===t).length
+      return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+        <span style="width:10px;height:10px;border-radius:2px;background:${cfg.color};display:inline-block"></span>
+        ${cfg.label} (${count})
+      </div>`
+    }).join('')
+    layer.appendChild(leg)
   }
 }
 
@@ -7880,9 +7757,6 @@ async function salvaCoordinate(){
       y: Math.round((m.y_pct / 100) * H),
     }
     if(m.w_pct) c.w = Math.round((m.w_pct / 100) * W)
-    if(m.fs) c.fs = m.fs
-    if(m.autofit) c.af = 1
-    if(m.font) c.fnt = m.font
     return c
   })
   
@@ -7926,10 +7800,7 @@ async function loadEditorCoordinate(){
           page: c.p,
           x_pct: (c.x / W) * 100,
           y_pct: (c.y / H) * 100,
-          ...(c.w ? { w_pct: (c.w / W) * 100 } : {}),
-          ...(c.fs ? { fs: c.fs } : {}),
-          ...(c.af ? { autofit: true } : {}),
-          ...(c.fnt ? { font: c.fnt } : {})
+          ...(c.w ? { w_pct: (c.w / W) * 100 } : {})
         }))
       })
     }
@@ -7991,8 +7862,6 @@ loadAll().then(()=>{
   // Carica documenti custom da Storage
   caricaDocumentiCustom()
   loadDocs()
-  // Aggiornamento automatico scadenze offerte dal foglio Google (una volta al giorno)
-  setTimeout(()=>{ try{ if(impostazioni['scadenze_last_sync']!==today()){ sincronizzaScadenzeDaGoogle(true) } }catch(e){ console.error('auto-sync:',e) } }, 6000)
 })
 } // ── fine avviaApp ──
 
@@ -8107,7 +7976,7 @@ function _cfCheck(c){
 }
 function apriCalcoloCF(){
   const regime=document.getElementById('pr-regime')?.value
-  if(regime==='piva'){ /* CF e P.IVA sono campi distinti: il CF resta calcolabile anche in regime P.IVA */ }
+  if(regime==='piva'){ alert('In regime P.IVA questo campo contiene la Partita IVA, non il codice fiscale.'); return }
   const full=(document.getElementById('pr-nome').value||'').trim()
   const parti=full.toUpperCase().replace(/[^A-ZÀ-Ù ]/g,' ').split(/\s+/).filter(Boolean)
   document.getElementById('cf-cognome').value = parti.length>1?parti.slice(0,-1).join(' '):''
