@@ -1031,6 +1031,7 @@ tbody tr:hover td{background:var(--surface2)}
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;width:100%;margin-bottom:2px">Aggiungi campo</div>
             <button class="btn btn-sm" style="background:#e74c3c;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('nome')">+ Nome e Cognome</button>
+            <button class="btn btn-sm" style="background:#b9770e;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ragione_sociale')">+ Ragione sociale</button>
             <button class="btn btn-sm" style="background:#2980b9;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('cf')">+ CF / P.IVA</button>
             <button class="btn btn-sm" style="background:#27ae60;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('indirizzo')">+ Indirizzo</button>
             <button class="btn btn-sm" style="background:#8e44ad;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('cap')">+ CAP</button>
@@ -1104,7 +1105,6 @@ tbody tr:hover td{background:var(--surface2)}
             <img id="editor-pdf-img" style="display:block;width:100%;height:auto">
             <div id="editor-markers-layer" style="position:absolute;inset:0;pointer-events:none"></div>
           </div>
-          <div id="editor-markers-layer" style="position:absolute;inset:0;pointer-events:none"></div>
         </div>
 
         <!-- Placeholder -->
@@ -1506,7 +1506,7 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div id="box-rit" style="background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--rsm);padding:.75rem 1rem;margin-bottom:10px;font-size:11.5px;color:var(--text2);line-height:1.5"><strong style="color:var(--text)">Ritenuta d'acconto — Art. 25 DPR 600/73</strong><br>Ritenuta 20% applicata da Leone Consulting quale sostituto d'imposta.</div>
     <div id="box-piva" style="display:none;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--rsm);padding:.75rem 1rem;margin-bottom:10px;font-size:11.5px;color:var(--text2);line-height:1.5"><strong style="color:var(--text)">Partita IVA</strong><br>Il procacciatore emette fattura. Nessuna ritenuta applicata.</div>
-    <div id="pr-piva-wrap" class="fr" style="display:none"><div class="fg"><label>Partita IVA</label><input id="pr-piva" type="text" placeholder="01234567890"></div></div>
+    <div id="pr-piva-wrap" class="fr" style="display:none"><div class="fg"><label>Partita IVA</label><input id="pr-piva" type="text" placeholder="01234567890"></div><div class="fg"><label>Ragione sociale (intestatario conto azienda)</label><input id="pr-ragione" type="text" placeholder="es. Rossi Servizi S.r.l."></div></div>
     <div class="msec">Qualifica</div>
     <div class="fr">
       <div class="fg"><label>Qualifica (auto o forzata)</label><select id="pr-qual"><option value="auto">🔄 Automatica dal fatturato</option><option value="base">Forza: Agente Base — 8%</option><option value="tl">Forza: Team Leader — 10%</option><option value="am">Forza: Area Manager — 11%</option><option value="sp">Forza: Senior Partner — 12%</option></select></div>
@@ -2683,7 +2683,7 @@ function onRegime(){
   {const w=document.getElementById('pr-piva-wrap'); if(w) w.style.display=v==='piva'?'flex':'none'}
 }
 function resetProcForm(){
-  ['pr-nome','pr-email','pr-email-az','pr-tel','pr-iban','pr-cf','pr-cf2','pr-nascita','pr-luogonascita','pr-indirizzo','pr-citta','pr-cap','pr-prov','pr-ateco','pr-doc-id','pr-doc-ril','pr-doc-scad','pr-zona','pr-ncontratto','pr-piva','pr-email-az-pwd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
+  ['pr-nome','pr-email','pr-email-az','pr-tel','pr-iban','pr-cf','pr-cf2','pr-nascita','pr-luogonascita','pr-indirizzo','pr-citta','pr-cap','pr-prov','pr-ateco','pr-doc-id','pr-doc-ril','pr-doc-scad','pr-zona','pr-ncontratto','pr-piva','pr-ragione','pr-email-az-pwd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
   {const _tc=document.getElementById('pr-tipo-conto'); if(_tc)_tc.value='bancario'}
   document.getElementById('pr-inizio').value=''
   document.getElementById('pr-fine').value=''
@@ -3319,6 +3319,7 @@ async function saveProc(){
   regime:document.getElementById('pr-regime').value,
   cf:document.getElementById('pr-cf').value.trim().toUpperCase(),
   piva:(document.getElementById('pr-piva')?.value||'').trim(),
+  ragione_sociale:(document.getElementById('pr-ragione')?.value||'').trim(),
   qualForce:document.getElementById('pr-qual').value,
   stato:document.getElementById('pr-stato').value,
   rete:[...tempNet],
@@ -3383,6 +3384,7 @@ function editProc(i){
   {const _tc=document.getElementById('pr-tipo-conto'); if(_tc)_tc.value=p.tipo_conto||'bancario'}
   document.getElementById('pr-regime').value=p.regime
   {const e=document.getElementById('pr-piva'); if(e)e.value=p.piva||''}
+  {const e=document.getElementById('pr-ragione'); if(e)e.value=p.ragione_sociale||''}
   document.getElementById('pr-cf').value=p.cf||''
   {const e=document.getElementById('pr-cf2'); if(e)e.value=p.cf||''}
   document.getElementById('pr-qual').value=p.qualForce||'auto'
@@ -4324,9 +4326,8 @@ async function fillDocFirmaSel(){
     const hasPdf = d.dynamic || !!impostazioni['docpdf_'+d.id]
     const nM=(editorMarkers[d.id]||[]).length
     const label=impostazioni['docname_'+d.id]||d.label
-    if(hasPdf && nM>0) return `<option value="${d.id}">${label}</option>`
-    const manca = !hasPdf ? 'manca il PDF' : 'aggiungi i campi Firma e Data'
-    return `<option value="" disabled>${label} \u2014 (${manca})</option>`
+    const hint=(hasPdf && nM>0)?'':(!hasPdf?' \u2014 (manca il PDF)':' \u2014 (aggiungi campi Firma e Data)')
+    return `<option value="${d.id}">${label}${hint}</option>`
   }).join('')
   sel.innerHTML = `<option value="">— Seleziona documento —</option>` + opts
   applicaDocPerTipo()
@@ -4337,7 +4338,7 @@ function getFirmaDocMap(){ try{ return JSON.parse(impostazioni['firma_doc_map']|
 function docFirmabiliOptionsHtml(selId){
   const all=[...EDITOR_DOCS, ...editorDocsCustom].filter(d=>!impostazioni['dochidden_'+d.id])
   let html='<option value="">— nessuno (scelgo all\u0027invio) —</option>'
-  all.forEach(d=>{ const hasPdf=d.dynamic||!!impostazioni['docpdf_'+d.id]; const nM=(editorMarkers[d.id]||[]).length; if(hasPdf&&nM>0){ const label=impostazioni['docname_'+d.id]||d.label; html+='<option value="'+d.id+'"'+(selId===d.id?' selected':'')+'>'+label+'</option>' } })
+  all.forEach(d=>{ const hasPdf=d.dynamic||!!impostazioni['docpdf_'+d.id]; const nM=(editorMarkers[d.id]||[]).length; const label=impostazioni['docname_'+d.id]||d.label; const hint=(hasPdf&&nM>0)?'':(!hasPdf?' \u2014 (manca il PDF)':' \u2014 (aggiungi campi Firma e Data)'); html+='<option value="'+d.id+'"'+(selId===d.id?' selected':'')+'>'+label+hint+'</option>' })
   return html
 }
 async function renderMappaFirmaDoc(){
@@ -6753,6 +6754,7 @@ const MARKER_COLORS = {
   ced_causale:        { color:'#117a65', label:'Causale' },
   ced_compenso_lordo: { color:'#148f77', label:'Compenso lordo' },
   nome:        { color:'#e74c3c', label:'Nome e Cognome' },
+  ragione_sociale: { color:'#b9770e', label:'Ragione sociale (azienda)' },
   cf:          { color:'#2980b9', label:'CF / P.IVA' },
   indirizzo:   { color:'#27ae60', label:'Indirizzo' },
   cap:         { color:'#8e44ad', label:'CAP' },
@@ -7085,6 +7087,10 @@ async function onDocumentoCaricato(input){
     const id = 'CUSTOM_' + storageName.replace('.pdf','').replace(/[^a-zA-Z0-9]/g,'_').toUpperCase()
     impostazioni['pages_' + id] = numPages
     impostazioni['docname_' + id] = nome.replace(/\.pdf$/i,'')   // mostra il nome originale (con spazi)
+    // se questo documento era stato cancellato/nascosto, ricaricandolo torna visibile
+    delete impostazioni['dochidden_' + id]
+    delete impostazioni['docpurged_' + id]
+    delete impostazioni['docdeleted_' + id]
     await upsertImpostazioni()
     
     setProgress(95, 'Aggiornamento lista...', nome)
@@ -7133,6 +7139,10 @@ async function onReplacePdfInput(input){
     if(error){ alert('Errore caricamento: ' + error.message); return }
     impostazioni['pages_'+id] = numPages
     if(!isCustom) impostazioni['docpdf_'+id] = storageFile
+    // se era stato cancellato/nascosto, ricaricando il PDF torna visibile
+    delete impostazioni['dochidden_'+id]
+    delete impostazioni['docpurged_'+id]
+    delete impostazioni['docdeleted_'+id]
     await upsertImpostazioni()
     await caricaDocumentiCustom()
     if(editorDocId === id){ editorTotalPages = numPages; if(editorPage>numPages) editorPage=numPages; loadEditorPage() }
@@ -7260,6 +7270,7 @@ function risolviCampo(tipo, p, oggi){
   }
   if(Object.prototype.hasOwnProperty.call(T, tipo)) return { testo: (T[tipo]||'') }
   if(tipo==='regime_testo')  return { testo: p.regime==='piva'?'Titolare di Partita IVA':"Ritenuta d'acconto" }
+  if(tipo==='ragione_sociale') return { testo: p.ragione_sociale||'' }
   if(tipo==='citta_cap_prov') return { testo: [p.citta, p.cap, p.prov?('('+p.prov+')'):''].filter(Boolean).join(' ') }
   if(tipo==='codice_ateco')  return { testo: p.ateco||'' }
   if(tipo==='solo_piva')     return { testo: p.regime==='piva'?(p.piva||''):'' }
@@ -7702,18 +7713,32 @@ function toggleCedFields(el){
 function addMarker(tipo){
   if(!editorDocId) return
   if(!editorMarkers[editorDocId]) editorMarkers[editorDocId] = []
-  // Posiziona il campo nella zona ATTUALMENTE VISIBILE (non a metà del PDF)
-  let y_pct = 50
+  // Posiziona il campo al centro di cio che e ATTUALMENTE VISIBILE a schermo
+  // (usa la posizione reale, cosi funziona qualunque elemento stia scrollando)
+  let y_pct = 50, x_pct = 40
   const wrap = document.getElementById('editor-canvas-wrap')
   const img = document.getElementById('editor-pdf-img')
-  if(wrap && img && img.offsetHeight){
-    const centro = wrap.scrollTop + Math.min(wrap.clientHeight, img.offsetHeight)/2
-    y_pct = Math.max(2, Math.min(96, (centro / img.offsetHeight) * 100))
+  if(wrap && img){
+    const wr = wrap.getBoundingClientRect()
+    const ir = img.getBoundingClientRect()
+    if(ir.height > 0){
+      // porzione dell'immagine effettivamente visibile dentro il riquadro
+      const visTop = Math.max(wr.top, ir.top)
+      const visBottom = Math.min(wr.bottom, ir.bottom)
+      const visCenterY = (visTop + visBottom) / 2
+      y_pct = Math.max(3, Math.min(95, ((visCenterY - ir.top) / ir.height) * 100))
+    }
+    if(ir.width > 0){
+      const visLeft = Math.max(wr.left, ir.left)
+      const visRight = Math.min(wr.right, ir.right)
+      const visCenterX = (visLeft + visRight) / 2
+      x_pct = Math.max(3, Math.min(80, ((visCenterX - ir.left) / ir.width) * 100))
+    }
   }
-  editorMarkers[editorDocId].push({ tipo, page: editorPage, x_pct: 40, y_pct: Math.round(y_pct*10)/10 })
+  editorMarkers[editorDocId].push({ tipo, page: editorPage, x_pct: Math.round(x_pct*10)/10, y_pct: Math.round(y_pct*10)/10 })
   // Per i campi a scelta con testo (es. "a partire dal") aggiungo anche una X spostabile, a sinistra
   if(typeof PAIR_X!=='undefined' && PAIR_X[tipo]){
-    editorMarkers[editorDocId].push({ tipo: PAIR_X[tipo], page: editorPage, x_pct: 34, y_pct: Math.round(y_pct*10)/10 })
+    editorMarkers[editorDocId].push({ tipo: PAIR_X[tipo], page: editorPage, x_pct: Math.max(2, Math.round((x_pct-6)*10)/10), y_pct: Math.round(y_pct*10)/10 })
   }
   renderEditorMarkers()
 }
@@ -7917,23 +7942,28 @@ function renderEditorMarkers(){
     layer.appendChild(el)
   })
 
-  // Legenda (comprimibile, in basso a destra)
-  const allTypes = [...new Set((editorMarkers[editorDocId]||[]).map(m=>m.tipo))]
-  if(allTypes.length){
-    const leg = document.createElement('div')
-    leg.style.cssText = 'position:absolute;bottom:8px;right:8px;background:rgba(20,20,20,.82);border-radius:8px;padding:5px 9px;font-size:10px;color:#fff;pointer-events:auto;max-width:210px;box-shadow:0 2px 8px rgba(0,0,0,.45)'
-    const total=(editorMarkers[editorDocId]||[]).length
-    const open=!!window._legOpen
-    let inner='<div onclick="window._legOpen=!window._legOpen;renderEditorMarkers()" style="cursor:pointer;font-weight:700;display:flex;align-items:center;gap:6px;user-select:none">\ud83d\udccb Campi ('+total+') '+(open?'\u25be':'\u25b8')+'</div>'
-    if(open){
-      inner+='<div style="margin-top:5px;max-height:150px;overflow:auto">'+allTypes.map(t => {
-        const cfg = MARKER_COLORS[t]||{color:'#888',label:t}
-        const count = (editorMarkers[editorDocId]||[]).filter(m=>m.tipo===t).length
-        return '<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px"><span style="width:10px;height:10px;border-radius:2px;background:'+cfg.color+';display:inline-block;flex-shrink:0"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cfg.label+' ('+count+')</span></div>'
-      }).join('')+'</div>'
+  // Legenda ANCORATA in basso al riquadro (resta visibile mentre scorri) — elenca tutti i campi messi
+  const wrapEl = document.getElementById('editor-canvas-wrap')
+  if(wrapEl){
+    const oldLeg = document.getElementById('editor-legenda'); if(oldLeg) oldLeg.remove()
+    const allTypes = [...new Set((editorMarkers[editorDocId]||[]).map(m=>m.tipo))]
+    if(allTypes.length){
+      const total=(editorMarkers[editorDocId]||[]).length
+      const open=(window._legOpen!==false) // default: aperta
+      const leg = document.createElement('div')
+      leg.id='editor-legenda'
+      leg.style.cssText='position:sticky;bottom:8px;float:right;clear:both;width:max-content;max-width:240px;margin:0 8px 8px auto;background:rgba(20,20,20,.9);border-radius:8px;padding:6px 10px;font-size:10px;color:#fff;pointer-events:auto;box-shadow:0 2px 12px rgba(0,0,0,.55);z-index:40'
+      let inner='<div onclick="window._legOpen=(window._legOpen===false);renderEditorMarkers()" style="cursor:pointer;font-weight:700;display:flex;align-items:center;gap:6px;user-select:none">\ud83d\udccb Campi messi ('+total+') '+(open?'\u25be':'\u25b8')+'</div>'
+      if(open){
+        inner+='<div style="margin-top:5px;max-height:170px;overflow:auto">'+allTypes.map(t => {
+          const cfg = MARKER_COLORS[t]||{color:'#888',label:t}
+          const count = (editorMarkers[editorDocId]||[]).filter(m=>m.tipo===t).length
+          return '<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px"><span style="width:10px;height:10px;border-radius:2px;background:'+cfg.color+';display:inline-block;flex-shrink:0"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cfg.label+(count>1?(' ('+count+')'):'')+'</span></div>'
+        }).join('')+'</div>'
+      }
+      leg.innerHTML=inner
+      wrapEl.appendChild(leg)
     }
-    leg.innerHTML=inner
-    layer.appendChild(leg)
   }
 }
 
