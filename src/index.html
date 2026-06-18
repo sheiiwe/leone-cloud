@@ -175,7 +175,7 @@ tbody tr:hover td{background:var(--surface2)}
 <div class="app">
 <div class="sidebar">
   <div class="logo">
-    <img id="sidebar-logo" src="../assets/icon.png" alt="Logo">
+    <img id="sidebar-logo" src="../assets/icon.png" alt="Logo" onerror="this.onerror=null;this.src='../assets/icon.png'">
     <h1>Leone Consulting</h1>
     <div class="sub1">di Leonardo Angelucci</div>
     <div class="sub2">Gestionale amministrativo</div>
@@ -2399,7 +2399,7 @@ function sp(id,el){
   if(el)el.classList.add('active')
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
-  const renders={dashboard:renderDash,proc:renderProc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':caricaDocComm,'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={dashboard:renderDash,proc:renderProc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':caricaDocComm,'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -2449,7 +2449,14 @@ function mostraLiveTick(){
   clearTimeout(el._t); el._t=setTimeout(()=>{ el.style.opacity='0' }, 1400)
 }
 function openM(id){
-  if(id==='m-vend'){_convLeadId=null;fillSel('vd-proc');fillCatSel();document.getElementById('vd-data').value=today()}
+  if(id==='m-vend'){
+    _convLeadId=null;fillSel('vd-proc');fillCatSel()
+    const _vp=document.getElementById('vd-prod'); if(_vp) _vp.innerHTML='<option value="">-- Prima categoria --</option>'
+    ;['vd-val','vd-cliente','vd-cognome','vd-cell','vd-email','vd-note','vd-prov-preview'].forEach(k=>{const e=document.getElementById(k); if(e) e.value=''})
+    const _vs=document.getElementById('vd-stato'); if(_vs) _vs.selectedIndex=0
+    const _ve=document.getElementById('vd-extra'); if(_ve) _ve.innerHTML=''
+    document.getElementById('vd-data').value=today()
+  }
   if(id==='m-lead'){fillSel('ld-proc');fillLdCat()}
   if(id==='m-proc'){resetProcForm()}
   if(id==='m-dip'){resetDipForm()}
@@ -7799,9 +7806,7 @@ function renderEditorMarkers(){
       const totc=cw.reduce((a,b)=>a+b,0)||1
       const heads=['N\u00b0','Cliente','Descrizione','Provvigione','Provv. lorda (\u20ac)']
       const sample=[
-        ['1','Mario Rossi','Fastweb Casa Light','25%','45,00'],
-        ['2','Tech Solutions S.r.l.','Enel Energia Luce + Gas','30%','120,00'],
-        ['3','Giulia Bianchi','TIM Super Fibra Mobile','22%','38,50']
+        ['1','Mario Rossi','Fastweb Casa Light','25%','45,00']
       ]
       el.style.cssText='position:absolute;left:'+m.x_pct+'%;top:'+m.y_pct+'%;'+(m.w_pct?('width:'+m.w_pct+'%;'):'width:60%;')+'box-sizing:border-box;cursor:grab;z-index:10;background:rgba(255,255,255,.30);border:1.5px dashed '+cfg.color+';border-radius:4px;overflow:hidden;backdrop-filter:saturate(1.1)'
       const pc=v=>'width:'+(v/totc*100).toFixed(3)+'%;box-sizing:border-box;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'
@@ -7992,6 +7997,8 @@ function aggiornaLogo(){
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
   const logo = document.getElementById('sidebar-logo')
   if(!logo) return
+  // Se il logo personalizzato non si carica (rete/Storage), torna sempre a quello incluso nell'app
+  logo.onerror = function(){ logo.onerror=null; logo.src='../assets/icon.png' }
   const logoNotte = impostazioni.logo_notte || ''
   const logoGiorno = impostazioni.logo_giorno || ''
   const logoEntrambi = impostazioni.logo_entrambi || ''
