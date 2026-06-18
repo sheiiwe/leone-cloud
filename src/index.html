@@ -7009,12 +7009,22 @@ async function onDocumentoCaricatoInput(input){
   await onDocumentoCaricato({ files: [file] })
 }
 
+// Ripulisce il nome del file per lo Storage Supabase (no spazi, parentesi, accenti → 400)
+function _safeStorageName(fname){
+  let base = (fname||'').replace(/\.pdf$/i,'')
+  base = base.normalize('NFD').replace(/[\u0300-\u036f]/g,'')          // togli accenti
+  base = base.replace(/[^a-zA-Z0-9._-]+/g,'_').replace(/_+/g,'_').replace(/^[_.-]+|[_.-]+$/g,'')
+  if(!base) base = 'documento_' + Date.now()
+  return base + '.pdf'
+}
+
 async function onDocumentoCaricato(input){
   const file = input.files[0]
   if(!file) return
   input.value = ''
   
   const nome = file.name
+  const storageName = _safeStorageName(nome)
   
   // Mostra pannello di progresso
   const overlay = document.createElement('div')
@@ -7064,7 +7074,7 @@ async function onDocumentoCaricato(input){
     
     setProgress(50, 'Caricamento su cloud... (' + numPages + ' pagine)', nome)
     
-    const { error } = await db.storage.from('documenti').upload(nome, new Blob([pdfBytes], {type:'application/pdf'}), {
+    const { error } = await db.storage.from('documenti').upload(storageName, new Blob([pdfBytes], {type:'application/pdf'}), {
       upsert: true,
       contentType: 'application/pdf'
     })
@@ -7072,8 +7082,9 @@ async function onDocumentoCaricato(input){
     if(error){ setDone(false, 'Errore: ' + error.message); return }
     
     setProgress(80, 'Salvataggio configurazione...', nome)
-    const key = nome.replace('.pdf','').replace(/[^a-zA-Z0-9]/g,'_').toUpperCase()
-    impostazioni['pages_' + key] = numPages
+    const id = 'CUSTOM_' + storageName.replace('.pdf','').replace(/[^a-zA-Z0-9]/g,'_').toUpperCase()
+    impostazioni['pages_' + id] = numPages
+    impostazioni['docname_' + id] = nome.replace(/\.pdf$/i,'')   // mostra il nome originale (con spazi)
     await upsertImpostazioni()
     
     setProgress(95, 'Aggiornamento lista...', nome)
@@ -7178,6 +7189,7 @@ async function ripristinaDocId(id){
   try{
     delete impostazioni['dochidden_'+id]
     delete impostazioni['docdeleted_'+id]
+    delete impostazioni['docpurged_'+id]
     await upsertImpostazioni()
     await caricaDocumentiCustom()
     try{ await loadEditorCoordinate() }catch(e){ console.error('reload coords:',e) }
@@ -7205,6 +7217,7 @@ async function eliminaDocDefinitivo(id){
     delete impostazioni['pages_'+id]
     delete impostazioni['docdeleted_'+id]
     impostazioni['dochidden_'+id] = true
+    impostazioni['docpurged_'+id] = true
     await upsertImpostazioni()
     await caricaDocumentiCustom()
     renderEditorDocList()
@@ -7214,7 +7227,7 @@ async function eliminaDocDefinitivo(id){
 }
 function apriCestinoDocs(){
   const allDocs=[...EDITOR_DOCS, ...editorDocsCustom]
-  const seen={}; let hidden=allDocs.filter(d=>{ if(seen[d.id])return false; seen[d.id]=1; return impostazioni['dochidden_'+d.id] })
+  const seen={}; let hidden=allDocs.filter(d=>{ if(seen[d.id])return false; seen[d.id]=1; return impostazioni['dochidden_'+d.id] && impostazioni['docdeleted_'+d.id] && !impostazioni['docpurged_'+d.id] })
   hidden.sort((a,b)=> String(impostazioni['docdeleted_'+b.id]||'').localeCompare(String(impostazioni['docdeleted_'+a.id]||'')))
   let body
   if(!hidden.length){ body='<div style="padding:16px;color:var(--text2);text-align:center">Il cestino è vuoto.</div>' }
