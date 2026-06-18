@@ -1062,6 +1062,7 @@ tbody tr:hover td{background:var(--surface2)}
             <span id="ced-fields" style="display:contents">
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('regime_testo')">+ Regime (testo)</button>
             <button class="btn btn-sm" style="background:#117a65;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_causale')">+ Causale (auto)</button>
+            <button class="btn btn-sm" style="background:#148f77;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('ced_compenso_lordo')">+ Compenso lordo</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('citta_cap_prov')">+ Città/CAP/Prov</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('codice_ateco')">+ Cod. ATECO</button>
             <button class="btn btn-sm" style="background:#0e6655;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('solo_piva')">+ Solo P.IVA</button>
@@ -5854,6 +5855,7 @@ async function generaCedolino(idx, mese){
   const prodotti=[...new Set(vv.map(v=>v.cat).filter(Boolean))].join(', ')
   const extraBase={
     ced_causale: (p.nome||'') + ' - Provvigioni ' + _meseLabelCed(mese) + ' ' + mese.split('-')[0],
+    ced_compenso_lordo:'\u20ac '+fmtN(c.lordo),
     ced_mese:_meseLabelCed(mese), ced_anno:mese.split('-')[0], ced_data_emiss:new Date().toLocaleDateString('it-IT'),
     ced_n_prosp: mese.replace('-','')+'-'+String(idx+1).padStart(2,'0'),
     ced_prodotto: prodotti||'Vari prodotti/servizi',
@@ -6741,6 +6743,8 @@ const EDITOR_DOCS = [
 ]
 
 const MARKER_COLORS = {
+  ced_causale:        { color:'#117a65', label:'Causale' },
+  ced_compenso_lordo: { color:'#148f77', label:'Compenso lordo' },
   nome:        { color:'#e74c3c', label:'Nome e Cognome' },
   cf:          { color:'#2980b9', label:'CF / P.IVA' },
   indirizzo:   { color:'#27ae60', label:'Indirizzo' },
@@ -7168,9 +7172,11 @@ async function ripristinaDocId(id){
     delete impostazioni['docdeleted_'+id]
     await upsertImpostazioni()
     await caricaDocumentiCustom()
+    try{ await loadEditorCoordinate() }catch(e){ console.error('reload coords:',e) }
     renderEditorDocList()
     const m=document.getElementById('cestino-docs-modal'); if(m){ m.remove(); apriCestinoDocs() }
-    toast('↩ Documento ripristinato')
+    const _n=(editorMarkers[id]||[]).length
+    toast('↩ Documento ripristinato'+(_n?(' con '+_n+' campi'):''))
   }catch(e){ alert('Errore ripristino: '+e.message) }
 }
 async function eliminaDocDefinitivo(id){
@@ -7332,14 +7338,16 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
   const oggi = new Date().toLocaleDateString('it-IT')
   const pages = pdfDoc.getPages()
   // Stampa testo con eventuale a-capo automatico se il campo ha una larghezza (w_pct)
-  const drawTxt = (pg, t, x, ph, yTop, wpct) => {
+  const drawTxt = (pg, t, x, ph, yTop, wpct, col) => {
+    const _c = col || PDFLib.rgb(0.05,0.05,0.05)
     const maxW = wpct ? (wpct/100)*pg.getWidth() : 0
     if(maxW>0){
-      wrapPdfText(t, font, 10, maxW).forEach((ln,i)=> pg.drawText(ln, { x, y: ph - yTop - 4 - i*12, size:10, font, color: PDFLib.rgb(0.05,0.05,0.05) }))
+      wrapPdfText(t, font, 10, maxW).forEach((ln,i)=> pg.drawText(ln, { x, y: ph - yTop - 4 - i*12, size:10, font, color: _c }))
     } else {
-      pg.drawText(t, { x, y: ph - yTop - 4, size:10, font, color: PDFLib.rgb(0.05,0.05,0.05) })
+      pg.drawText(t, { x, y: ph - yTop - 4, size:10, font, color: _c })
     }
   }
+  const WHITE_FIELDS = ['ced_netto_pagare']
   markers.forEach(m => {
     if(skip.indexOf(m.tipo)!==-1) return
     const pg = pages[(m.page||1)-1]; if(!pg) return
@@ -7352,13 +7360,16 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
       const yHead=ph - yTop - 4
       const tableW = (m.w_pct ? (m.w_pct/100)*pw : (pw - x0 - 36))
       const cols=[
-        {k:'n',      t:'N\u00b0',              w:0.07},
-        {k:'cliente',t:'Cliente',             w:0.27},
-        {k:'desc',   t:'Descrizione',         w:0.34},
-        {k:'pct',    t:'Provvigione',         w:0.15},
-        {k:'lorda',  t:'Provv. lorda (\u20ac)', w:0.17}
+        {k:'n',      t:'N\u00b0'},
+        {k:'cliente',t:'Cliente'},
+        {k:'desc',   t:'Descrizione'},
+        {k:'pct',    t:'Provvigione'},
+        {k:'lorda',  t:'Provv. lorda (\u20ac)'}
       ]
-      let acc=0; cols.forEach(c=>{ c.off=acc; acc+=c.w })
+      const sc=impostazioni['tabcols_'+docId]
+      const widths=(sc && sc.length===5)?sc.map(n=>+n||0):[7,27,34,15,17]
+      const tot=widths.reduce((a,b)=>a+b,0)||1
+      let acc=0; cols.forEach((c,i)=>{ c.w=widths[i]/tot; c.off=acc; acc+=c.w })
       const rowH=18
       cols.forEach(c=>{ pg.drawText(c.t, { x:x0 + c.off*tableW, y:yHead, size:8.5, font:fontBold, color:PDFLib.rgb(0.10,0.10,0.10) }) })
       pg.drawLine({ start:{x:x0,y:yHead-4}, end:{x:x0+tableW,y:yHead-4}, thickness:0.8, color:PDFLib.rgb(0.40,0.40,0.40) })
@@ -7376,7 +7387,7 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
     }
     if(Object.prototype.hasOwnProperty.call(extra, m.tipo)){
       const t=(extra[m.tipo]==null?'':extra[m.tipo]).toString()
-      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct)
+      if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct, WHITE_FIELDS.indexOf(m.tipo)!==-1?PDFLib.rgb(1,1,1):null)
       return
     }
     if(CAMPI_SCELTA[m.tipo]){
@@ -7694,6 +7705,13 @@ function eliminaMarker(idx){
   renderEditorMarkers()
 }
 // Doppio clic su un campo: opzioni (larghezza testo / elimina)
+async function salvaTabCols(){
+  const vals=[]; for(let i=0;i<5;i++){ const el=document.getElementById('tabcol-'+i); vals.push(el?(parseFloat(el.value)||0):0) }
+  impostazioni['tabcols_'+editorDocId]=vals
+  try{ await upsertImpostazioni() }catch(e){}
+  document.getElementById('campo-opz')?.remove()
+  toast('\u2705 Larghezza colonne salvata')
+}
 function apriOpzioniCampo(idx){
   const arr = editorMarkers[editorDocId]||[]; const m = arr[idx]; if(!m) return
   const cfg = MARKER_COLORS[m.tipo] || { color:'#888', label:m.tipo }
@@ -7709,7 +7727,16 @@ function apriOpzioniCampo(idx){
     html+='<div style="display:flex;align-items:center;gap:8px;margin:6px 0 4px"><input type="range" id="opz-w" min="0" max="90" step="2" value="'+cur+'" style="flex:1"><span id="opz-wv" style="font-size:11px;width:48px;text-align:right">'+(cur?cur+'%':'no')+'</span></div>'
     html+='<div style="font-size:10px;color:var(--text3);margin-bottom:14px">0 = nessun limite (riga unica). Aumenta per far andare a capo il testo lungo (es. email).</div>'
   }
-  html+='<div style="display:flex;gap:8px;justify-content:space-between;align-items:center">'
+  if(m.tipo==='tabella_affari'){
+    const def=[7,27,34,15,17]
+    const cur=impostazioni['tabcols_'+editorDocId]||def
+    const names=['N\u00b0','Cliente','Descrizione','Provvigione','Provv. lorda']
+    html+='<div style="border-top:0.5px solid var(--border);margin-top:10px;padding-top:10px"><div style="font-size:11px;color:var(--text2);margin-bottom:6px">Larghezza colonne (in % della tabella) \u2014 regola per allineare</div>'
+    names.forEach((nm,i)=>{ html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:11px;width:100px;flex-shrink:0">'+nm+'</span><input type="number" id="tabcol-'+i+'" value="'+(cur[i]||def[i])+'" min="3" max="70" style="width:64px;padding:5px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)"><span style="font-size:11px">%</span></div>' })
+    html+='<button class="btn btn-sm btn-p" style="margin-top:6px;width:100%" onclick="salvaTabCols()">\ud83d\udcbe Salva colonne</button>'
+    html+='<div style="font-size:10px;color:var(--text3);margin-top:6px">Sposta la tabella trascinandola e regola la larghezza totale dal bordo destro. Qui regoli le singole colonne.</div></div>'
+  }
+  html+='<div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:12px">'
   html+='<button class="btn btn-sm btn-r" onclick="eliminaMarker('+idx+')">🗑 Elimina campo</button>'
   html+='<button class="btn btn-sm" onclick="document.getElementById(\'campo-opz\').remove()">Chiudi</button></div>'
   div.innerHTML=html
@@ -7757,10 +7784,10 @@ function renderEditorMarkers(){
     } else {
       // CAMPO DI TESTO: casella allungabile. Trascini il bordo destro per la larghezza (= dove il testo va a capo)
       el.dataset.anchor='box'
-      el.style.cssText = `position:absolute;left:${m.x_pct}%;top:${m.y_pct}%;transform:translateY(-50%);${m.w_pct?('width:'+m.w_pct+'%;'):''}min-height:19px;box-sizing:border-box;background:${cfg.color}26;border:1.5px dashed ${cfg.color};border-radius:4px;cursor:grab;z-index:10;display:flex;align-items:center`
+      el.style.cssText = `position:absolute;left:${m.x_pct}%;top:${m.y_pct}%;transform:translateY(-50%);${m.w_pct?('width:'+m.w_pct+'%;'):''}min-height:19px;box-sizing:border-box;background:${cfg.color}26;border:1.5px dashed ${cfg.color};border-radius:4px;cursor:grab;z-index:10;display:flex;align-items:center;padding-right:7px`
       const lab=document.createElement('span')
       lab.textContent=cfg.label
-      lab.style.cssText=`font-size:9px;font-weight:700;color:#fff;background:${cfg.color};padding:1px 6px;border-radius:3px;white-space:nowrap;pointer-events:none`
+      lab.style.cssText=`flex:1;min-width:0;font-size:9px;font-weight:700;color:#fff;background:${cfg.color};padding:1px 6px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none`
       el.appendChild(lab)
       const grip=document.createElement('div')
       grip.title='Trascina per allungare il campo (il testo lungo va a capo)'
@@ -7821,19 +7848,22 @@ function renderEditorMarkers(){
     layer.appendChild(el)
   })
 
-  // Legenda
+  // Legenda (comprimibile, in basso a destra)
   const allTypes = [...new Set((editorMarkers[editorDocId]||[]).map(m=>m.tipo))]
   if(allTypes.length){
     const leg = document.createElement('div')
-    leg.style.cssText = 'position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);border-radius:6px;padding:6px 8px;font-size:10px;color:#fff;pointer-events:none'
-    leg.innerHTML = allTypes.map(t => {
-      const cfg = MARKER_COLORS[t]||{color:'#888',label:t}
-      const count = (editorMarkers[editorDocId]||[]).filter(m=>m.tipo===t).length
-      return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
-        <span style="width:10px;height:10px;border-radius:2px;background:${cfg.color};display:inline-block"></span>
-        ${cfg.label} (${count})
-      </div>`
-    }).join('')
+    leg.style.cssText = 'position:absolute;bottom:8px;right:8px;background:rgba(20,20,20,.82);border-radius:8px;padding:5px 9px;font-size:10px;color:#fff;pointer-events:auto;max-width:210px;box-shadow:0 2px 8px rgba(0,0,0,.45)'
+    const total=(editorMarkers[editorDocId]||[]).length
+    const open=!!window._legOpen
+    let inner='<div onclick="window._legOpen=!window._legOpen;renderEditorMarkers()" style="cursor:pointer;font-weight:700;display:flex;align-items:center;gap:6px;user-select:none">\ud83d\udccb Campi ('+total+') '+(open?'\u25be':'\u25b8')+'</div>'
+    if(open){
+      inner+='<div style="margin-top:5px;max-height:150px;overflow:auto">'+allTypes.map(t => {
+        const cfg = MARKER_COLORS[t]||{color:'#888',label:t}
+        const count = (editorMarkers[editorDocId]||[]).filter(m=>m.tipo===t).length
+        return '<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px"><span style="width:10px;height:10px;border-radius:2px;background:'+cfg.color+';display:inline-block;flex-shrink:0"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cfg.label+' ('+count+')</span></div>'
+      }).join('')+'</div>'
+    }
+    leg.innerHTML=inner
     layer.appendChild(leg)
   }
 }
