@@ -7372,10 +7372,9 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
       const tot=widths.reduce((a,b)=>a+b,0)||1
       let acc=0; cols.forEach((c,i)=>{ c.w=widths[i]/tot; c.off=acc; acc+=c.w })
       const rowH=18
-      cols.forEach(c=>{ pg.drawText(c.t, { x:x0 + c.off*tableW, y:yHead, size:8.5, font:fontBold, color:PDFLib.rgb(0.10,0.10,0.10) }) })
-      pg.drawLine({ start:{x:x0,y:yHead-4}, end:{x:x0+tableW,y:yHead-4}, thickness:0.8, color:PDFLib.rgb(0.40,0.40,0.40) })
+      // Niente intestazione: le colonne sono gia stampate nel cedolino, quindi si parte subito dai dati (riga 1).
       aff.forEach((rr,ri)=>{
-        const yy=yHead - (ri+1)*rowH
+        const yy=yHead - ri*rowH
         cols.forEach(c=>{
           let val=(rr[c.k]==null?'':String(rr[c.k]))
           const maxChars=Math.max(3, Math.floor((c.w*tableW)/4.4))
@@ -7806,9 +7805,8 @@ function renderEditorMarkers(){
       ]
       el.style.cssText='position:absolute;left:'+m.x_pct+'%;top:'+m.y_pct+'%;'+(m.w_pct?('width:'+m.w_pct+'%;'):'width:60%;')+'box-sizing:border-box;cursor:grab;z-index:10;background:rgba(255,255,255,.30);border:1.5px dashed '+cfg.color+';border-radius:4px;overflow:hidden;backdrop-filter:saturate(1.1)'
       const pc=v=>'width:'+(v/totc*100).toFixed(3)+'%;box-sizing:border-box;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'
-      let inner='<div style="display:flex;background:'+cfg.color+'d9">'
-      heads.forEach((hh,i)=>{ inner+='<div style="'+pc(cw[i])+';font-size:8px;font-weight:800;color:#fff;'+(i<4?'border-right:1px solid rgba(255,255,255,.45)':'')+'">'+hh+'</div>' })
-      inner+='</div>'
+      // Niente intestazione: e gia stampata nel cedolino. L\u0027anteprima parte subito dai dati.
+      let inner=''
       sample.forEach((row,ri)=>{
         inner+='<div style="display:flex;'+(ri%2?'background:rgba(0,0,0,.04)':'')+'border-bottom:0.5px solid '+cfg.color+'40">'
         row.forEach((cell,i)=>{ inner+='<div style="'+pc(cw[i])+';font-size:8px;color:#0e0e0e;'+(i<4?'border-right:1px solid '+cfg.color+'40':'')+'">'+cell+'</div>' })
