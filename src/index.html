@@ -528,9 +528,10 @@ tbody tr:hover td{background:var(--surface2)}
       <div id="inv-extra-gencampi" style="display:none">
         <div class="fg">
           <label>Documento da gestione campi *</label>
-          <select id="inv-gencampi-doc"><option value="">-- Seleziona documento --</option></select>
+          <select id="inv-gencampi-doc" onchange="onInvGencampiSel()"><option value="">-- Seleziona documento --</option></select>
         </div>
         <div style="margin-top:8px;padding:8px 12px;background:var(--surface2);border-radius:var(--rsm);font-size:12px;color:var(--text2)">Verrà generato e inviato il documento <strong>compilato</strong> con i dati del procacciatore e le spunte (Conto, Regime…).</div>
+        <div id="inv-gencampi-opzioni"></div>
       </div>
     </div>
 
@@ -571,7 +572,7 @@ tbody tr:hover td{background:var(--surface2)}
 <!-- DOCUMENTI COMMERCIALI -->
 <div class="page" id="page-doc-comm">
   <div class="pg-title">Documenti commerciali</div>
-  <div style="max-width:900px">
+  <div>
     <div class="card" style="margin-bottom:14px">
       <div class="card-hdr"><h3>Carica un documento</h3></div>
       <div style="display:flex;flex-direction:column;gap:10px;padding:6px 0">
@@ -2960,7 +2961,12 @@ async function inviaDocumento(){
     const btn = document.getElementById('btn-inv-invia')
     btn.disabled=true; btn.textContent='Invio in corso...'
     try{
-      const out = await compilaPdfBytes(docId, p)
+      const scelte={}
+      Object.keys(CAMPI_SCELTA).forEach(t=>{ const el=document.getElementById('invsc-'+t); if(el) scelte[t]= CAMPI_SCELTA[t].tipo==='check' ? !!el.checked : (el.value||'') })
+      const pSend = {...p}
+      const _dc=document.getElementById('inv-data-cess')
+      if(_dc && _dc.value) pSend.dataCessazione = _dc.value.split('-').reverse().join('/')
+      const out = await compilaPdfBytes(docId, pSend, scelte)
       const buf = Array.from(new Uint8Array(out))
       const doc = editorDocsCustom.find(x=>x.id===docId)
       const nomeDoc = (doc && doc.label) || 'Documento'
@@ -7233,6 +7239,31 @@ function wrapPdfText(text, font, size, maxWidth){
     out.push(cur)
   })
   return out.length?out:['']
+}
+async function onInvGencampiSel(){
+  const box=document.getElementById('inv-gencampi-opzioni'); if(!box) return
+  box.innerHTML=''
+  const docId=(document.getElementById('inv-gencampi-doc')||{}).value
+  if(!docId) return
+  try{ if(!editorMarkers[docId]) await loadEditorCoordinate() }catch(e){}
+  const markers=editorMarkers[docId]||[]
+  const tipi=[...new Set(markers.map(m=>m.tipo))]
+  let h=''
+  const scelta=tipi.filter(t=>CAMPI_SCELTA[t] && !t.endsWith('_x'))
+  if(scelta.length){
+    h+='<div style="margin-top:12px;padding-top:10px;border-top:0.5px solid var(--border);font-weight:700;font-size:13px;margin-bottom:6px">Opzioni / spunte del documento</div>'
+    h+='<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Seleziona cosa stampare sul documento prima di inviarlo.</div>'
+    scelta.forEach(t=>{
+      const c=CAMPI_SCELTA[t]
+      if(c.tipo==='check') h+='<label style="display:flex;align-items:flex-start;gap:8px;margin:6px 0;font-size:13px;cursor:pointer"><input type="checkbox" id="invsc-'+t+'" style="width:15px;height:15px;margin-top:2px;flex-shrink:0">'+escB(c.label)+'</label>'
+      else h+='<div style="margin:8px 0"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">'+escB(c.label)+'</label><input type="text" id="invsc-'+t+'" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);box-sizing:border-box"></div>'
+    })
+  }
+  if(tipi.indexOf('data_cessazione')!==-1){
+    const oggi=new Date(), max=new Date(); max.setDate(max.getDate()+60); const f=d=>d.toISOString().slice(0,10)
+    h+='<div style="margin-top:10px"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:3px">Data di effettiva cessazione (oggi → +60 giorni)</label><input type="date" id="inv-data-cess" min="'+f(oggi)+'" max="'+f(max)+'" value="'+f(oggi)+'" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);box-sizing:border-box"></div>'
+  }
+  box.innerHTML=h
 }
 async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
   scelte = scelte || {}; skip = skip || []; extra = extra || {}
