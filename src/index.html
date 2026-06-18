@@ -259,6 +259,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="apriStatoDocumenti()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>Stato documenti
     </div>
+    <div class="nav-item" onclick="apriScadenzeSolleciti()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Scadenze e solleciti
+    </div>
     <div class="nav-item" onclick="sp('impostazioni',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Impostazioni
     </div>
@@ -364,6 +367,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="search-row">
     <label style="font-size:12px;color:var(--text2);white-space:nowrap">Periodo:</label>
     <select id="provv-mese" onchange="renderProvv()" style="padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit"><option value="">Tutti</option></select>
+    <button class="btn btn-sm btn-p" style="margin-left:auto" onclick="esportaPagamenti()">⬇ Esporta pagamenti</button>
   </div>
   <div class="metrics" id="provv-metrics"></div>
   <div class="card"><div class="card-hdr"><h3>Dettaglio per procacciatore</h3></div>
@@ -3388,6 +3392,11 @@ async function saveProc(){
   }catch(e){syncStatus('err','Errore: '+e.message);alert('Errore: '+e.message)}
   finally{btn.disabled=false;btn.innerHTML='Salva'}
 }
+// Apre la scheda procacciatore partendo dall'id (per Stato documenti e Ricerca globale)
+function apriSchedaProc(id){
+  const i=(procs||[]).findIndex(x=>String(x._id)===String(id))
+  if(i>=0) editProc(i)
+}
 function editProc(i){
   const p=procs[i]
   document.getElementById('pr-edit-id').value=p._id
@@ -4729,7 +4738,7 @@ function renderRicercaGlobale(){
   const match=(...vals)=>vals.some(v=>(v||'').toString().toLowerCase().includes(q))
   let html=''
   const rp=(procs||[]).filter(p=>match(p.nome,p.email,p.email_aziendale,p.cf,p.tel,p.citta,p.zona,p.ragione_sociale)).slice(0,20)
-  if(rp.length){ html+='<div style="font-size:11px;font-weight:700;color:var(--text2);margin:8px 0 4px">PROCACCIATORI ('+rp.length+')</div>'+rp.map(p=>'<div onclick="document.getElementById(\'ricerca-globale-modal\').remove();editProc(\''+p._id+'\')" style="padding:8px 10px;border-radius:7px;cursor:pointer;border:0.5px solid var(--border);margin-bottom:4px;font-size:13px">\ud83d\udc64 <strong>'+esc(p.nome||'\u2014')+'</strong> <span style="color:var(--text2)">'+esc(p.email||p.email_aziendale||'')+(p.citta?(' \u00b7 '+esc(p.citta)):'')+'</span></div>').join('') }
+  if(rp.length){ html+='<div style="font-size:11px;font-weight:700;color:var(--text2);margin:8px 0 4px">PROCACCIATORI ('+rp.length+')</div>'+rp.map(p=>'<div onclick="document.getElementById(\'ricerca-globale-modal\').remove();apriSchedaProc(\''+p._id+'\')" style="padding:8px 10px;border-radius:7px;cursor:pointer;border:0.5px solid var(--border);margin-bottom:4px;font-size:13px">\ud83d\udc64 <strong>'+esc(p.nome||'\u2014')+'</strong> <span style="color:var(--text2)">'+esc(p.email||p.email_aziendale||'')+(p.citta?(' \u00b7 '+esc(p.citta)):'')+'</span></div>').join('') }
   const rv=(vendite||[]).filter(v=>match(v.cliente,v.cognome,v.email,v.cell,v.prodotto,v.note)).slice(0,20)
   if(rv.length){ html+='<div style="font-size:11px;font-weight:700;color:var(--text2);margin:10px 0 4px">VENDITE ('+rv.length+')</div>'+rv.map(v=>'<div style="padding:8px 10px;border-radius:7px;border:0.5px solid var(--border);margin-bottom:4px;font-size:13px">\ud83d\udcb0 <strong>'+esc((v.cliente||'')+' '+(v.cognome||''))+'</strong> <span style="color:var(--text2)">'+esc(v.prodotto||'')+(v.val?(' \u00b7 \u20ac'+esc(v.val)):'')+'</span></div>').join('') }
   const rc=(contratti||[]).filter(c=>match(c.nomeDestinatario,c.emailDestinatario,c.tipoContratto)).slice(0,20)
@@ -4740,6 +4749,16 @@ function renderRicercaGlobale(){
 }
 
 // ===== STATO DOCUMENTI PROCACCIATORI =====
+async function toggleDocManuale(procId, key){
+  const p=(procs||[]).find(x=>String(x._id)===String(procId)); if(!p) return
+  p.docManuali = p.docManuali || {}
+  p.docManuali[key] = !p.docManuali[key]
+  try{
+    await db.from('procacciatori').update({data:p}).eq('id', p._id)
+    toast(p.docManuali[key]?'\u2713 Segnato come consegnato a mano':'Spunta manuale rimossa')
+    apriStatoDocumenti()
+  }catch(e){ alert('Errore: '+e.message) }
+}
 function _docsFirmaPerEmail(email){
   email=(email||'').trim().toLowerCase(); const out={}
   if(!email) return out
@@ -4751,6 +4770,11 @@ function apriStatoDocumenti(){
   const esc=s=>(s||'').toString().replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))
   const oggi=new Date(); oggi.setHours(0,0,0,0)
   const ic=ok=>ok?'<span style="color:#1e8449;font-weight:700">\u2713</span>':'<span style="color:#c0392b;font-weight:700">\u2717</span>'
+  const cell=(p,df,key)=>{
+    if(df[key]) return '<td style="padding:7px 8px;text-align:center" title="Caricato dal procacciatore in fase di firma"><span style="color:#1e8449;font-weight:700">\u2713</span> <span style="font-size:9px">\ud83d\udcce</span></td>'
+    const manual=!!(p.docManuali&&p.docManuali[key])
+    return '<td onclick="toggleDocManuale(\''+p._id+'\',\''+key+'\')" style="padding:7px 8px;text-align:center;cursor:pointer" title="'+(manual?'Consegnato a mano \u2014 clicca per togliere':'Clicca per segnare come consegnato a mano')+'">'+(manual?'<span style="color:#1e8449;font-weight:700">\u2713</span> <span style="font-size:9px">\u270b</span>':'<span style="color:#c0392b;font-weight:700">\u2717</span>')+'</td>'
+  }
   const rows=(procs||[]).slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(p=>{
     const email=(p.email||p.email_aziendale||'')
     const df=_docsFirmaPerEmail(email)
@@ -4761,13 +4785,13 @@ function apriStatoDocumenti(){
       else docScadHtml='<span style="color:#1e8449">'+esc(p.doc_scadenza)+'</span>' } }
     const firmato=(contratti||[]).some(c=>(c.emailDestinatario||'').trim().toLowerCase()===email.trim().toLowerCase() && c.statoFirma==='Firmato')
     return '<tr style="border-bottom:0.5px solid var(--border)">'+
-      '<td style="padding:7px 8px;font-weight:600;cursor:pointer" onclick="document.getElementById(\'stato-doc-modal\').remove();editProc(\''+p._id+'\')">'+esc(p.nome||'\u2014')+'</td>'+
+      '<td style="padding:7px 8px;font-weight:600;cursor:pointer" onclick="document.getElementById(\'stato-doc-modal\').remove();apriSchedaProc(\''+p._id+'\')">'+esc(p.nome||'\u2014')+'</td>'+
       '<td style="padding:7px 8px;text-align:center">'+ic(!!(p.cf&&p.cf.trim()))+'</td>'+
       '<td style="padding:7px 8px;text-align:center">'+ic(!!(p.iban&&p.iban.trim()))+'</td>'+
       '<td style="padding:7px 8px;font-size:12px">'+docScadHtml+'</td>'+
-      '<td style="padding:7px 8px;text-align:center">'+ic(!!df.carta_identita)+'</td>'+
-      '<td style="padding:7px 8px;text-align:center">'+ic(!!df.codice_fiscale)+'</td>'+
-      '<td style="padding:7px 8px;text-align:center">'+ic(!!df.visura_camerale)+'</td>'+
+      cell(p,df,'carta_identita')+
+      cell(p,df,'codice_fiscale')+
+      cell(p,df,'visura_camerale')+
       '<td style="padding:7px 8px;text-align:center">'+ic(firmato)+'</td></tr>'
   }).join('')
   const div=document.createElement('div'); div.id='stato-doc-modal'
@@ -4775,7 +4799,96 @@ function apriStatoDocumenti(){
   div.innerHTML='<div style="background:var(--surface);border-radius:12px;max-width:880px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.4)" onclick="event.stopPropagation()">'+
     '<div style="padding:14px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between"><div style="font-weight:700;font-size:16px">\ud83d\udccb Stato documenti procacciatori</div><button onclick="document.getElementById(\'stato-doc-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)">\u00d7</button></div>'+
     '<div style="overflow:auto;padding:6px 12px 14px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="text-align:left;color:var(--text2);font-size:11px"><th style="padding:6px 8px">Procacciatore</th><th style="padding:6px 8px;text-align:center">CF</th><th style="padding:6px 8px;text-align:center">IBAN</th><th style="padding:6px 8px">Doc. identit\u00e0 (scad.)</th><th style="padding:6px 8px;text-align:center">Carta id.<br>(firma)</th><th style="padding:6px 8px;text-align:center">Cod.fisc.<br>(firma)</th><th style="padding:6px 8px;text-align:center">Visura<br>(firma)</th><th style="padding:6px 8px;text-align:center">Contratto<br>firmato</th></tr></thead><tbody>'+(rows||'<tr><td colspan="8" style="padding:16px;text-align:center;color:var(--text2)">Nessun procacciatore.</td></tr>')+'</tbody></table></div>'+
-    '<div style="padding:8px 16px;border-top:0.5px solid var(--border);font-size:11px;color:var(--text2)">\u2713 a posto \u00b7 \u2717 mancante \u00b7 le colonne "(firma)" sono i documenti caricati dal procacciatore in fase di firma. Clicca il nome per aprire la scheda.</div></div>'
+    '<div style="padding:8px 16px;border-top:0.5px solid var(--border);font-size:11px;color:var(--text2)">\u2713 a posto \u00b7 \u2717 mancante \u00b7 \ud83d\udcce caricato in firma \u00b7 \u270b segnato a mano. <b>Clicca</b> su Carta id./Cod.fisc./Visura per segnare i documenti consegnati di persona. Clicca il nome per aprire la scheda.</div></div>'
+  div.onclick=()=>div.remove()
+  document.body.appendChild(div)
+}
+
+// ===== EXPORT PAGAMENTI IN BLOCCO (CSV / Excel) =====
+function _calcPagamenti(mese){
+  const out=[]
+  ;(procs||[]).forEach((p,i)=>{
+    const vv=(vendite||[]).filter(v=>v.pidx===i && v.stato==='Incassato' && (!mese||(v.data||'').startsWith(mese)))
+    const fat=vv.reduce((s,v)=>s+(+v.val||0),0)
+    const provPers=vv.reduce((s,v)=>s+(+v.prov||0),0)
+    let ovr=0;(p.rete||[]).forEach(n=>{ const vN=(vendite||[]).filter(v=>v.pidx===n.idx && v.stato==='Incassato' && (!mese||(v.data||'').startsWith(mese))); ovr+=vN.reduce((s,v)=>s+(+v.val||0),0)*((+n.pct||0)/100) })
+    const lordo=provPers+ovr
+    const rit=p.regime==='ritenuta'?lordo*0.20:0
+    if(fat<=0 && lordo<=0) return
+    out.push({ nome:p.nome||'', email:(p.email||p.email_aziendale||''), iban:p.iban||'', regime:(p.regime==='piva'?'P.IVA':'Ritenuta'), fat, provPers, ovr, lordo, rit, netto:lordo-rit })
+  })
+  return out
+}
+function esportaPagamenti(){
+  const mese=document.getElementById('provv-mese')?.value||''
+  const righe=_calcPagamenti(mese)
+  if(!righe.length){ alert('Nessun pagamento da esportare per il periodo selezionato.'); return }
+  const old=document.getElementById('exp-pag-modal'); if(old) old.remove()
+  const div=document.createElement('div'); div.id='exp-pag-modal'
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px'
+  div.innerHTML='<div style="background:var(--surface);border-radius:12px;max-width:420px;width:100%;padding:20px" onclick="event.stopPropagation()">'+
+    '<div style="font-weight:700;font-size:16px;margin-bottom:6px">\u2b07 Esporta pagamenti</div>'+
+    '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">'+righe.length+' procacciatori \u00b7 periodo: '+(mese||'tutti')+'. Scegli il formato:</div>'+
+    '<button class="btn btn-p" style="width:100%;margin-bottom:8px" onclick="_scaricaPagamenti(\''+mese+'\',\'csv\')">\ud83d\udcc4 CSV (consigliato per il commercialista)</button>'+
+    '<button class="btn" style="width:100%;margin-bottom:8px" onclick="_scaricaPagamenti(\''+mese+'\',\'xls\')">\ud83d\udcd7 Excel (.xls)</button>'+
+    '<button class="btn btn-sm" style="width:100%" onclick="document.getElementById(\'exp-pag-modal\').remove()">Annulla</button></div>'
+  div.onclick=()=>div.remove()
+  document.body.appendChild(div)
+}
+function _scaricaPagamenti(mese, fmt){
+  document.getElementById('exp-pag-modal')?.remove()
+  const righe=_calcPagamenti(mese)
+  const head=['N\u00b0','Procacciatore','Email','IBAN','Regime','Fatturato','Provv. personali','Override','Lordo','Ritenuta','Netto da pagare']
+  const n=v=>(Math.round((+v||0)*100)/100).toFixed(2).replace('.',',')
+  const tot=righe.reduce((a,r)=>({fat:a.fat+r.fat,provPers:a.provPers+r.provPers,ovr:a.ovr+r.ovr,lordo:a.lordo+r.lordo,rit:a.rit+r.rit,netto:a.netto+r.netto}),{fat:0,provPers:0,ovr:0,lordo:0,rit:0,netto:0})
+  const fname='pagamenti-'+(mese||'tutti')+'.'+(fmt==='xls'?'xls':'csv')
+  let blob
+  if(fmt==='xls'){
+    const e=s=>(s||'').toString().replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))
+    let h='<table border="1" cellspacing="0"><thead><tr>'+head.map(x=>'<th>'+e(x)+'</th>').join('')+'</tr></thead><tbody>'
+    righe.forEach((r,i)=>{ h+='<tr><td>'+(i+1)+'</td><td>'+e(r.nome)+'</td><td>'+e(r.email)+'</td><td>'+e(r.iban)+'</td><td>'+e(r.regime)+'</td><td>'+n(r.fat)+'</td><td>'+n(r.provPers)+'</td><td>'+n(r.ovr)+'</td><td>'+n(r.lordo)+'</td><td>'+n(r.rit)+'</td><td>'+n(r.netto)+'</td></tr>' })
+    h+='<tr><td></td><td><b>TOTALE</b></td><td></td><td></td><td></td><td><b>'+n(tot.fat)+'</b></td><td><b>'+n(tot.provPers)+'</b></td><td><b>'+n(tot.ovr)+'</b></td><td><b>'+n(tot.lordo)+'</b></td><td><b>'+n(tot.rit)+'</b></td><td><b>'+n(tot.netto)+'</b></td></tr>'
+    h+='</tbody></table>'
+    blob=new Blob(['\ufeff<html><head><meta charset="utf-8"></head><body>'+h+'</body></html>'],{type:'application/vnd.ms-excel'})
+  } else {
+    const q=c=>'"'+String(c).replace(/"/g,'""')+'"'
+    let csv=head.map(q).join(';')+'\r\n'
+    righe.forEach((r,i)=>{ csv+=[i+1,r.nome,r.email,r.iban,r.regime,n(r.fat),n(r.provPers),n(r.ovr),n(r.lordo),n(r.rit),n(r.netto)].map(q).join(';')+'\r\n' })
+    csv+=['','TOTALE','','','',n(tot.fat),n(tot.provPers),n(tot.ovr),n(tot.lordo),n(tot.rit),n(tot.netto)].map(q).join(';')+'\r\n'
+    blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'})
+  }
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=fname; a.click(); setTimeout(()=>URL.revokeObjectURL(url),2000)
+  toast('\u2b07 Pagamenti esportati ('+fname+')')
+}
+
+// ===== SCADENZE E SOLLECITI FIRMA =====
+function _parseDataIT(s){ if(!s) return null; const m=String(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return new Date(+m[3],+m[2]-1,+m[1]); const d=new Date(s); return isNaN(d)?null:d }
+async function sollecitaFirma(id){
+  const c=(contratti||[]).find(x=>x._id===id); if(!c) return
+  await reinviaContratto(id)
+  try{ const nuovo={...c}; delete nuovo._id; nuovo.ultimoSollecito=new Date().toISOString(); await db.from('contratti_firme').update({data:nuovo}).eq('id', c._id); c.ultimoSollecito=nuovo.ultimoSollecito }catch(e){}
+  apriScadenzeSolleciti()
+}
+function apriScadenzeSolleciti(){
+  const old=document.getElementById('scad-modal'); if(old) old.remove()
+  const esc=s=>(s||'').toString().replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))
+  const oggi=new Date(); oggi.setHours(0,0,0,0)
+  // 1) contratti non firmati da troppo tempo
+  const nonFirmati=(contratti||[]).filter(c=>c.sezione==='proc' && c.statoFirma!=='Firmato').map(c=>{
+    const d=_parseDataIT(c.dataInvio); const gg=d?Math.round((oggi-d)/86400000):null; return {c,gg}
+  }).filter(x=>x.gg!==null && x.gg>=7).sort((a,b)=>b.gg-a.gg)
+  // 2) contratti procacciatore in scadenza (data fine)
+  const inScad=(procs||[]).map(p=>{ if(!p.fine) return null; const d=_parseDataIT(p.fine); if(!d) return null; const gg=Math.round((d-oggi)/86400000); return (gg<=60)?{p,gg,fine:p.fine}:null }).filter(Boolean).sort((a,b)=>a.gg-b.gg)
+  let html=''
+  html+='<div style="font-weight:700;font-size:13px;margin:4px 0 6px">\ud83d\udd8a\ufe0f Contratti non firmati da \u2265 7 giorni ('+nonFirmati.length+')</div>'
+  html+= nonFirmati.length ? nonFirmati.map(({c,gg})=>'<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:0.5px solid var(--border);border-radius:7px;margin-bottom:5px;font-size:13px"><div style="flex:1;min-width:0"><strong>'+esc(c.nomeDestinatario||'\u2014')+'</strong> <span style="color:var(--text2)">'+esc(c.tipoContratto||'')+'</span><br><span style="font-size:11px;color:#c0392b">inviato '+esc(c.dataInvio||'')+' \u00b7 '+gg+' giorni fa'+(c.ultimoSollecito?(' \u00b7 ultimo sollecito '+new Date(c.ultimoSollecito).toLocaleDateString('it-IT')):'')+'</span></div><button class="btn btn-sm btn-p" onclick="sollecitaFirma(\''+c._id+'\')">\u21ba Sollecita</button></div>').join('') : '<div style="font-size:12px;color:var(--text2);padding:4px 0 8px">Nessuno. Tutto in ordine.</div>'
+  html+='<div style="font-weight:700;font-size:13px;margin:14px 0 6px">\u23f0 Contratti in scadenza ('+inScad.length+')</div>'
+  html+= inScad.length ? inScad.map(({p,gg,fine})=>'<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:0.5px solid var(--border);border-radius:7px;margin-bottom:5px;font-size:13px"><div style="flex:1;min-width:0"><strong>'+esc(p.nome||'\u2014')+'</strong></div><span style="font-size:12px;color:'+(gg<0?'#c0392b':'#b9770e')+';font-weight:700">'+(gg<0?('scaduto il '+esc(fine)):('scade il '+esc(fine)+' ('+gg+'gg)'))+'</span></div>').join('') : '<div style="font-size:12px;color:var(--text2);padding:4px 0">Nessuno in scadenza nei prossimi 60 giorni.</div>'
+  const div=document.createElement('div'); div.id='scad-modal'
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99998;display:flex;align-items:center;justify-content:center;padding:30px 20px'
+  div.innerHTML='<div style="background:var(--surface);border-radius:12px;max-width:620px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.4)" onclick="event.stopPropagation()">'+
+    '<div style="padding:14px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between"><div style="font-weight:700;font-size:16px">\u23f0 Scadenze e solleciti</div><button onclick="document.getElementById(\'scad-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)">\u00d7</button></div>'+
+    '<div style="overflow:auto;padding:14px 16px">'+html+'</div></div>'
   div.onclick=()=>div.remove()
   document.body.appendChild(div)
 }
