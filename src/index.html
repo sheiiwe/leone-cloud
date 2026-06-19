@@ -315,7 +315,7 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="card">
     <div class="card-hdr"><h3>Lista procacciatori</h3><button class="btn btn-p" onclick="openM('m-proc')">+ Nuovo</button></div>
-    
+    <div id="proc-filtro-bar" style="display:flex;gap:6px;flex-wrap:wrap;padding:0 0 10px"></div>
 <div class="tbl-wrap"><table>
       <thead><tr><th>Nome</th><th>Qualifica</th><th>Prov.%</th><th>Override rete</th><th>Regime</th><th>CF/P.IVA</th><th>Fat.mese</th><th>Stato</th><th>Inizio</th><th>Scadenza</th><th>Azioni</th></tr></thead>
       <tbody id="tbl-proc"><tr><td colspan="9" class="empty">Caricamento...</td></tr></tbody>
@@ -1538,7 +1538,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="msec">Qualifica</div>
     <div class="fr">
       <div class="fg"><label>Qualifica (auto o forzata)</label><select id="pr-qual"><option value="auto">🔄 Automatica dal fatturato</option><option value="base">Forza: Agente Base — 8%</option><option value="tl">Forza: Team Leader — 10%</option><option value="am">Forza: Area Manager — 11%</option><option value="sp">Forza: Senior Partner — 12%</option></select></div>
-      <div class="fg"><label>Stato</label><select id="pr-stato"><option>Attivo</option><option>Inattivo</option></select></div>
+      <div class="fg"><label>Stato</label><select id="pr-stato"><option>Attivo</option><option>In pausa</option><option>Scaduto</option><option>Terminato</option><option>Inattivo</option></select></div>
     </div>
     <div class="msec">Rete commerciale</div>
     <div class="fr" style="align-items:flex-end">
@@ -2547,7 +2547,7 @@ function getQual(p,i,mese){
 }
 const qualBadge=(q,auto)=>`<span class="badge ${q.badge}">${q.label} <span class="auto-tag">${auto?'auto':'forzata'}</span></span>`
 const regimeBadge=r=>r==='piva'?'<span class="badge bt">P. IVA</span>':'<span class="badge bp">Ritenuta</span>'
-function statoBadge(s){const m={Incassato:'bg','In attesa':'ba',Annullato:'br',Attivo:'bg',Inattivo:'bgr','In prova':'ba',Nuovo:'bb',Contattato:'ba',Interessato:'bg','Non interessato':'br',Chiuso:'bgr',Acquisito:'bg',Inviato:'bb',Firmato:'bg','In attesa firma':'ba'};return`<span class="badge ${m[s]||'bgr'}">${s}</span>`}
+function statoBadge(s){const m={Incassato:'bg','In attesa':'ba',Annullato:'br',Attivo:'bg',Inattivo:'bgr','In pausa':'ba',Scaduto:'br',Terminato:'br','In prova':'ba',Nuovo:'bb',Contattato:'ba',Interessato:'bg','Non interessato':'br',Chiuso:'bgr',Acquisito:'bg',Inviato:'bb',Firmato:'bg','In attesa firma':'ba'};return`<span class="badge ${m[s]||'bgr'}">${s||'—'}</span>`}
 
 // ── LISTINO ───────────────────────────────────────────────────
 const LISTINO=[
@@ -3350,7 +3350,7 @@ async function saveProc(){
   piva:(document.getElementById('pr-piva')?.value||'').trim(),
   ragione_sociale:(document.getElementById('pr-ragione')?.value||'').trim(),
   qualForce:document.getElementById('pr-qual').value,
-  stato:document.getElementById('pr-stato').value,
+  stato:(document.getElementById('pr-stato').value||'Attivo'),
   rete:[...tempNet],
   foto:window._procFoto||null,
   nascita:document.getElementById('pr-nascita').value,
@@ -3422,7 +3422,7 @@ function editProc(i){
   document.getElementById('pr-cf').value=p.cf||''
   {const e=document.getElementById('pr-cf2'); if(e)e.value=p.cf||''}
   document.getElementById('pr-qual').value=p.qualForce||'auto'
-  document.getElementById('pr-stato').value=p.stato
+  {const e=document.getElementById('pr-stato'); const sv=p.stato||'Attivo'; if(e){ if(![...e.options].some(o=>o.value===sv)){ const o=document.createElement('option'); o.value=sv; o.textContent=sv; e.appendChild(o) } e.value=sv }}
   if(document.getElementById('pr-nascita')) document.getElementById('pr-nascita').value=p.nascita||''
   {const e=document.getElementById('pr-luogonascita'); if(e)e.value=p.luogonascita||''}
   if(document.getElementById('pr-indirizzo')) document.getElementById('pr-indirizzo').value=p.indirizzo||''
@@ -3528,12 +3528,66 @@ async function cambiaStatoProc(i, nuovoStato){
   if(!nuovoStato) return
   const p = procs[i]
   if(!p) return
+  // Riattivazione da Terminato: serve il nuovo contratto di procacciamento firmato
+  if(p.stato==='Terminato' && (nuovoStato==='Attivo' || nuovoStato==='In pausa')){
+    apriRiattivaProc(i, nuovoStato)
+    return
+  }
   p.stato = nuovoStato
+  await _syncAccessoPortale(p, nuovoStato)
   try {
     await db.from('procacciatori').update({data: p}).eq('id', p._id)
     renderProc()
     renderDash()
   } catch(e){ alert('Errore: '+e.message) }
+}
+// Gestisce l'accesso al portale in base allo stato del procacciatore:
+// In pausa/Scaduto = sospeso (riattivabile) · Terminato = accesso eliminato + email aziendale azzerata · Attivo = riabilitato
+async function _syncAccessoPortale(p, nuovoStato){
+  const email=(p.email_aziendale||'').trim().toLowerCase()
+  try{
+    if(nuovoStato==='Terminato'){
+      if(email){ try{ await db.from('portale_accessi').delete().eq('email', email) }catch(e){} }
+      p.email_aziendale=''
+    } else if(nuovoStato==='In pausa' || nuovoStato==='Scaduto'){
+      if(email) await db.from('portale_accessi').update({approvato:false, stato:'sospeso'}).eq('email', email)
+    } else if(nuovoStato==='Attivo'){
+      if(email) await db.from('portale_accessi').update({approvato:true, stato:'approvato'}).eq('email', email)
+    }
+  }catch(e){ console.error('sync accesso portale:', e) }
+}
+function apriRiattivaProc(i, nuovoStato){
+  const p=procs[i]; if(!p) return
+  const old=document.getElementById('riattiva-modal'); if(old) old.remove()
+  const div=document.createElement('div'); div.id='riattiva-modal'
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px'
+  div.innerHTML='<div style="background:var(--surface);border-radius:12px;max-width:460px;width:100%;padding:20px" onclick="event.stopPropagation()">'+
+    '<div style="font-weight:700;font-size:16px;margin-bottom:8px">Riattivazione procacciatore</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:14px"><b>'+escB(p.nome||'')+'</b> ha firmato il nuovo contratto di procacciamento?<br>Per rimetterlo <b>'+(nuovoStato==='Attivo'?'Attivo':'In pausa')+'</b> devi caricare il contratto firmato (PDF). Senza il contratto non \u00e8 possibile riattivarlo.</div>'+
+    '<label class="btn btn-p" style="cursor:pointer;display:inline-block">\ud83d\udcce Carica contratto firmato (PDF)<input type="file" accept="application/pdf" style="display:none" onchange="_riattivaUpload('+i+',\''+nuovoStato+'\',this)"></label>'+
+    '<span id="riattiva-stato" style="font-size:12px;color:var(--text2);margin-left:8px"></span>'+
+    '<div style="margin-top:16px"><button class="btn btn-sm" onclick="document.getElementById(\'riattiva-modal\').remove()">Annulla</button></div></div>'
+  div.onclick=()=>div.remove()
+  document.body.appendChild(div)
+}
+async function _riattivaUpload(i, nuovoStato, input){
+  const file=input.files[0]; if(!file) return
+  const st=document.getElementById('riattiva-stato'); if(st) st.textContent='Caricamento...'
+  const p=procs[i]; if(!p) return
+  try{
+    const safe=(p.nome||'proc').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'_')
+    const path='riattivazioni/'+safe+'_'+Date.now()+'.pdf'
+    const up=await db.storage.from('documenti').upload(path, file, {upsert:true, contentType:'application/pdf'})
+    if(up.error) throw up.error
+    p.stato=nuovoStato
+    p.contrattoRiattivazione=path
+    p.dataRiattivazione=new Date().toLocaleDateString('it-IT')
+    await _syncAccessoPortale(p, nuovoStato)
+    await db.from('procacciatori').update({data:p}).eq('id',p._id)
+    document.getElementById('riattiva-modal')?.remove()
+    renderProc(); renderDash()
+    toast('\u2705 '+(p.nome||'Procacciatore')+' riattivato ('+nuovoStato+')')
+  }catch(e){ if(st) st.textContent='Errore: '+e.message; else alert('Errore: '+e.message) }
 }
 
 // ── ELIMINA PROCACCIATORE ─────────────────────────────────────
@@ -3637,11 +3691,22 @@ function apriProfilo(i){
   document.body.appendChild(overlay)
 }
 
+let procFiltroStato='attivi'
+function setProcFiltro(k){ procFiltroStato=k; renderProc() }
 function renderProc(){
   const tb=document.getElementById('tbl-proc')
-  if(!procs.length){tb.innerHTML='<tr><td colspan="9" class="empty">Nessun procacciatore</td></tr>';return}
+  if(!tb) return
+  const bar=document.getElementById('proc-filtro-bar')
+  if(bar){
+    const nTerm=procs.filter(p=>p.stato==='Terminato').length
+    const b=(k,l)=>'<button class="btn btn-sm'+(procFiltroStato===k?' btn-p':'')+'" style="border-radius:20px" onclick="setProcFiltro(\''+k+'\')">'+l+'</button>'
+    bar.innerHTML=b('attivi','Contratti attivi')+b('terminati','Contratti terminati'+(nTerm?(' ('+nTerm+')'):''))
+  }
+  if(!procs.length){tb.innerHTML='<tr><td colspan="11" class="empty">Nessun procacciatore</td></tr>';return}
   const m=curMese()
-  tb.innerHTML=procs.map((p,i)=>{
+  const righe=procs.map((p,i)=>({p,i})).filter(({p})=> procFiltroStato==='terminati' ? p.stato==='Terminato' : p.stato!=='Terminato')
+  if(!righe.length){ tb.innerHTML='<tr><td colspan="11" class="empty">'+(procFiltroStato==='terminati'?'Nessun contratto terminato':'Nessun procacciatore attivo')+'</td></tr>'; return }
+  tb.innerHTML=righe.map(({p,i})=>{
     const q=getQual(p,i,m),isAuto=!p.qualForce||p.qualForce==='auto'
     const fat=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&v.data.startsWith(m)).reduce((s,v)=>s+v.val,0)
     const rete=p.rete||[]
