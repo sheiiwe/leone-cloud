@@ -3698,14 +3698,15 @@ function renderProc(){
   if(!tb) return
   const bar=document.getElementById('proc-filtro-bar')
   if(bar){
-    const nTerm=procs.filter(p=>p.stato==='Terminato').length
+    const nTerm=procs.filter(p=>p.stato==='Terminato'||p.stato==='Scaduto').length
     const b=(k,l)=>'<button class="btn btn-sm'+(procFiltroStato===k?' btn-p':'')+'" style="border-radius:20px" onclick="setProcFiltro(\''+k+'\')">'+l+'</button>'
-    bar.innerHTML=b('attivi','Contratti attivi')+b('terminati','Contratti terminati'+(nTerm?(' ('+nTerm+')'):''))
+    bar.innerHTML=b('attivi','Contratti attivi')+b('terminati','Terminati / scaduti'+(nTerm?(' ('+nTerm+')'):''))
   }
   if(!procs.length){tb.innerHTML='<tr><td colspan="11" class="empty">Nessun procacciatore</td></tr>';return}
   const m=curMese()
-  const righe=procs.map((p,i)=>({p,i})).filter(({p})=> procFiltroStato==='terminati' ? p.stato==='Terminato' : p.stato!=='Terminato')
-  if(!righe.length){ tb.innerHTML='<tr><td colspan="11" class="empty">'+(procFiltroStato==='terminati'?'Nessun contratto terminato':'Nessun procacciatore attivo')+'</td></tr>'; return }
+  const _chiuso=p=>p.stato==='Terminato'||p.stato==='Scaduto'
+  const righe=procs.map((p,i)=>({p,i})).filter(({p})=> procFiltroStato==='terminati' ? _chiuso(p) : !_chiuso(p))
+  if(!righe.length){ tb.innerHTML='<tr><td colspan="11" class="empty">'+(procFiltroStato==='terminati'?'Nessun contratto terminato o scaduto':'Nessun procacciatore attivo')+'</td></tr>'; return }
   tb.innerHTML=righe.map(({p,i})=>{
     const q=getQual(p,i,m),isAuto=!p.qualForce||p.qualForce==='auto'
     const fat=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&v.data.startsWith(m)).reduce((s,v)=>s+v.val,0)
@@ -5304,7 +5305,7 @@ function renderDash(){
   const rankEl=document.getElementById('d-rank')
   if(!procs.length){rankEl.innerHTML='<div class="empty">Aggiungi procacciatori e vendite</div>';return}
   const m=curMese()
-  const sorted=procs.map((p,i)=>({p,i,fat:vendite.filter(v=>v.pidx===i&&v.stato==='Incassato').reduce((s,v)=>s+v.val,0),prov:vendite.filter(v=>v.pidx===i&&v.stato==='Incassato').reduce((s,v)=>s+v.prov,0),q:getQual(p,i,m),isAuto:!p.qualForce||p.qualForce==='auto'})).filter(r=>r.p.stato!=='Terminato').sort((a,b)=>b.fat-a.fat)
+  const sorted=procs.map((p,i)=>({p,i,fat:vendite.filter(v=>v.pidx===i&&v.stato==='Incassato').reduce((s,v)=>s+v.val,0),prov:vendite.filter(v=>v.pidx===i&&v.stato==='Incassato').reduce((s,v)=>s+v.prov,0),q:getQual(p,i,m),isAuto:!p.qualForce||p.qualForce==='auto'})).filter(r=>r.p.stato!=='Terminato' && r.p.stato!=='Scaduto').sort((a,b)=>b.fat-a.fat)
   rankEl.innerHTML=`<table><thead><tr><th>#</th><th>Procacciatore</th><th>Qualifica</th><th>Vendite</th><th>Fatturato</th><th>Provvigioni</th><th>Stato</th></tr></thead><tbody>${sorted.map((r,ri)=>`<tr style="cursor:pointer" onclick="apriProfiloDaDash(${r.i})"><td style="font-weight:600;color:var(--text2)">${ri+1}</td><td><div class="ar"><div class="av ${avc(r.i)}" style="width:28px;height:28px;font-size:10px">${avatarImg(r.i,28)}</div><span style=\"font-weight:600\">${r.p.nome}</span></div></td><td>${qualBadge(r.q,r.isAuto)}</td><td>${vendite.filter(v=>v.pidx===r.i).length}</td><td>${fmtE(r.fat)}</td><td style="font-weight:600">${fmtE(r.prov)}</td><td>${statoBadge(r.p.stato)}</td></tr>`).join('')}</tbody></table>`
   const recEl=document.getElementById('d-recent')
   if(!vendite.length){recEl.innerHTML='<div class="empty">Nessuna vendita</div>';return}
