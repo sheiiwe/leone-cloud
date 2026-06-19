@@ -4433,7 +4433,7 @@ async function preparaDocFirma(docId, token, p, scelte){
   if(!markers.length) throw new Error('Il documento scelto non ha campi posizionati nella Gestione campi.')
   // Compila il PDF con i dati anagrafici del procacciatore + le scelte, poi lo congela.
   // Salto "data": la data la mette la firma (data di firma), altrimenti si sovrapporrebbe.
-  const out = await compilaPdfBytes(docId, p||{}, scelte||{}, ['data','chk_doc_identita','chk_doc_cf','chk_doc_visura'])
+  const out = await compilaPdfBytes(docId, p||{}, scelte||{}, ['data','chk_doc_identita','chk_doc_cf','chk_doc_visura','rec_assunzione','rec_impresa','rec_personali','rec_altro','rec_altro_x'])
   const pdfPath='firme/'+token+'.pdf'
   const up=await db.storage.from('contratti').upload(pdfPath, new Blob([out],{type:'application/pdf'}), { upsert:true, contentType:'application/pdf' })
   if(up.error) throw new Error('Errore nella copia del PDF: '+up.error.message)
@@ -4646,6 +4646,12 @@ async function generaPdfFirmato(rowId, d){
           const dc=d.documentiCaricati||{}
           const caricato=(m.tipo==='chk_doc_identita')?dc.carta_identita:((m.tipo==='chk_doc_cf')?dc.codice_fiscale:dc.visura_camerale)
           if(caricato){ pg.drawText('X',{ x:x-4, y:ph-yTop-5, size:12, font, color: rgb(0,0,0) }) }
+        } else if(m.tipo==='rec_assunzione' || m.tipo==='rec_impresa' || m.tipo==='rec_personali' || m.tipo==='rec_altro_x'){
+          // Spunta la motivazione recesso scelta dal procacciatore in firma
+          const mapM={ rec_assunzione:'assunzione', rec_impresa:'impresa', rec_personali:'personali', rec_altro_x:'altro' }
+          if(d.recessoMotivo===mapM[m.tipo]){ pg.drawText('X',{ x:x-4, y:ph-yTop-5, size:12, font, color: rgb(0,0,0) }) }
+        } else if(m.tipo==='rec_altro'){
+          if(d.recessoMotivo==='altro' && d.recessoAltro){ pg.drawText(String(d.recessoAltro),{ x, y:ph-yTop-4, size:10, font, color: rgb(0.05,0.05,0.05) }) }
         }
       }
     } else {
