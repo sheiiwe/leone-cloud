@@ -569,6 +569,16 @@ async function avvia(session){
     }
     const p = righe[0].data || righe[0]
     p._id = righe[0].id
+    const _st = (p.stato || '')
+    if(_st === 'In pausa' || _st === 'Scaduto' || _st === 'Terminato'){
+      document.getElementById('who-nome').textContent = p.nome || email
+      const box = document.getElementById('no-profile')
+      box.querySelector('.notice').innerHTML = (_st === 'In pausa')
+        ? 'Il tuo accesso \u00e8 <strong>temporaneamente sospeso</strong>. Per informazioni contatta Leone Consulting (<a href="mailto:amministrazione@leoneconsultingitalia.it" style="color:#F22015">amministrazione@leoneconsultingitalia.it</a>).'
+        : 'Il tuo accesso <strong>non \u00e8 pi\u00f9 attivo</strong>. Per informazioni contatta Leone Consulting (<a href="mailto:amministrazione@leoneconsultingitalia.it" style="color:#F22015">amministrazione@leoneconsultingitalia.it</a>).'
+      box.style.display = 'block'
+      return
+    }
     MIO_PID = p._id; MIO_NOME = p.nome || ''; MIO_P = p; MIO_EMAIL = email
     renderProfilo(p)
     mostraAvatar(p.foto || '', p.nome || email)
