@@ -1065,6 +1065,7 @@ tbody tr:hover td{background:var(--surface2)}
             <button class="btn btn-sm" style="background:#7f8c8d;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('data_fine')">+ Fine</button>
             <button class="btn btn-sm" style="background:#922b21;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('data_firma')">+ Firma</button>
             <button class="btn btn-sm" style="background:#7d3c98;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('data_cessazione')">+ Data cessazione (recesso)</button>
+            <button class="btn btn-sm" style="background:#5b2c6f;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('data_invio')">+ Data invio atto (oggi)</button>
             <button class="btn btn-sm" style="background:#154360;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('iban')">+ IBAN</button>
             <button class="btn btn-sm" style="background:#154360;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('banca')">+ Banca</button>
             <button class="btn btn-sm" style="background:#0b3a5e;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarker('bic')">+ BIC/SWIFT</button>
@@ -4399,16 +4400,25 @@ function onCtDocSel(){
   const box=document.getElementById('ct-scelte-box'); if(!box) return
   const docId=document.getElementById('ct-documento')?.value
   if(!docId){ box.style.display='none'; box.innerHTML=''; return }
-  const tipi=[...new Set((editorMarkers[docId]||[]).map(m=>m.tipo).filter(t=>CAMPI_SCELTA[t] && !CAMPI_SCELTA[t].pair))]
-  if(!tipi.length){ box.style.display='none'; box.innerHTML=''; return }
+  // Online (Contratti e firme): motivazione recesso e data cessazione le sceglie il PROCACCIATORE in firma, non l'admin
+  const ONLINE_RECESSO=['rec_assunzione','rec_impresa','rec_personali','rec_altro']
+  const allTipi=[...new Set((editorMarkers[docId]||[]).map(m=>m.tipo))]
+  const haRecesso = allTipi.some(t=>ONLINE_RECESSO.indexOf(t)!==-1) || allTipi.indexOf('data_cessazione')!==-1
+  const tipi=allTipi.filter(t=>CAMPI_SCELTA[t] && !CAMPI_SCELTA[t].pair && ONLINE_RECESSO.indexOf(t)===-1)
+  if(!tipi.length && !haRecesso){ box.style.display='none'; box.innerHTML=''; return }
   box.style.display='block'
-  box.innerHTML='<div style="font-size:12px;font-weight:700;margin-bottom:3px">Opzioni del contratto</div>'+
-    '<div style="font-size:10.5px;color:var(--text3);margin-bottom:10px">Spunta le voci giuste e compila i campi liberi (vuoto = niente). Verranno stampate nel contratto inviato.</div>'+
-    tipi.map(t=>{
-      const d=CAMPI_SCELTA[t]
-      if(d.tipo==='check') return '<label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:9px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="ctsc-'+t+'" style="width:15px;height:15px;margin-top:1px;flex-shrink:0">'+d.label+'</label>'
-      return '<div style="margin-bottom:10px"><label style="font-size:11.5px;color:var(--text2);display:block;margin-bottom:3px">'+d.label+'</label><input type="text" id="ctsc-'+t+'" placeholder="(vuoto = N/A)" style="width:100%;box-sizing:border-box;background:var(--bg);color:var(--text);border:0.5px solid var(--border2);border-radius:6px;padding:7px;font-size:12.5px"></div>'
-    }).join('')
+  let h=''
+  if(haRecesso) h+='<div style="font-size:11.5px;color:var(--text2);background:var(--surface);border-radius:6px;padding:8px 10px;margin-bottom:10px">\ud83d\udcdd Recesso online: la <b>motivazione</b> e la <b>data di cessazione</b> le sceglie il procacciatore in fase di firma. Qui non devi selezionarle.</div>'
+  if(tipi.length){
+    h+='<div style="font-size:12px;font-weight:700;margin-bottom:3px">Opzioni del contratto</div>'+
+      '<div style="font-size:10.5px;color:var(--text3);margin-bottom:10px">Spunta le voci giuste e compila i campi liberi (vuoto = niente). Verranno stampate nel contratto inviato.</div>'+
+      tipi.map(t=>{
+        const d=CAMPI_SCELTA[t]
+        if(d.tipo==='check') return '<label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:9px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="ctsc-'+t+'" style="width:15px;height:15px;margin-top:1px;flex-shrink:0">'+d.label+'</label>'
+        return '<div style="margin-bottom:10px"><label style="font-size:11.5px;color:var(--text2);display:block;margin-bottom:3px">'+d.label+'</label><input type="text" id="ctsc-'+t+'" placeholder="(vuoto = N/A)" style="width:100%;box-sizing:border-box;background:var(--bg);color:var(--text);border:0.5px solid var(--border2);border-radius:6px;padding:7px;font-size:12.5px"></div>'
+      }).join('')
+  }
+  box.innerHTML=h
 }
 // Legge le scelte dal box del modale di invio
 function getCtScelte(docId){
@@ -4433,7 +4443,7 @@ async function preparaDocFirma(docId, token, p, scelte){
   if(!markers.length) throw new Error('Il documento scelto non ha campi posizionati nella Gestione campi.')
   // Compila il PDF con i dati anagrafici del procacciatore + le scelte, poi lo congela.
   // Salto "data": la data la mette la firma (data di firma), altrimenti si sovrapporrebbe.
-  const out = await compilaPdfBytes(docId, p||{}, scelte||{}, ['data','chk_doc_identita','chk_doc_cf','chk_doc_visura','rec_assunzione','rec_impresa','rec_personali','rec_altro','rec_altro_x'])
+  const out = await compilaPdfBytes(docId, p||{}, scelte||{}, ['data','chk_doc_identita','chk_doc_cf','chk_doc_visura','rec_assunzione','rec_impresa','rec_personali','rec_altro','rec_altro_x','data_cessazione','data_invio'])
   const pdfPath='firme/'+token+'.pdf'
   const up=await db.storage.from('contratti').upload(pdfPath, new Blob([out],{type:'application/pdf'}), { upsert:true, contentType:'application/pdf' })
   if(up.error) throw new Error('Errore nella copia del PDF: '+up.error.message)
@@ -4652,6 +4662,10 @@ async function generaPdfFirmato(rowId, d){
           if(d.recessoMotivo===mapM[m.tipo]){ pg.drawText('X',{ x:x-4, y:ph-yTop-5, size:12, font, color: rgb(0,0,0) }) }
         } else if(m.tipo==='rec_altro'){
           if(d.recessoMotivo==='altro' && d.recessoAltro){ pg.drawText(String(d.recessoAltro),{ x, y:ph-yTop-4, size:10, font, color: rgb(0.05,0.05,0.05) }) }
+        } else if(m.tipo==='data_cessazione'){
+          if(d.dataCessazione){ pg.drawText(String(d.dataCessazione),{ x, y:ph-yTop-4, size:10, font, color: rgb(0.05,0.05,0.05) }) }
+        } else if(m.tipo==='data_invio'){
+          pg.drawText(String(d.dataInvio||new Date().toLocaleDateString('it-IT')),{ x, y:ph-yTop-4, size:10, font, color: rgb(0.05,0.05,0.05) })
         }
       }
     } else {
@@ -7113,6 +7127,8 @@ const MARKER_COLORS = {
   rec_impresa:        { color:'#922b21', label:'☑ Recesso: impresa' },
   rec_personali:      { color:'#922b21', label:'☑ Recesso: personali' },
   rec_altro:          { color:'#922b21', label:'✏️ Recesso: altro' },
+  data_cessazione:    { color:'#7d3c98', label:'Data cessazione (recesso)' },
+  data_invio:         { color:'#5b2c6f', label:'Data invio atto (oggi)' },
   tabella_affari:     { color:'#1f8a70', label:'Tabella affari' },
 }
 // Campi che l'utente SCEGLIE al momento di generare (non dipendono dalla scheda)
@@ -7627,6 +7643,7 @@ function risolviCampo(tipo, p, oggi){
   if(tipo==='area_geo')      return { testo: p.zona||'' }
   if(tipo==='tel_email')     return { testo: [p.tel, p.email].filter(Boolean).join(' / ') }
   if(tipo==='data_cessazione') return { testo: p.dataCessazione||p.data_cessazione||'' }
+  if(tipo==='data_invio') return { testo: p.data_invio||p.dataInvio||new Date().toLocaleDateString('it-IT') }
   if(tipo==='conto_bancario') return { spunta: p.tipo_conto==='bancario' }
   if(tipo==='conto_postale')  return { spunta: p.tipo_conto==='postale' }
   if(tipo==='conto_estero')   return { spunta: p.tipo_conto==='estero' }
