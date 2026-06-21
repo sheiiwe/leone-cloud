@@ -919,6 +919,24 @@ tbody tr:hover td{background:var(--surface2)}
     <div style="margin-top:10px"><button class="btn btn-g" onclick="salvaEmailConfig()">Salva credenziali email</button><span id="em-stato" style="font-size:12px;color:var(--text2);margin-left:10px"></span></div>
   </div>
 
+  <!-- 4c-bis. AUTOMAZIONI EMAIL -->
+  <div class="acc-hdr" onclick="toggleAcc('acc-automazioni',this)">
+    <h3>🤖 Automazioni email</h3>
+    <span class="acc-arrow">▼</span>
+  </div>
+  <div class="acc-body" id="acc-automazioni">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Invii automatici, <b>solo in orario diurno (9:00–20:00)</b>. Mai email di notte. Funzionano quando l'app è aperta.</div>
+    <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;cursor:pointer">
+      <input type="checkbox" id="set-promemoria-auto" onchange="salvaAutomazioni()" style="width:16px;height:16px;margin-top:2px">
+      <span><b>Promemoria firma automatico</b><br><span style="font-size:12px;color:var(--text2)">Rinvia da solo il contratto ai procacciatori che non hanno ancora firmato dopo 7 giorni, ripetendo ogni 7 giorni.</span></span>
+    </label>
+    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+      <input type="checkbox" id="set-notifica-offerte" onchange="salvaAutomazioni()" style="width:16px;height:16px;margin-top:2px">
+      <span><b>Avvisa i procacciatori delle nuove offerte</b><br><span style="font-size:12px;color:var(--text2)">Quando compaiono nuove offerte nel listino, invia un riepilogo via email ai procacciatori attivi (max una volta al giorno).</span></span>
+    </label>
+    <div style="margin-top:14px"><button class="btn btn-sm" onclick="_notificaNuoveOfferteAuto(true)">📣 Invia ora l'avviso nuove offerte</button> <span style="font-size:11px;color:var(--text3)">(invio manuale di prova)</span></div>
+  </div>
+
   <!-- 4d. DOCUMENTO PER TIPO DI CONTRATTO -->
   <div class="acc-hdr" onclick="toggleAcc('acc-firma-doc',this)">
     <h3>📑 Documento per tipo di contratto</h3>
@@ -1828,6 +1846,7 @@ async function loadAll(){
     caricaAccessiPortale()
     caricaEmailConfig()
     avviaRealtime()
+    try{ const now=Date.now(); if(!window._lastAutoTs || now-window._lastAutoTs > 3*3600*1000){ window._lastAutoTs=now; setTimeout(()=>{ eseguiAutomazioni() }, 5000) } }catch(e){}
   }catch(e){syncStatus('err','Errore: '+e.message); alert('ERRORE: '+e.message)}
 }
 
@@ -4984,6 +5003,83 @@ function apriScadenzeSolleciti(){
   document.body.appendChild(div)
 }
 
+// ===== AUTOMAZIONI EMAIL (promemoria firma + nuove offerte) =====
+function _orarioOk(){ const h=new Date().getHours(); return h>=9 && h<20 }   // solo diurno, niente notte
+async function salvaAutomazioni(){
+  const prom=!!document.getElementById('set-promemoria-auto')?.checked
+  const off=!!document.getElementById('set-notifica-offerte')?.checked
+  const eraOff=impostazioni['notifica_offerte_auto']===true
+  impostazioni['promemoria_auto']=prom
+  impostazioni['notifica_offerte_auto']=off
+  if(off && !eraOff){
+    // baseline: tutte le offerte attuali contano come "gi\u00e0 note", cos\u00ec non spedisce l'intero catalogo
+    const sig=o=>((o.cat||'')+'|'+(o.forn||'')+'|'+(o.nome||'')).toLowerCase()
+    impostazioni['offerte_notificate']=[...new Set((OFFERTE||[]).map(sig))]
+  }
+  try{ await upsertImpostazioni(); toast('Automazioni aggiornate') }catch(e){ alert('Errore: '+e.message) }
+}
+async function _promemoriaFirmaAuto(){
+  if(impostazioni['promemoria_auto']!==true) return
+  if(!_orarioOk()) return
+  if(!window.electronAPI?.sendContract) return
+  const oggi=new Date(); oggi.setHours(0,0,0,0)
+  let inviati=0
+  for(const c of (contratti||[])){
+    if(c.sezione!=='proc' || c.statoFirma==='Firmato' || !c.signToken) continue
+    const di=_parseDataIT(c.dataInvio); if(!di) continue
+    if(Math.round((oggi-di)/86400000) < 7) continue
+    if(c.ultimoSollecito){ if(Math.round((oggi-new Date(c.ultimoSollecito))/86400000) < 7) continue }
+    try{
+      await window.electronAPI.sendContract({..._ec(),to:c.emailDestinatario,name:c.nomeDestinatario,contractType:c.tipoContratto,signToken:c.signToken,via:c.via})
+      const nuovo={...c}; delete nuovo._id; nuovo.ultimoSollecito=new Date().toISOString()
+      await db.from('contratti_firme').update({data:nuovo}).eq('id',c._id); c.ultimoSollecito=nuovo.ultimoSollecito
+      inviati++
+    }catch(e){ console.error('promemoria auto:',e) }
+  }
+  if(inviati>0) toast('\ud83d\udd14 '+inviati+' promemoria firma inviati in automatico')
+}
+async function _emailOfferteTutti(titolo, testo){
+  const set=new Set()
+  ;(procs||[]).forEach(p=>{ if(p.stato!=='Attivo') return; const pe=(''+(p.email||'')).trim().toLowerCase(), ae=(''+(p.email_aziendale||'')).trim().toLowerCase(); if(pe.includes('@'))set.add(pe); if(ae.includes('@'))set.add(ae) })
+  const emails=[...set]; if(!emails.length){ return 0 }
+  const portale='https://portale.leoneconsultingitalia.it/'
+  const html='<div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a18;font-size:14px;line-height:1.6"><h2 style="color:#F22015;margin:0 0 8px">'+escB(titolo)+'</h2><div style="white-space:pre-wrap">'+escB(testo||'')+'</div><p style="margin-top:14px"><a href="'+portale+'" style="background:#3B6D11;color:#fff;text-decoration:none;padding:9px 16px;border-radius:8px">Apri il portale</a></p><p style="font-size:12px;color:#888;margin-top:12px">Leone Consulting \u2014 Portale Procacciatori</p></div>'
+  const subject='\ud83d\udd25 '+titolo+' \u2014 Leone Consulting'
+  const rows=emails.map(e=>({data:{to:e, subject, html}}))
+  await db.from('email_queue').insert(rows)
+  return emails.length
+}
+async function _notificaNuoveOfferteAuto(manuale){
+  if(!manuale){
+    if(impostazioni['notifica_offerte_auto']!==true) return
+    if(!_orarioOk()) return
+    const oggiStr=new Date().toISOString().slice(0,10)
+    if(impostazioni['offerte_notif_giorno']===oggiStr) return
+  }
+  const sig=o=>((o.cat||'')+'|'+(o.forn||'')+'|'+(o.nome||'')).toLowerCase()
+  const noti=Array.isArray(impostazioni['offerte_notificate'])?impostazioni['offerte_notificate']:[]
+  const notiSet=new Set(noti)
+  const nuove=(OFFERTE||[]).filter(o=>!notiSet.has(sig(o)))
+  if(!noti.length && !manuale){
+    // primo avvio senza baseline: imposta il riferimento e non spedire il catalogo intero
+    impostazioni['offerte_notificate']=[...new Set((OFFERTE||[]).map(sig))]
+    await upsertImpostazioni(); return
+  }
+  if(!nuove.length){ if(manuale) alert('Nessuna nuova offerta da segnalare (tutte gi\u00e0 note).'); return }
+  const elenco=nuove.slice(0,40).map(o=>'\u2022 '+(o.forn||'')+' \u2013 '+(o.nome||'')+(o.prezzo?(' \u2014 '+o.prezzo):'')).join('\n')
+  const testo='Sono disponibili nuove offerte:\n\n'+elenco+'\n\nTrovi tutti i dettagli aggiornati nel portale.'
+  let n=0
+  try{ n=await _emailOfferteTutti('Nuove offerte disponibili', testo) }catch(e){ if(manuale) alert('Errore invio: '+e.message); return }
+  impostazioni['offerte_notificate']=[...new Set((OFFERTE||[]).map(sig))]
+  impostazioni['offerte_notif_giorno']=new Date().toISOString().slice(0,10)
+  try{ await upsertImpostazioni() }catch(e){}
+  toast('\ud83d\udce3 Avviso nuove offerte in coda per '+n+' indirizzi ('+nuove.length+' offerte)')
+}
+async function eseguiAutomazioni(){
+  try{ await _promemoriaFirmaAuto() }catch(e){ console.error(e) }
+  try{ await _notificaNuoveOfferteAuto(false) }catch(e){ console.error(e) }
+}
+
 async function generaEApriPdfFirmato(id){
   const c=contratti.find(x=>x._id===id); if(!c) return
   toast('Genero il PDF firmato...')
@@ -6787,6 +6883,8 @@ async function salvaImp(gruppo){
 
 function renderImpostazioni(){
   // Popola tutti i campi con i valori salvati
+  {const a=document.getElementById('set-promemoria-auto'); if(a) a.checked=impostazioni['promemoria_auto']===true}
+  {const b=document.getElementById('set-notifica-offerte'); if(b) b.checked=impostazioni['notifica_offerte_auto']===true}
   const map = {
     'imp-link-generico': 'link_generico',
     'imp-email-mittente': 'email_mittente',
