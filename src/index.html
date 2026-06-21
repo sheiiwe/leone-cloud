@@ -4481,7 +4481,7 @@ function docFirmabiliOptionsHtml(selId){
 }
 async function renderMappaFirmaDoc(){
   const el=document.getElementById('mappa-firma-doc'); if(!el) return
-  try{ if(!editorDocsCustom.length) await caricaDocumentiCustom(); await loadEditorCoordinate() }catch(e){}
+  try{ await caricaDocumentiCustom(); await loadEditorCoordinate() }catch(e){}
   const map=getFirmaDocMap(), mapF=getFirmaDocMapForf()
   const attivo=_regimeAz()==='forfettario'?'Forfettario':'Ordinario'
   el.innerHTML='<div style="font-size:11.5px;color:var(--text2);margin-bottom:12px">Per ogni tipo puoi impostare due versioni del documento. L\u0027app usa in automatico la colonna del regime attivo (ora: <b>'+attivo+'</b>) e switcha da sola quando cambi regime. Se lasci vuota una colonna, usa l\u0027altra.</div>'+
@@ -6881,6 +6881,7 @@ function toggleAcc(id, hdr){
   body.classList.toggle('open', !isOpen)
   hdr.classList.toggle('open', !isOpen)
   if(!isOpen && id === 'acc-editor-doc') renderEditorDocList()
+  if(!isOpen && id === 'acc-firma-doc') renderMappaFirmaDoc()
 }
 
 // ── IMPOSTAZIONI ────────────────────────────────────────────────
