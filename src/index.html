@@ -834,6 +834,12 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="acc-body" id="acc-azienda">
     <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Usati nei PDF generati automaticamente.</div>
+    <div class="fr" style="margin-bottom:14px">
+      <div class="fg"><label>Regime fiscale dell'azienda <span style="font-size:10px;color:var(--text3)">(guida calcoli e documenti)</span></label>
+        <select id="imp-regime-azienda" onchange="setRegimeAzienda(this.value)"><option value="forfettario">Forfettario</option><option value="ordinario">Ordinario</option></select>
+      </div>
+      <div class="fg"><div style="font-size:11px;color:var(--text2);padding-top:22px">Cambiando qui, switchano in automatico: cedolini, bonus porta cliente e i documenti inviati (anche online).</div></div>
+    </div>
     <div class="fr" style="margin-bottom:10px">
       <div class="fg"><label>Ragione sociale</label><input id="imp-az-nome" type="text" placeholder="Leone Consulting di Leonardo Angelucci"></div>
       <div class="fg"><label>P.IVA</label><input id="imp-az-piva" type="text" placeholder="18231181001"></div>
@@ -6713,6 +6719,9 @@ async function setRegimeAzienda(val){
   impostazioni['regime_azienda']=(val==='ordinario')?'ordinario':'forfettario'
   try{ await upsertImpostazioni() }catch(e){}
   if(document.getElementById('bp-compenso')) calcolaBonus()
+  {const s2=document.getElementById('imp-regime-azienda'); if(s2) s2.value=_regimeAz()}
+  {const s3=document.getElementById('bon-regime'); if(s3) s3.value=_regimeAz()}
+  if(document.getElementById('mappa-firma-doc')) renderMappaFirmaDoc()
   toast('Regime azienda impostato: '+_regimeAz())
 }
 function calcolaBonus(){
@@ -6922,6 +6931,7 @@ function renderImpostazioni(){
   // Popola tutti i campi con i valori salvati
   {const a=document.getElementById('set-promemoria-auto'); if(a) a.checked=impostazioni['promemoria_auto']===true}
   {const b=document.getElementById('set-notifica-offerte'); if(b) b.checked=impostazioni['notifica_offerte_auto']===true}
+  {const rg=document.getElementById('imp-regime-azienda'); if(rg) rg.value=(impostazioni['regime_azienda']==='ordinario'?'ordinario':'forfettario')}
   const map = {
     'imp-link-generico': 'link_generico',
     'imp-email-mittente': 'email_mittente',
