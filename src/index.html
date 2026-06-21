@@ -6325,13 +6325,14 @@ async function salvaCedolinoDoc(){
   impostazioni['cedolino_docid']=document.getElementById('ced-doc').value
   try{ await upsertImpostazioni(); toast('Modello cedolino salvato') }catch(e){ alert('Errore salvataggio: '+(e.message||e)) }
 }
-function _calcCedolino(p, vv, ovr){
+function _calcCedolino(p, vv, ovr, fields){
+  const has = t => fields ? fields.has(t) : true   // se non passo i campi = comportamento pieno (retrocompatibile)
   const lordo=vv.reduce((s,v)=>s+v.prov,0)+ovr
   const piva=p.regime==='piva'
-  const iva=piva?lordo*0.22:0
-  const ritenuta=lordo*0.115
-  const baseRit=piva?0:lordo*0.5
-  const bollo=(!piva && lordo>77.47)?2:0
+  const iva=(piva && has('ced_iva'))?lordo*0.22:0
+  const ritenuta=has('ced_ritenuta')?lordo*0.115:0
+  const baseRit=(has('ced_ritenuta') && !piva)?lordo*0.5:0
+  const bollo=(has('ced_bollo') && lordo>77.47)?2:0
   const nettoFatt=piva?(lordo+iva-ritenuta):0
   const nettoPag=piva?0:(lordo-ritenuta-bollo)
   return {lordo,iva,ritenuta,baseRit,bollo,nettoFatt,nettoPag,piva}
@@ -6342,7 +6343,8 @@ async function generaCedolino(idx, mese){
   const p=procs[idx]; if(!p) return
   const vv=vendite.filter(v=>v.pidx===idx&&v.stato==='Incassato'&&(v.data||'').startsWith(mese))
   const ovr=_ovrMese(p,mese)
-  const c=_calcCedolino(p,vv,ovr)
+  const _cedFields=new Set(((typeof editorMarkers!=='undefined'&&editorMarkers[docId])||[]).map(m=>m.tipo))
+  const c=_calcCedolino(p,vv,ovr,_cedFields)
   if(c.lordo<=0 && !confirm('Nessuna provvigione incassata per '+p.nome+' in '+_meseLabelCed(mese)+'.\nGenero comunque il cedolino?')) return
   const q=(typeof getQual==='function')?getQual(p,idx,mese):{prov:null}
   const fmtN=n=>(n||0).toFixed(2).replace('.',',')
@@ -7970,7 +7972,7 @@ async function compilaPdfBytes(docId, p, scelte, skip, extra, keepPage){
       if(t) drawTxt(pg, t, x, ph, yTop, m.w_pct)
     }
   })
-  if(keepPage){ for(let pi=pdfDoc.getPageCount()-1; pi>=0; pi--){ if(pi!==(keepPage-1)) pdfDoc.removePage(pi) } }
+  if(keepPage){ const kp=Math.min(keepPage, pdfDoc.getPageCount()); for(let pi=pdfDoc.getPageCount()-1; pi>=0; pi--){ if(pi!==(kp-1)) pdfDoc.removePage(pi) } }
   return await pdfDoc.save()
 }
 async function generaDocCompilato(docId, idx, scelte){
