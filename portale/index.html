@@ -440,7 +440,7 @@ let MIO_PID = '', MIO_NOME = '', MIO_P = null, MIO_EMAIL = '', MIE_VENDITE = [],
 function mostra(id){
   ['v-loading','v-login','v-signup','v-signup-done','v-setpass','v-admin','v-app'].forEach(v=>{ const el=document.getElementById(v); if(el) el.style.display='none' })
   const el=document.getElementById(id); if(el) el.style.display=''
-  try{ const cb=document.getElementById('cbot-launch'); if(cb) cb.style.display=(id==='v-app')?'flex':'none'; if(id!=='v-app'){ const p=document.getElementById('cbot-panel'); if(p) p.style.display='none' } }catch(e){}
+  try{ const cb=document.getElementById('cbot-launch'); if(cb) cb.style.display=(id==='v-app'||id==='v-admin')?'flex':'none'; if(id!=='v-app'&&id!=='v-admin'){ const p=document.getElementById('cbot-panel'); if(p) p.style.display='none' } }catch(e){}
 }
 
 // Invito / recupero password: Supabase mette il token nell'hash dell'URL
