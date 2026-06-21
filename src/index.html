@@ -704,10 +704,17 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <!-- Calcolo automatico -->
     <div class="calc-box" style="margin-top:1rem">
-      <div style="font-size:12px;font-weight:600;margin-bottom:8px">Calcolo ritenuta d'acconto</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px">
+        <div style="font-size:12px;font-weight:600">Calcolo compenso</div>
+        <select id="bon-regime" onchange="setRegimeAzienda(this.value)" style="padding:5px 8px;font-size:11.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+          <option value="forfettario">Leone Consulting: Forfettario</option>
+          <option value="ordinario">Leone Consulting: Ordinario</option>
+        </select>
+      </div>
       <div class="calc-row"><span>Compenso lordo</span><span id="bon-lordo">€ 10,00</span></div>
-      <div class="calc-row"><span>Base imponibile (50%)</span><span id="bon-base">€ 5,00</span></div>
-      <div class="calc-row"><span>Ritenuta 23% su 50%</span><span id="bon-rit" style="color:var(--red)">− € 1,15</span></div>
+      <div class="calc-row" id="row-bon-base"><span>Base imponibile (50%)</span><span id="bon-base">€ 5,00</span></div>
+      <div class="calc-row" id="row-bon-rit"><span>Ritenuta 23% su 50%</span><span id="bon-rit" style="color:var(--red)">− € 1,15</span></div>
+      <div class="calc-row" id="row-bon-noforf" style="display:none"><span style="font-size:11px;color:var(--text2)">Compenso non soggetto a ritenuta (regime forfettario)</span><span></span></div>
       <div class="calc-row"><span>Marca da bollo (se > €77,47)</span><span id="bon-bollo">—</span></div>
       <div class="calc-row"><span style="color:var(--green);font-weight:600">Netto a pagare</span><span id="bon-netto" style="color:var(--green);font-weight:600">€ 8,85</span></div>
     </div>
@@ -4454,6 +4461,12 @@ async function fillDocFirmaSel(){
 // Associazione Tipo contratto -> documento firmabile (con marcatori)
 const TIPI_CONTRATTO_FIRMA=["Contratto di Procacciamento d'Affari Autonomo","Rinnovo Contratto Procacciamento","Addendum Provvigioni","Bonus Porta Cliente","Contratto di Recesso"]
 function getFirmaDocMap(){ try{ return JSON.parse(impostazioni['firma_doc_map']||'{}') }catch(e){ return {} } }
+function getFirmaDocMapForf(){ try{ return JSON.parse(impostazioni['firma_doc_map_forf']||'{}') }catch(e){ return {} } }
+function getDocPerTipo(tipo){
+  const mO=getFirmaDocMap(), mF=getFirmaDocMapForf()
+  if(_regimeAz()==='forfettario') return mF[tipo] || mO[tipo] || ''   // forfettario, con ripiego sull'ordinario
+  return mO[tipo] || mF[tipo] || ''                                    // ordinario, con ripiego sul forfettario
+}
 function docFirmabiliOptionsHtml(selId){
   const all=[...EDITOR_DOCS, ...editorDocsCustom].filter(d=>!impostazioni['dochidden_'+d.id])
   let html='<option value="">— nessuno (scelgo all\u0027invio) —</option>'
@@ -4463,20 +4476,28 @@ function docFirmabiliOptionsHtml(selId){
 async function renderMappaFirmaDoc(){
   const el=document.getElementById('mappa-firma-doc'); if(!el) return
   try{ if(!editorDocsCustom.length) await caricaDocumentiCustom(); await loadEditorCoordinate() }catch(e){}
-  const map=getFirmaDocMap()
-  el.innerHTML=TIPI_CONTRATTO_FIRMA.map((t,i)=>'<div class="fr"><div class="fg"><label>'+t+'</label><select id="mfd-'+i+'" onchange="salvaMappaFirmaDoc()">'+docFirmabiliOptionsHtml(map[t]||'')+'</select></div></div>').join('')
+  const map=getFirmaDocMap(), mapF=getFirmaDocMapForf()
+  const attivo=_regimeAz()==='forfettario'?'Forfettario':'Ordinario'
+  el.innerHTML='<div style="font-size:11.5px;color:var(--text2);margin-bottom:12px">Per ogni tipo puoi impostare due versioni del documento. L\u0027app usa in automatico la colonna del regime attivo (ora: <b>'+attivo+'</b>) e switcha da sola quando cambi regime. Se lasci vuota una colonna, usa l\u0027altra.</div>'+
+    TIPI_CONTRATTO_FIRMA.map((t,i)=>'<div style="margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--border)">'+
+      '<div style="font-size:12.5px;font-weight:600;margin-bottom:6px">'+t+'</div>'+
+      '<div class="fr">'+
+        '<div class="fg"><label style="font-size:10.5px;color:var(--text3)">Ordinario</label><select id="mfd-'+i+'" onchange="salvaMappaFirmaDoc()">'+docFirmabiliOptionsHtml(map[t]||'')+'</select></div>'+
+        '<div class="fg"><label style="font-size:10.5px;color:var(--text3)">Forfettario</label><select id="mfdf-'+i+'" onchange="salvaMappaFirmaDoc()">'+docFirmabiliOptionsHtml(mapF[t]||'')+'</select></div>'+
+      '</div></div>').join('')
 }
 async function salvaMappaFirmaDoc(){
-  const map={}
-  TIPI_CONTRATTO_FIRMA.forEach((t,i)=>{ const v=document.getElementById('mfd-'+i)?.value; if(v) map[t]=v })
+  const map={}, mapF={}
+  TIPI_CONTRATTO_FIRMA.forEach((t,i)=>{ const v=document.getElementById('mfd-'+i)?.value; if(v) map[t]=v; const vf=document.getElementById('mfdf-'+i)?.value; if(vf) mapF[t]=vf })
   impostazioni['firma_doc_map']=JSON.stringify(map)
+  impostazioni['firma_doc_map_forf']=JSON.stringify(mapF)
   await upsertImpostazioni()
   toast('Associazioni salvate')
 }
 function applicaDocPerTipo(){
   const tipo=document.getElementById('ct-tipo')?.value
   const sel=document.getElementById('ct-documento'); if(!sel) return
-  const docId=getFirmaDocMap()[tipo]
+  const docId=getDocPerTipo(tipo)
   if(docId){ const opt=[...sel.options].find(o=>o.value===docId && !o.disabled); if(opt) sel.value=docId }
   onCtDocSel()
 }
@@ -6687,10 +6708,18 @@ async function inviaLinkEmail(i){
 }
 
 // ── BONUS PORTA CLIENTE ────────────────────────────────────────
+function _regimeAz(){ return impostazioni['regime_azienda']==='ordinario'?'ordinario':'forfettario' }
+async function setRegimeAzienda(val){
+  impostazioni['regime_azienda']=(val==='ordinario')?'ordinario':'forfettario'
+  try{ await upsertImpostazioni() }catch(e){}
+  if(document.getElementById('bp-compenso')) calcolaBonus()
+  toast('Regime azienda impostato: '+_regimeAz())
+}
 function calcolaBonus(){
   const lordo=parseFloat(document.getElementById('bp-compenso').value)||0
-  const base=lordo*0.5
-  const rit=base*0.23
+  const ord=_regimeAz()==='ordinario'
+  const base=ord?lordo*0.5:0
+  const rit=ord?base*0.23:0
   const bollo=lordo>77.47?2:0
   const netto=lordo-rit-bollo
   const fe=n=>'€ '+n.toFixed(2).replace('.',',')
@@ -6699,6 +6728,11 @@ function calcolaBonus(){
   document.getElementById('bon-rit').textContent='− '+fe(rit)
   document.getElementById('bon-bollo').textContent=bollo?'− €2,00':'—'
   document.getElementById('bon-netto').textContent=fe(netto)
+  const rb=document.getElementById('row-bon-base'), rr=document.getElementById('row-bon-rit'), rn=document.getElementById('row-bon-noforf')
+  if(rb) rb.style.display=ord?'':'none'
+  if(rr) rr.style.display=ord?'':'none'
+  if(rn) rn.style.display=ord?'none':''
+  const sel=document.getElementById('bon-regime'); if(sel) sel.value=_regimeAz()
 }
 
 async function inviaBonus(){
@@ -6706,7 +6740,8 @@ async function inviaBonus(){
   const email=document.getElementById('bp-email').value.trim()
   if(!nome||!email)return alert('Nome e email obbligatori')
   const lordo=parseFloat(document.getElementById('bp-compenso').value)||10
-  const base=lordo*0.5; const rit=base*0.23; const bollo=lordo>77.47?2:0; const netto=lordo-rit-bollo
+  const ord=_regimeAz()==='ordinario'
+  const base=ord?lordo*0.5:0; const rit=ord?base*0.23:0; const bollo=lordo>77.47?2:0; const netto=lordo-rit-bollo
   const fe=n=>n.toFixed(2).replace('.',',')
   const via=document.getElementById('bp-via').value
   const cf=document.getElementById('bp-cf').value.trim().toUpperCase()
@@ -6719,7 +6754,7 @@ async function inviaBonus(){
   const html=`<html><body style="font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#1a1a18;font-size:13px">
   <div style="background:#185FA5;padding:20px 24px;display:flex;align-items:center;gap:12px">
     <div><h2 style="color:#fff;margin:0;font-size:18px">PROSPETTO COMPENSI – BONUS PORTA CLIENTE</h2>
-    <p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:12px">Regime: Ritenuta d'Acconto 23% (art. 25 DPR 600/73)</p></div>
+    <p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:12px">${ord?"Regime: Ritenuta d'Acconto 23% (art. 25 DPR 600/73)":"Regime forfettario – compenso non soggetto a ritenuta d'acconto (L. 190/2014)"}</p></div>
   </div>
   <table style="width:100%;border-collapse:collapse;margin-top:0">
     <tr style="background:#2C3E50"><td colspan="4" style="color:#fff;padding:7px 10px;font-size:11px;font-weight:600">DATI AZIENDA MANDANTE</td></tr>
@@ -6733,8 +6768,8 @@ async function inviaBonus(){
     <tr style="background:#f5f5f0"><td style="padding:7px 10px;font-size:11px;color:#888">CLIENTE</td><td style="padding:7px 10px;font-weight:600">${clienteSeg||'—'}</td><td style="padding:7px 10px;font-size:11px;color:#888">PRODOTTO</td><td style="padding:7px 10px">${prodSeg||'—'}</td></tr>
     <tr style="background:#2C3E50"><td colspan="4" style="color:#fff;padding:7px 10px;font-size:11px;font-weight:600">CALCOLO COMPENSO</td></tr>
     <tr style="background:#f5f5f0"><td style="padding:7px 10px">Compenso lordo</td><td style="padding:7px 10px;font-weight:600">€ ${fe(lordo)}</td><td></td><td></td></tr>
-    <tr><td style="padding:7px 10px">Base imponibile (50%)</td><td style="padding:7px 10px">€ ${fe(base)}</td><td style="padding:7px 10px;font-size:11px;color:#888">Art. 25-bis DPR 600/73</td><td></td></tr>
-    <tr style="background:#f5f5f0"><td style="padding:7px 10px">Ritenuta d'acconto (23% su 50%)</td><td style="padding:7px 10px;color:#A32D2D">− € ${fe(rit)}</td><td style="padding:7px 10px;font-size:11px;color:#888">F24 cod. 1040</td><td></td></tr>
+    ${ord?`<tr><td style="padding:7px 10px">Base imponibile (50%)</td><td style="padding:7px 10px">€ ${fe(base)}</td><td style="padding:7px 10px;font-size:11px;color:#888">Art. 25-bis DPR 600/73</td><td></td></tr>
+    <tr style="background:#f5f5f0"><td style="padding:7px 10px">Ritenuta d'acconto (23% su 50%)</td><td style="padding:7px 10px;color:#A32D2D">− € ${fe(rit)}</td><td style="padding:7px 10px;font-size:11px;color:#888">F24 cod. 1040</td><td></td></tr>`:`<tr><td style="padding:7px 10px" colspan="4"><span style="font-size:11px;color:#888">Compenso non soggetto a ritenuta d'acconto – sostituto in regime forfettario (L. 190/2014)</span></td></tr>`}
     ${bollo?`<tr><td style="padding:7px 10px">Marca da bollo</td><td style="padding:7px 10px;color:#A32D2D">− € 2,00</td><td style="padding:7px 10px;font-size:11px;color:#888">Obbligatoria > €77,47</td><td></td></tr>`:''}
     <tr style="background:#185FA5"><td style="padding:10px;color:#fff;font-weight:700">NETTO A PAGARE</td><td style="padding:10px;color:#fff;font-weight:700;font-size:15px">€ ${fe(netto)}</td><td colspan="2"></td></tr>
   </table>
