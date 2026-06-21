@@ -440,6 +440,7 @@ let MIO_PID = '', MIO_NOME = '', MIO_P = null, MIO_EMAIL = '', MIE_VENDITE = [],
 function mostra(id){
   ['v-loading','v-login','v-signup','v-signup-done','v-setpass','v-admin','v-app'].forEach(v=>{ const el=document.getElementById(v); if(el) el.style.display='none' })
   const el=document.getElementById(id); if(el) el.style.display=''
+  try{ const cb=document.getElementById('cbot-launch'); if(cb) cb.style.display=(id==='v-app')?'flex':'none'; if(id!=='v-app'){ const p=document.getElementById('cbot-panel'); if(p) p.style.display='none' } }catch(e){}
 }
 
 // Invito / recupero password: Supabase mette il token nell'hash dell'URL
@@ -1723,6 +1724,86 @@ document.addEventListener('keydown', e=>{
 })
 
 init()
+
+// ===== ASSISTENTE PORTALE (rule-based, dati reali) =====
+let _cbotInit=false
+function cbotToggle(){
+  const p=document.getElementById('cbot-panel'); if(!p) return
+  const open=p.style.display==='flex'
+  p.style.display=open?'none':'flex'
+  if(!open && !_cbotInit){ _cbotInit=true; cbotBenvenuto() }
+}
+function _cbotAdd(txt, who){
+  const box=document.getElementById('cbot-msgs'); if(!box) return
+  const mine=who==='me'
+  const div=document.createElement('div')
+  div.style.cssText='margin-bottom:10px;display:flex;'+(mine?'justify-content:flex-end':'justify-content:flex-start')
+  div.innerHTML='<div style="max-width:80%;padding:9px 12px;border-radius:14px;'+(mine?'background:#F22015;color:#fff;border-bottom-right-radius:4px':'background:#fff;color:#1a1a18;border:1px solid #ececea;border-bottom-left-radius:4px')+'">'+txt+'</div>'
+  box.appendChild(div); box.scrollTop=box.scrollHeight
+}
+function _cbotChips(list){
+  const c=document.getElementById('cbot-chips'); if(!c) return
+  c.innerHTML=(list||[]).map(t=>'<button onclick="cbotQuick(\''+t.replace(/'/g,"\\'")+'\')" style="background:#fff;border:1px solid #d8d8d2;border-radius:16px;padding:6px 11px;font-size:12px;cursor:pointer;color:#171819">'+t+'</button>').join('')
+}
+function cbotBenvenuto(){
+  const nome=(MIO_NOME||'').split(' ')[0]||''
+  _cbotAdd('Ciao'+(nome?(' '+esc(nome)):'')+'! 👋 Sono l\u0027assistente di Leone Consulting. Come posso aiutarti?', 'bot')
+  _cbotChips(['Le mie provvigioni','Le offerte','Inviare un cliente','Documenti e firma','Contatti'])
+}
+function cbotQuick(t){ document.getElementById('cbot-input').value=t; cbotSend() }
+function cbotSend(){
+  const inp=document.getElementById('cbot-input'); if(!inp) return
+  const t=(inp.value||'').trim(); if(!t) return
+  _cbotAdd(esc(t),'me'); inp.value=''
+  setTimeout(()=>cbotRispondi(t), 250)
+}
+function cbotRispondi(testo){
+  const t=' '+testo.toLowerCase()+' '
+  const has=(...ks)=>ks.some(k=>t.includes(k))
+  let r='', chips=['Le mie provvigioni','Le offerte','Inviare un cliente','Documenti e firma','Contatti']
+  if(has('provvigion','guadagn','quanto ho','quanto guadagn','compens','maturat')){
+    const vd=(typeof MIE_VENDITE!=='undefined'&&Array.isArray(MIE_VENDITE))?MIE_VENDITE:[]
+    const tot=vd.reduce((s,v)=>s+(+(v.totProv||v.totprov||0)||0),0)
+    const n=vd.length
+    r = n? ('Finora le tue provvigioni totali sono <b>\u20ac '+(Math.round(tot*100)/100).toFixed(2).replace('.',',')+'</b> su <b>'+n+'</b> '+(n===1?'vendita':'vendite')+'. 📊<br>Trovi il dettaglio completo nella sezione <b>Vendite</b>.')
+            : 'Per ora non risultano vendite registrate a tuo nome. Appena inserisci un cliente e viene lavorato, qui vedrai la tua provvigione. 💪'
+  } else if(has('offert','listino','prezz','cosa vend','cosa posso vend','catalog')){
+    r='Nella sezione <b>Offerte</b> trovi tutte le offerte aggiornate (luce, gas, telefonia, ecc.) con la <b>tua provvigione</b> per ciascuna. Da l\u00ec puoi anche inviare direttamente un cliente. 🔌📱'
+  } else if(has('invia','nuovo client','proposta','mandare un client','acquisire','vendita nuova','fare un contratto','cliente nuovo')){
+    r='Per inviare un cliente: vai su <b>Offerte</b>, scegli l\u0027offerta giusta, compila i dati del cliente e (se serve) allega la bolletta. La proposta arriva <b>direttamente a Leone Consulting</b> che la lavora. ✅'
+  } else if(has('document','firma','firmare','contratto mio','il mio contratto','recesso')){
+    r='I documenti da firmare ti arrivano via <b>email</b> con un link: apri il link, controlla, firma e invia. \u00c8 tutto online. ✍️<br>Per i documenti gi\u00e0 firmati e il tuo profilo, guarda nelle relative sezioni del portale.'
+  } else if(has('scaden','scade','fino a quando','rinnov')){
+    const fine=(MIO_P&&MIO_P.fine)?MIO_P.fine:''
+    r= fine? ('Il tuo contratto risulta in scadenza il <b>'+esc(fine)+'</b>. Per il rinnovo ti contatter\u00e0 Leone Consulting. 📅')
+            : 'Per le scadenze del tuo contratto contatta pure l\u0027amministrazione: ti diranno tutto. 📅'
+  } else if(has('iban','pagat','pagament','quando vengo pag','bonifico','quando mi pag')){
+    r='I pagamenti delle provvigioni sono gestiti da Leone Consulting secondo gli accordi. Per i tempi o per aggiornare il tuo <b>IBAN</b>, scrivi all\u0027amministrazione. 💳'
+  } else if(has('contatt','assistenz','aiuto','telefono','numero','parlare','ufficio','email')){
+    r='Puoi contattare Leone Consulting:<br>📧 <a href="mailto:amministrazione@leoneconsultingitalia.it" style="color:#F22015">amministrazione@leoneconsultingitalia.it</a><br>☎️ 379 126 4864'
+  } else if(has('ciao','salve','buongiorno','buonasera','hey','ehi')){
+    r='Ciao! 👋 Posso aiutarti con provvigioni, offerte, invio clienti, documenti o contatti. Cosa ti serve?'
+  } else if(has('grazie','perfetto','ottimo','gentile')){
+    r='Figurati, sono qui per questo! 😊 Se ti serve altro chiedi pure.'
+  } else {
+    r='Non sono sicuro di aver capito bene. 🤔 Posso aiutarti con:<br>\u2022 <b>Provvigioni</b><br>\u2022 <b>Offerte</b> e cosa vendere<br>\u2022 Come <b>inviare un cliente</b><br>\u2022 <b>Documenti e firma</b><br>\u2022 <b>Contatti</b><br>Per richieste specifiche: <a href="mailto:amministrazione@leoneconsultingitalia.it" style="color:#F22015">amministrazione@leoneconsultingitalia.it</a>'
+  }
+  _cbotAdd(r,'bot'); _cbotChips(chips)
+}
 </script>
+<!-- ===== ASSISTENTE PORTALE ===== -->
+<div id="cbot-launch" onclick="cbotToggle()" style="display:none;position:fixed;right:18px;bottom:18px;z-index:9999;width:56px;height:56px;border-radius:50%;background:#F22015;color:#fff;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.25);font-size:26px">💬</div>
+<div id="cbot-panel" style="display:none;position:fixed;right:18px;bottom:84px;z-index:9999;width:340px;max-width:calc(100vw - 36px);height:480px;max-height:calc(100vh - 120px);background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.28);flex-direction:column;overflow:hidden">
+  <div style="background:#171819;color:#fff;padding:13px 16px;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:9px"><div style="width:30px;height:30px;border-radius:50%;background:#F22015;display:flex;align-items:center;justify-content:center;font-size:16px">🦁</div><div><div style="font-weight:700;font-size:14px">Assistente Leone</div><div style="font-size:11px;opacity:.7">Sempre qui per te</div></div></div>
+    <div onclick="cbotToggle()" style="cursor:pointer;font-size:20px;opacity:.8">×</div>
+  </div>
+  <div id="cbot-msgs" style="flex:1;overflow-y:auto;padding:14px;background:#f7f7f4;font-size:13.5px;line-height:1.5"></div>
+  <div id="cbot-chips" style="padding:6px 10px;display:flex;gap:6px;flex-wrap:wrap;background:#f7f7f4;border-top:1px solid #ececea"></div>
+  <div style="display:flex;gap:8px;padding:10px;border-top:1px solid #ececea;background:#fff">
+    <input id="cbot-input" placeholder="Scrivi qui..." onkeydown="if(event.key==='Enter')cbotSend()" style="flex:1;border:1px solid #d8d8d2;border-radius:20px;padding:9px 14px;font-size:13.5px;font-family:inherit;outline:none">
+    <button onclick="cbotSend()" style="background:#F22015;color:#fff;border:none;border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:16px">➤</button>
+  </div>
+</div>
 </body>
 </html>
