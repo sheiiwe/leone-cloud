@@ -2894,7 +2894,7 @@ function renderInvioDocNav(){
   const sel = document.getElementById('inv-proc')
   if(!sel) return
   sel.innerHTML = '<option value="">-- Seleziona procacciatore --</option>' +
-    procs.map((p,i)=>`<option value="${i}">${p.nome}</option>`).join('')
+    procs.map((p,i)=>_chiusoP(p)?'':`<option value="${i}">${p.nome}</option>`).join('')
 }
 
 function onInvProcSel(){
@@ -3324,7 +3324,7 @@ function fillSel(sid){
   const s=document.getElementById(sid)
   s.innerHTML='<option value="">-- Seleziona --</option>'
   if(sid==='vd-proc') s.innerHTML+='<option value="azienda">\ud83c\udfe2 Vendita mia (Azienda) — nessuna provvigione</option>'
-  procs.forEach((p,i)=>s.innerHTML+=`<option value="${i}">${p.nome}</option>`)
+  procs.forEach((p,i)=>{ if(_chiusoP(p)) return; s.innerHTML+=`<option value="${i}">${p.nome}</option>` })
 }
 function fillDipSel(sid){
   const s=document.getElementById(sid)
@@ -4403,12 +4403,14 @@ async function deleteLead(id){
 }
 
 // ── PROVVIGIONI ───────────────────────────────────────────────
+function _chiusoP(p){ return p && (p.stato==='Terminato'||p.stato==='Scaduto') }
 function renderProvv(){
   const mf=document.getElementById('provv-mese').value
   const tb=document.getElementById('tbl-provv'),pm=document.getElementById('provv-metrics')
   if(!procs.length){pm.innerHTML='';tb.innerHTML='<tr><td colspan="10" class="empty">Nessun procacciatore</td></tr>';return}
   let totL=0,totR=0
   const rows=procs.map((p,i)=>{
+    if(_chiusoP(p)) return null
     const vv=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&(!mf||v.data.startsWith(mf)))
     const fat=vv.reduce((s,v)=>s+v.val,0),provPers=vv.reduce((s,v)=>s+v.prov,0)
     let ovr=0;(p.rete||[]).forEach(n=>{const vNet=vendite.filter(v=>v.pidx===n.idx&&v.stato==='Incassato'&&(!mf||v.data.startsWith(mf)));ovr+=vNet.reduce((s,v)=>s+v.val,0)*(n.pct/100)})
@@ -4416,7 +4418,8 @@ function renderProvv(){
     totL+=lordo;totR+=rit
     const q=getQual(p,i,mf||curMese()),isAuto=!p.qualForce||p.qualForce==='auto'
     return{p,i,fat,provPers,ovr,lordo,rit,netto:lordo-rit,q,isAuto,mese:mf||curMese()}
-  })
+  }).filter(Boolean)
+  if(!rows.length){pm.innerHTML='';tb.innerHTML='<tr><td colspan="10" class="empty">Nessun procacciatore attivo</td></tr>';return}
   pm.innerHTML=`<div class="metric"><div class="metric-lbl">Totale lordo</div><div class="metric-val">${fmtEr(totL)}</div></div><div class="metric"><div class="metric-lbl">Ritenute</div><div class="metric-val" style="color:var(--red)">${fmtEr(totR)}</div></div><div class="metric"><div class="metric-lbl">Netto da pagare</div><div class="metric-val" style="color:var(--green)">${fmtEr(totL-totR)}</div></div>`
   tb.innerHTML=rows.map(({p,i,fat,provPers,ovr,lordo,rit,netto,q,isAuto,mese})=>`<tr><td><div class="ar"><div class="av ${avc(i)}" style="width:26px;height:26px;font-size:10px">${avatarImg(i,26)}</div>${p.nome}</div></td><td>${qualBadge(q,isAuto)}</td><td>${regimeBadge(p.regime)}</td><td>${fmtE(fat)}</td><td style="font-weight:600">${fmtE(provPers)}</td><td style="color:var(--accent)">+${fmtE(ovr)}</td><td style="font-weight:600">${fmtE(lordo)}</td><td style="color:${rit>0?'var(--red)':'var(--text3)'}">${rit>0?fmtE(rit):'—'}</td><td style="font-weight:700;color:var(--green)">${fmtE(netto)}</td><td class="acts"><button class="btn btn-sm btn-p" onclick="scaricaProspettoPDF(${i},'${mese}')" title="Scarica PDF">⬇ PDF</button>
           <button class="btn btn-sm btn-g" onclick="salvaInviaProspetto(${i},'${mese}','salva')" title="Salva in archivio">💾</button>
@@ -4426,9 +4429,9 @@ function renderProvv(){
 // ── RETI ─────────────────────────────────────────────────────
 function renderRete(){
   const el=document.getElementById('rete-content')
-  const capi=procs.filter(p=>(p.rete||[]).length>0)
+  const capi=procs.filter(p=>(p.rete||[]).length>0 && !_chiusoP(p))
   if(!capi.length){el.innerHTML='<div class="empty" style="padding:3rem">Nessuna rete attiva.</div>';return}
-  el.innerHTML=capi.map(p=>{const ri=procs.indexOf(p),q=getQual(p,ri,curMese());return`<div class="card"><div class="card-hdr"><h3>${p.nome}</h3><span class="badge ${q.badge}">${q.label}</span></div><div class="net-tree"><div class="net-node"><div class="av ${avc(ri)}">${ini(p.nome)}</div><strong>${p.nome}</strong><span class="badge ${q.badge}" style="margin-left:6px">${q.label}</span><span class="net-pct">capo rete</span></div>${(p.rete||[]).map(n=>{const np=procs[n.idx];return np?`<div class="net-node net-indent"><div class="av ${avc(n.idx)}" style="width:26px;height:26px;font-size:10px">${ini(np.nome)}</div>${np.nome} ${regimeBadge(np.regime)}<span class="net-pct">${n.pct}% override</span></div>`:''}).join('')}</div></div>`}).join('')
+  el.innerHTML=capi.map(p=>{const ri=procs.indexOf(p),q=getQual(p,ri,curMese());return`<div class="card"><div class="card-hdr"><h3>${p.nome}</h3><span class="badge ${q.badge}">${q.label}</span></div><div class="net-tree"><div class="net-node"><div class="av ${avc(ri)}">${ini(p.nome)}</div><strong>${p.nome}</strong><span class="badge ${q.badge}" style="margin-left:6px">${q.label}</span><span class="net-pct">capo rete</span></div>${(p.rete||[]).map(n=>{const np=procs[n.idx];return (np&&!_chiusoP(np))?`<div class="net-node net-indent"><div class="av ${avc(n.idx)}" style="width:26px;height:26px;font-size:10px">${ini(np.nome)}</div>${np.nome} ${regimeBadge(np.regime)}<span class="net-pct">${n.pct}% override</span></div>`:''}).join('')}</div></div>`}).join('')
 }
 
 // ── CONTRATTI & FIRME ─────────────────────────────────────────
@@ -6438,6 +6441,7 @@ function _iconDC(ext){ ext=(ext||'').toLowerCase(); if(ext==='pdf')return '\ud83
 function _fmtSizeDC(b){ b=Number(b)||0; if(b<1024)return b+' B'; if(b<1048576)return Math.round(b/1024)+' KB'; return (Math.round(b/104857.6)/10)+' MB' }
 function renderDocCommApp(){
   const box=document.getElementById('doc-comm-lista'); if(!box) return
+  _rebuildDcCatList()
   const q=(document.getElementById('dc-search')?.value||'').trim().toLowerCase()
   const lista=docCommList.filter(d=> !q || ((d.nome||'')+' '+(d.categoria||'')+' '+(d.descrizione||'')).toLowerCase().includes(q))
   if(!docCommList.length){ box.innerHTML='<div style="padding:12px;color:var(--text2)">Nessun documento caricato.</div>'; return }
@@ -6448,17 +6452,48 @@ function renderDocCommApp(){
     (d.descrizione?'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+escB(d.descrizione)+'</div>':'')+
     '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+escB((d.ext||'').toUpperCase())+(d.size?' \u00b7 '+_fmtSizeDC(d.size):'')+(d.data?' \u00b7 '+escB(d.data):'')+'</div></div>'+
     '<a href="'+escB(d.url)+'" target="_blank" class="btn btn-sm">\u2b07 Apri</a>'+
+    '<button class="btn btn-sm" onclick="modificaDocComm(\''+d._id+'\')" title="Modifica">\u270f\ufe0f</button>'+
     '<button class="btn btn-sm btn-r" onclick="eliminaDocComm(\''+d._id+'\')">\ud83d\uddd1</button>'+
   '</div>').join('')
 }
 async function uploadDocComm(){
   const inp=document.getElementById('dc-file'); const f=inp&&inp.files&&inp.files[0]
-  if(!f) return alert('Seleziona un file da caricare.')
-  const nome=document.getElementById('dc-nome').value.trim()||f.name
+  const nome=document.getElementById('dc-nome').value.trim()||(f?f.name:'')
   const categoria=document.getElementById('dc-cat').value.trim()
   const descrizione=document.getElementById('dc-desc').value.trim()
+  const btn=document.getElementById('btn-dc-up')
+  // ── MODIFICA documento esistente ──
+  if(_dcEditId){
+    const d=docCommList.find(x=>x._id===_dcEditId)
+    if(!d){ annullaModificaDocComm(); return }
+    btn.disabled=true; btn.innerHTML='<div class="spinner"></div>'
+    try{
+      let url=d.url,path=d.path,ext=d.ext,size=d.size
+      if(f){
+        const nx=(f.name.split('.').pop()||'').toLowerCase()
+        const np='commerciali/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+nx
+        const up=await db.storage.from('documenti').upload(np, f, {upsert:true, contentType:f.type||'application/octet-stream'})
+        if(up.error) throw up.error
+        const pub=db.storage.from('documenti').getPublicUrl(np)
+        if(d.path){ try{ await db.storage.from('documenti').remove([d.path]) }catch(e){} }
+        url=(pub&&pub.data&&pub.data.publicUrl)||''; path=np; ext=nx; size=f.size
+      }
+      const newData={...d, nome:nome||d.nome, categoria, descrizione, url, path, ext, size}
+      delete newData._id; delete newData.created
+      const upd=await db.from('documenti_commerciali').update({data:newData}).eq('id',_dcEditId)
+      if(upd.error) throw upd.error
+      if(categoria) await _saveDcCat(categoria)
+      annullaModificaDocComm()
+      await caricaDocComm()
+      toast('\u2705 Documento aggiornato')
+    }catch(e){ alert('Errore: '+(e.message||e)) }
+    finally{ btn.disabled=false; if(!_dcEditId) btn.innerHTML='\u2b06 Carica documento' }
+    return
+  }
+  // ── NUOVO documento ──
+  if(!f) return alert('Seleziona un file da caricare.')
   const ext=(f.name.split('.').pop()||'').toLowerCase()
-  const btn=document.getElementById('btn-dc-up'); btn.disabled=true; btn.innerHTML='<div class="spinner"></div>'
+  btn.disabled=true; btn.innerHTML='<div class="spinner"></div>'
   try{
     const path='commerciali/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext
     const up=await db.storage.from('documenti').upload(path, f, {upsert:true, contentType:f.type||'application/octet-stream'})
@@ -6467,11 +6502,45 @@ async function uploadDocComm(){
     const url=(pub&&pub.data&&pub.data.publicUrl)||''
     const ins=await db.from('documenti_commerciali').insert({data:{nome,categoria,descrizione,url,path,ext,size:f.size,data:new Date().toLocaleDateString('it-IT')}})
     if(ins.error) throw ins.error
+    if(categoria) await _saveDcCat(categoria)
     document.getElementById('dc-nome').value=''; document.getElementById('dc-cat').value=''; document.getElementById('dc-desc').value=''; inp.value=''
     await caricaDocComm()
     toast('\u2705 Documento caricato')
   }catch(e){ alert('Errore: '+(e.message||e)) }
   finally{ btn.disabled=false; btn.innerHTML='\u2b06 Carica documento' }
+}
+let _dcEditId=null
+function _rebuildDcCatList(){
+  const dl=document.getElementById('dc-cat-list'); if(!dl) return
+  const defaults=['Brochure','Listini','Modulistica','Contrattualistica','Marketing','Formazione']
+  const saved=Array.isArray(impostazioni['doc_comm_cats'])?impostazioni['doc_comm_cats']:[]
+  const used=docCommList.map(d=>d.categoria).filter(Boolean)
+  const all=[...new Set([...defaults,...saved,...used].map(s=>(''+s).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'))
+  dl.innerHTML=all.map(c=>'<option value="'+escB(c)+'"></option>').join('')
+}
+async function _saveDcCat(cat){
+  cat=(''+cat).trim(); if(!cat) return
+  let arr=Array.isArray(impostazioni['doc_comm_cats'])?impostazioni['doc_comm_cats']:[]
+  if(!arr.some(x=>(''+x).toLowerCase()===cat.toLowerCase())){ arr=[...arr,cat]; impostazioni['doc_comm_cats']=arr; try{ await upsertImpostazioni() }catch(e){} _rebuildDcCatList() }
+}
+function modificaDocComm(id){
+  const d=docCommList.find(x=>x._id===id); if(!d) return
+  _dcEditId=id
+  document.getElementById('dc-nome').value=d.nome||''
+  document.getElementById('dc-cat').value=d.categoria||''
+  document.getElementById('dc-desc').value=d.descrizione||''
+  const btn=document.getElementById('btn-dc-up')
+  if(btn){ btn.innerHTML='\ud83d\udcbe Salva modifiche'
+    if(!document.getElementById('btn-dc-canc')){ const c=document.createElement('button'); c.id='btn-dc-canc'; c.className='btn btn-sm'; c.style.marginLeft='8px'; c.textContent='Annulla'; c.onclick=annullaModificaDocComm; btn.parentNode.insertBefore(c, btn.nextSibling) } }
+  const nm=document.getElementById('dc-nome'); if(nm){ nm.scrollIntoView({behavior:'smooth',block:'center'}); nm.focus() }
+  toast('Modifica attiva: cambia i campi e premi Salva. Il file resta lo stesso, se non ne scegli un altro.')
+}
+function annullaModificaDocComm(){
+  _dcEditId=null
+  document.getElementById('dc-nome').value=''; document.getElementById('dc-cat').value=''; document.getElementById('dc-desc').value=''
+  const inp=document.getElementById('dc-file'); if(inp) inp.value=''
+  const btn=document.getElementById('btn-dc-up'); if(btn) btn.innerHTML='\u2b06 Carica documento'
+  const canc=document.getElementById('btn-dc-canc'); if(canc) canc.remove()
 }
 async function eliminaDocComm(id){
   if(!confirm('Eliminare questo documento? I procacciatori non lo vedranno più.')) return
@@ -7163,6 +7232,7 @@ async function _emailBachecaTutti(titolo, testo){
   const dest=(document.getElementById('bch-email-dest')||{}).value||'entrambe'
   const set=new Set()
   procs.forEach(p=>{
+    if(_chiusoP(p)) return
     const pe=(''+(p.email||'')).trim().toLowerCase(), ae=(''+(p.email_aziendale||'')).trim().toLowerCase()
     if((dest==='entrambe'||dest==='personale')&&pe.includes('@')) set.add(pe)
     if((dest==='entrambe'||dest==='aziendale')&&ae.includes('@')) set.add(ae)
