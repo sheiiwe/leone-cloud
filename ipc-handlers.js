@@ -57,17 +57,23 @@ const fromFor = (via, smtp, smtpPec) => {
 // ── INVIA CONTRATTO PER FIRMA ──────────────────────────────────
 ipcMain.handle('send-contract', async (event, { to, name, contractType, signToken, via, smtp, smtpPec }) => {
   const signUrl = `https://firma.leoneconsultingitalia.it/?token=${signToken}`
+  const isAgg = /aggiornamento/i.test(contractType || '')
+  const intro = isAgg
+    ? `<p>Le inviamo l'<strong>aggiornamento del contratto</strong> da sottoscrivere.</p><p style="font-size:13px;color:#555">Si tratta di un aggiornamento del contratto già in essere, che lo integra e sostituisce nelle parti modificate. La preghiamo di leggerlo e firmarlo.</p>`
+    : `<p>Le inviamo il <strong>${contractType}</strong> da sottoscrivere.</p>`
+  const ctaLabel = isAgg ? '✍️ Leggi e firma l\'aggiornamento' : '✍️ Leggi e firma il contratto'
+  const subject = isAgg ? `Aggiornamento contratto — Leone Consulting: firma richiesta` : `${contractType} — Leone Consulting: firma richiesta`
   const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a18">
   <div style="background:#185FA5;padding:24px;text-align:center"><h1 style="color:#fff;margin:0">Leone Consulting</h1><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:13px">di Leonardo Angelucci</p></div>
   <div style="padding:32px 24px">
     <p>Gentile <strong>${name}</strong>,</p>
-    <p>Le inviamo il <strong>${contractType}</strong> da sottoscrivere.</p>
-    <div style="text-align:center;margin:32px 0"><a href="${signUrl}" style="background:#185FA5;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:600">✍️ Leggi e firma il contratto</a></div>
+    ${intro}
+    <div style="text-align:center;margin:32px 0"><a href="${signUrl}" style="background:#185FA5;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:600">${ctaLabel}</a></div>
     <p style="font-size:12px;color:#888">Il link è valido per 30 giorni. Per info: amministrazione@leoneconsultingitalia.it</p>
   </div>
   <div style="background:#f5f5f0;padding:16px 24px;font-size:11px;color:#888;text-align:center">Leone Consulting di Leonardo Angelucci · Via Pia 42, 00049 Velletri (RM) · P.IVA 18231181001</div>
   </body></html>`
-  const info = await makeTransport(via, smtp, smtpPec).sendMail({ from: fromFor(via, smtp, smtpPec), to, subject: `${contractType} — Leone Consulting: firma richiesta`, html })
+  const info = await makeTransport(via, smtp, smtpPec).sendMail({ from: fromFor(via, smtp, smtpPec), to, subject, html })
   return { success: true, messageId: info.messageId }
 })
 

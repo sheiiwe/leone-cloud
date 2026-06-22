@@ -4468,7 +4468,7 @@ async function fillDocFirmaSel(){
   applicaDocPerTipo()
 }
 // Associazione Tipo contratto -> documento firmabile (con marcatori)
-const TIPI_CONTRATTO_FIRMA=["Contratto di Procacciamento d'Affari Autonomo","Rinnovo Contratto Procacciamento","Addendum Provvigioni","Bonus Porta Cliente","Contratto di Recesso"]
+const TIPI_CONTRATTO_FIRMA=["Contratto di Procacciamento d'Affari Autonomo","Rinnovo Contratto Procacciamento","Aggiornamento Contratto","Addendum Provvigioni","Bonus Porta Cliente","Contratto di Recesso"]
 function getFirmaDocMap(){ try{ return JSON.parse(impostazioni['firma_doc_map']||'{}') }catch(e){ return {} } }
 function getFirmaDocMapForf(){ try{ return JSON.parse(impostazioni['firma_doc_map_forf']||'{}') }catch(e){ return {} } }
 function getDocPerTipo(tipo){
