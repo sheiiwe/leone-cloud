@@ -419,7 +419,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="info-card">Offerte caricate dal foglio fornitori. Le <strong>scadute</strong> restano qui marcate "DA RINNOVARE" ma <strong>spariscono ai procacciatori</strong> nel portale. Aggiorna la data di scadenza quando il fornitore rinnova.</div>
   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center" id="offerte-cats"></div>
   <div class="card">
-    <div class="card-hdr"><h3 id="offerte-title">Tutte le offerte</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="btn-cat-off" onclick="aggiornaOfferteDaCatalogo()" title="Carica e aggiorna tutte le offerte dal catalogo Team Evolution (no doppioni)">📥 Aggiorna da catalogo</button><button class="btn btn-p" onclick="apriOfferta()">+ Nuova offerta</button></div></div>
+    <div class="card-hdr"><h3 id="offerte-title">Tutte le offerte</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="scaricaModelloOfferte()" title="Scarica le offerte attuali in CSV per modificarle in Excel/Google Sheets">⬇ Modello CSV</button><button class="btn" id="btn-imp-off" onclick="caricaFileOfferte()" title="Carica un CSV e sostituisci tutte le offerte (va anche online)">⬆ Carica CSV</button><input type="file" id="off-file-imp" accept=".csv,text/csv" style="display:none" onchange="_doImportOfferte(event)"><button class="btn" id="btn-cat-off" onclick="aggiornaOfferteDaCatalogo()" title="Carica e aggiorna tutte le offerte dal catalogo Team Evolution (no doppioni)">📥 Aggiorna da catalogo</button><button class="btn btn-p" onclick="apriOfferta()">+ Nuova offerta</button></div></div>
     <input id="off-search" type="text" placeholder="🔍 Cerca offerta (nome, fornitore, categoria...)" oninput="renderOfferte()" style="width:100%;padding:9px 12px;margin:8px 0 4px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div id="offerte-lista" style="padding:4px 0"></div>
   </div>
@@ -4133,6 +4133,70 @@ const CATALOGO_OFFERTE=[
  {cat:'Telefonia Fissa',forn:'Iren',nome:'Connettivita + Switch Gas',prezzo:'18,99 \u20ac (poi 20,99)',costoAtt:'49,99 \u20ac',pagamento:'RID/carta, no Postepay',azioni:'Nuova attivazione',promo:'con Iren Stay Gas',scad:''},
  {cat:'Telefonia Fissa',forn:'Edison',nome:'Edison Wifi',prezzo:'19,90 \u20ac (poi 24,90)',costoAtt:'incluso nel canone',pagamento:'RID/carta, no Postepay',azioni:'Nuova attivazione/Migrazione',promo:'con almeno 1 luce e 1 gas',scad:''}
 ]
+const _COLS_OFF=['cat','forn','nome','tipo','prezzo','pcv','validita','fatt','costoAtt','giga','pagamento','azioni','scad','promo']
+function _csvCell(v){ v=(v==null?'':''+v); return /[;"\n\r]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v }
+function scaricaModelloOfferte(){
+  const head=_COLS_OFF.join(';')
+  const body=(OFFERTE||[]).map(o=>_COLS_OFF.map(c=>_csvCell(o[c])).join(';')).join('\r\n')
+  const csv='\uFEFF'+head+'\r\n'+body
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'})
+  const url=URL.createObjectURL(blob), a=document.createElement('a')
+  a.href=url; a.download='offerte_leone.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),2000)
+  toast('Modello scaricato: aprilo in Excel/Sheets, modifica e poi premi "Carica CSV"')
+}
+function caricaFileOfferte(){ const inp=document.getElementById('off-file-imp'); if(inp){ inp.value=''; inp.click() } }
+function _parseCSV(text, delim){
+  text=text.replace(/^\uFEFF/,''); const rows=[]; let row=[],cur='',i=0,q=false
+  while(i<text.length){ const ch=text[i]
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i+=2;continue} q=false;i++;continue } cur+=ch;i++;continue }
+    if(ch==='"'){ q=true;i++;continue }
+    if(ch===delim){ row.push(cur);cur='';i++;continue }
+    if(ch==='\r'){ i++;continue }
+    if(ch==='\n'){ row.push(cur);rows.push(row);row=[];cur='';i++;continue }
+    cur+=ch;i++ }
+  if(cur!==''||row.length){ row.push(cur);rows.push(row) }
+  return rows
+}
+function _normScad(v){
+  v=(v||'').trim(); if(!v) return ''
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v
+  const m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+  if(m) return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2)
+  return v
+}
+async function _doImportOfferte(ev){
+  const f=ev.target.files&&ev.target.files[0]; if(!f) return
+  let text=''; try{ text=await f.text() }catch(e){ alert('Impossibile leggere il file.'); return }
+  const firstLine=(text.replace(/^\uFEFF/,'').split('\n')[0]||'')
+  const delim=firstLine.includes(';')?';':','
+  const rows=_parseCSV(text,delim).filter(r=>r.some(c=>(''+(c||'')).trim()!==''))
+  if(rows.length<2){ alert('Il file sembra vuoto o senza righe offerte.'); return }
+  const head=rows[0].map(h=>(''+(h||'')).trim().toLowerCase())
+  const alias={categoria:'cat',fornitore:'forn',offerta:'nome',scadenza:'scad',costoatt:'costoAtt'}
+  const colIndex={}; _COLS_OFF.forEach(c=>colIndex[c]=head.indexOf(c.toLowerCase()))
+  Object.keys(alias).forEach(a=>{ const p=head.indexOf(a); if(p>=0 && colIndex[alias[a]]<0) colIndex[alias[a]]=p })
+  if(colIndex['forn']<0 && colIndex['nome']<0){ alert('Intestazioni non riconosciute.\nUsa il modello scaricato dall\u0027app (prima riga: cat;forn;nome;prezzo;...).'); return }
+  const nuovi=[]
+  for(let r=1;r<rows.length;r++){
+    const cells=rows[r], o={}
+    _COLS_OFF.forEach(c=>{ const p=colIndex[c]; o[c]=(p>=0&&p<cells.length)?(''+cells[p]).trim():'' })
+    o.scad=_normScad(o.scad)
+    if(o.forn||o.nome) nuovi.push(o)
+  }
+  if(!nuovi.length){ alert('Nessuna offerta valida trovata nel file.'); return }
+  if(!confirm('Sostituisco TUTTE le offerte attuali ('+(OFFERTE.length)+') con le '+nuovi.length+' del file?\n\nLe vecchie vengono rimosse e i procacciatori vedranno subito le nuove, anche online.\n\nProcedo?')) return
+  const btn=document.getElementById('btn-imp-off'); if(btn){ btn.disabled=true; btn.innerHTML='<div class="spinner"></div>' }
+  try{
+    await caricaOfferte()
+    const vecchi=(OFFERTE||[]).map(o=>o._id).filter(Boolean)
+    const ins=await db.from('offerte').insert(nuovi.map(o=>({data:o})))
+    if(ins.error) throw ins.error
+    if(vecchi.length){ const del=await db.from('offerte').delete().in('id',vecchi); if(del.error) throw del.error }
+    await caricaOfferte()
+    alert('\u2705 Offerte aggiornate: '+nuovi.length+' caricate.\nSono gia online per i procacciatori.')
+  }catch(e){ alert('Errore durante l\u0027import: '+(e.message||e)+'\n\nLe offerte vecchie NON sono state toccate.') }
+  finally{ if(btn){ btn.disabled=false; btn.innerHTML='\u2b06 Carica CSV' } }
+}
 async function aggiornaOfferteDaCatalogo(){
   if(!confirm('Aggiorno le offerte dal catalogo Team Evolution?\n\n\u2022 Le offerte esistenti (stesso fornitore + nome) vengono aggiornate\n\u2022 Le nuove vengono aggiunte\n\u2022 Nessuna viene eliminata\n\nProcedo?')) return
   const btn=document.getElementById('btn-cat-off'); if(btn){btn.disabled=true; btn.innerHTML='<div class="spinner"></div>'}
