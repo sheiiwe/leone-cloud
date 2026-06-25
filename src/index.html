@@ -334,6 +334,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('avvisi',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Avvisi
     </div>
+    <div class="nav-item" onclick="sp('bacheca',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>Bacheca
+    </div>
     <div class="nav-sec">Sistema</div>
     <div class="nav-item" onclick="apriRicercaGlobale()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Ricerca globale
@@ -383,6 +386,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-sec">Notifiche</div>
     <div class="nav-item" onclick="sp('avvisi',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Avvisi
+    </div>
+    <div class="nav-item" onclick="sp('bacheca',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>Bacheca
     </div>
     <div class="nav-sec">Sistema</div>
     <div class="nav-item" onclick="apriRicercaGlobale()">
@@ -786,9 +792,9 @@ tbody tr:hover td{background:var(--surface2)}
 </div>
 
 <div class="page" id="page-bacheca">
-  <div class="pg-title">Bacheca · comunicazioni ai procacciatori</div>
+  <div class="pg-title">Bacheca · comunicazioni</div>
   <div class="info-card">
-    <strong>Come funziona:</strong> quello che pubblichi qui compare nel <strong>portale dei procacciatori</strong> (tab 📣 Bacheca), in tempo reale. Usalo per avvisi, novità, promozioni, scadenze.
+    <strong>Come funziona:</strong> quello che pubblichi qui compare nel <strong>portale</strong> delle aree che selezioni in <strong>Visibile a:</strong> (Procacciatori, Docenti, Dipendenti), in tempo reale. Usalo per avvisi, novità, promozioni, scadenze.
   </div>
   <div class="card">
     <div class="card-hdr"><h3 id="bch-form-title">Nuova comunicazione</h3></div>
@@ -797,8 +803,13 @@ tbody tr:hover td{background:var(--surface2)}
       <input id="bch-titolo" type="text" placeholder="Titolo" style="width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box">
       <textarea id="bch-testo" rows="5" placeholder="Testo della comunicazione..." style="width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box;resize:vertical;font-family:inherit"></textarea>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input id="bch-pin" type="checkbox" style="width:16px;height:16px"> 📌 Metti in evidenza (in cima alla bacheca)</label>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--text2)"><span style="font-weight:600">Visibile a:</span>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input id="bch-area-proc" type="checkbox" style="width:16px;height:16px"> Procacciatori</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input id="bch-area-doc" type="checkbox" style="width:16px;height:16px"> Docenti</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input id="bch-area-dip" type="checkbox" style="width:16px;height:16px"> Dipendenti</label>
+      </div>
       <div><label style="font-size:13px;color:var(--text2)">📎 Foto / Video <span style="font-size:11px;color:var(--text3)">(anche più di uno; video max ~45 MB)</span></label><br><input type="file" id="bch-media" accept="image/*,video/*" multiple style="font-size:13px;margin-top:4px"></div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input id="bch-email" type="checkbox" checked style="width:16px;height:16px"> 📧 Invia anche via email ai procacciatori</label><select id="bch-email-dest" style="font-size:12px;padding:4px 8px;border:0.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit"><option value="entrambe">Personale + Aziendale</option><option value="personale">Solo personale</option><option value="aziendale">Solo aziendale</option></select></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer"><input id="bch-email" type="checkbox" checked style="width:16px;height:16px"> 📧 Invia anche via email ai destinatari</label><select id="bch-email-dest" style="font-size:12px;padding:4px 8px;border:0.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit"><option value="entrambe">Personale + Aziendale</option><option value="personale">Solo personale</option><option value="aziendale">Solo aziendale</option></select></div>
       <div style="display:flex;gap:8px"><button class="btn btn-p" id="btn-bch-pub" onclick="pubblicaBacheca()">📣 Pubblica</button><button class="btn" id="btn-bch-annulla" onclick="annullaModificaBacheca()" style="display:none">Annulla modifica</button></div>
     </div>
   </div>
@@ -2765,7 +2776,7 @@ function sp(id,el){
   if(el)el.classList.add('active')
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
-  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -8165,6 +8176,30 @@ async function caricaBacheca(){
   }catch(e){ console.error('caricaBacheca:',e); bachecaPosts=[] }
   renderBachecaApp()
 }
+function _getBchAree(){ const a=[]; if(document.getElementById('bch-area-proc')?.checked) a.push('proc'); if(document.getElementById('bch-area-doc')?.checked) a.push('doc'); if(document.getElementById('bch-area-dip')?.checked) a.push('dip'); return a }
+function _setBchAree(aree){ const s=new Set(aree||[]); const p=document.getElementById('bch-area-proc'); if(p)p.checked=s.has('proc'); const d=document.getElementById('bch-area-doc'); if(d)d.checked=s.has('doc'); const i=document.getElementById('bch-area-dip'); if(i)i.checked=s.has('dip') }
+function _setBchAreeDefault(){ if((document.getElementById('bch-edit-id')||{}).value) return; _setBchAree([(sezioneAttiva||'proc')]) }
+function _bchAreaChips(p){
+  const aree=_docAree(p); const m=[['proc','Procacciatori'],['doc','Docenti'],['dip','Dipendenti']]
+  return '<div style="display:flex;align-items:center;gap:5px;margin-top:8px;flex-wrap:wrap"><span style="font-size:10px;color:var(--text3)">Visibile a:</span>'+m.map(([a,l])=>{
+    const on=aree.includes(a)
+    return '<span onclick="toggleBachecaArea(\''+p._id+'\',\''+a+'\')" title="Clic per mostrare/nascondere a '+l+'" style="display:inline-block;cursor:pointer;font-size:10px;font-weight:700;padding:3px 9px;border-radius:11px;border:0.5px solid '+(on?'var(--accent)':'var(--border)')+';'+(on?'background:var(--accent);color:#fff':'background:var(--surface2);color:var(--text3)')+'">'+(on?'\u2713 ':'')+l+'</span>'
+  }).join('')+'</div>'
+}
+async function toggleBachecaArea(id, area){
+  const p=bachecaPosts.find(x=>x._id===id); if(!p) return
+  let aree=_docAree(p).slice()
+  if(aree.includes(area)){ if(aree.length<=1){ alert('La comunicazione deve restare visibile ad almeno un\u0027area.'); return } aree=aree.filter(a=>a!==area) }
+  else aree.push(area)
+  try{
+    const newData={...p, aree}; delete newData._id; delete newData.created
+    const upd=await db.from('bacheca').update({data:newData}).eq('id',id)
+    if(upd.error) throw upd.error
+    p.aree=aree
+    renderBachecaApp()
+    toast('Visibilit\u00e0 aggiornata')
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+}
 function renderBachecaApp(){
   const box=document.getElementById('bch-lista'); if(!box) return
   const posts=[...bachecaPosts].sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)).filter(p=>((p.titolo||'').trim()||(p.testo||'').trim()||(p.media&&p.media.length)))
@@ -8177,6 +8212,7 @@ function renderBachecaApp(){
         '<span style="font-size:12px;color:var(--text2);white-space:nowrap">'+escB(d)+'</span></div>'+
       '<div style="margin-top:6px;color:var(--text2);white-space:pre-wrap;line-height:1.5;font-size:13px">'+escB(p.testo||'')+'</div>'+
       ((p.media&&p.media.length)?'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'+p.media.map(m=>m.t==='vid'?'<video controls preload="metadata" src="'+m.url+'" style="max-width:260px;max-height:200px;border-radius:8px;background:#000"></video>':'<img src="'+m.url+'" style="max-width:200px;max-height:200px;border-radius:8px;object-fit:cover;cursor:pointer" onclick="window.open(\''+m.url+'\')">').join('')+'</div>':'')+
+      _bchAreaChips(p)+
       '<div style="margin-top:10px;display:flex;gap:6px"><button class="btn btn-sm" onclick="modificaBacheca(\''+p._id+'\')">✎ Modifica</button><button class="btn btn-sm btn-r" onclick="eliminaBacheca(\''+p._id+'\')">🗑 Elimina</button></div>'+
     '</div>'
   }).join('')
@@ -8199,19 +8235,22 @@ async function _uploadMediaBacheca(inputId){
   if(inp) inp.value=''
   return media
 }
-async function _emailBachecaTutti(titolo, testo){
+async function _emailBachecaTutti(titolo, testo, aree){
   const dest=(document.getElementById('bch-email-dest')||{}).value||'entrambe'
   const set=new Set()
-  procs.forEach(p=>{
+  const ar=new Set(aree&&aree.length?aree:['proc'])
+  if(ar.has('proc')) procs.forEach(p=>{
     if(_chiusoP(p)) return
     const pe=(''+(p.email||'')).trim().toLowerCase(), ae=(''+(p.email_aziendale||'')).trim().toLowerCase()
     if((dest==='entrambe'||dest==='personale')&&pe.includes('@')) set.add(pe)
     if((dest==='entrambe'||dest==='aziendale')&&ae.includes('@')) set.add(ae)
   })
+  if(ar.has('doc')) (docenti||[]).forEach(d=>{ const e=(''+(d.email||d.email_aziendale||'')).trim().toLowerCase(); if(e.includes('@')) set.add(e) })
+  if(ar.has('dip')) (dipendenti||[]).forEach(d=>{ const e=(''+(d.email||d.email_aziendale||'')).trim().toLowerCase(); if(e.includes('@')) set.add(e) })
   const emails=[...set]
   if(!emails.length) return
-  const portale='https://portale.leoneconsultingitalia.it/'
-  const html='<div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a18;font-size:14px;line-height:1.6"><h2 style="color:#F22015;margin:0 0 8px">'+escB(titolo||'Comunicazione')+'</h2><div style="white-space:pre-wrap">'+escB(testo||'')+'</div><p style="margin-top:14px"><a href="'+portale+'" style="background:#3B6D11;color:#fff;text-decoration:none;padding:9px 16px;border-radius:8px">Apri il portale</a></p><p style="font-size:12px;color:#888;margin-top:12px">Leone Consulting \u2014 Portale Procacciatori</p></div>'
+  const hub='https://area.leoneconsultingitalia.it/'
+  const html='<div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a18;font-size:14px;line-height:1.6"><h2 style="color:#F22015;margin:0 0 8px">'+escB(titolo||'Comunicazione')+'</h2><div style="white-space:pre-wrap">'+escB(testo||'')+'</div><p style="margin-top:14px"><a href="'+hub+'" style="background:#3B6D11;color:#fff;text-decoration:none;padding:9px 16px;border-radius:8px">Apri il portale</a></p><p style="font-size:12px;color:#888;margin-top:12px">Leone Consulting</p></div>'
   const subject='\ud83d\udce3 '+(titolo||'Nuova comunicazione')+' \u2014 Leone Consulting'
   const rows=emails.map(e=>({data:{to:e, subject, html}}))
   try{ await db.from('email_queue').insert(rows); toast('\ud83d\udce7 Email in coda per '+rows.length+' indirizzi') }catch(e){ console.error('email bacheca:',e) }
@@ -8230,7 +8269,7 @@ async function pubblicaBacheca(){
     if(editId){
       const orig=bachecaPosts.find(x=>x._id===editId)||{}
       const media=[...(orig.media||[]),...nuoviMedia]
-      const data={titolo,testo,pin,media,data:orig.data||new Date().toLocaleDateString('it-IT'),modificato:new Date().toLocaleDateString('it-IT'),autore:'Leone Consulting',autoreNome:'Leone Consulting',autoreEmail:'amministrazione@leoneconsultingitalia.it',isAdmin:true}
+      const data={titolo,testo,pin,media,aree:(_getBchAree().length?_getBchAree():_docAree(orig)),data:orig.data||new Date().toLocaleDateString('it-IT'),modificato:new Date().toLocaleDateString('it-IT'),autore:'Leone Consulting',autoreNome:'Leone Consulting',autoreEmail:'amministrazione@leoneconsultingitalia.it',isAdmin:true}
       syncStatus('syncing','Aggiornamento...')
       await db.from('bacheca').update({data}).eq('id',editId)
       annullaModificaBacheca()
@@ -8238,8 +8277,9 @@ async function pubblicaBacheca(){
       syncStatus('ok','Aggiornato'); toast('✏️ Comunicazione aggiornata')
     } else {
       syncStatus('syncing','Pubblicazione...')
-      await db.from('bacheca').insert({data:{titolo,testo,pin,media:nuoviMedia,data:new Date().toLocaleDateString('it-IT'),autore:'Leone Consulting',autoreNome:'Leone Consulting',autoreEmail:'amministrazione@leoneconsultingitalia.it',isAdmin:true}})
-      if(document.getElementById('bch-email')&&document.getElementById('bch-email').checked){ await _emailBachecaTutti(titolo, testo) }
+      const _bchAree=_getBchAree(); const _bchAreeF=_bchAree.length?_bchAree:[(sezioneAttiva||'proc')]
+      await db.from('bacheca').insert({data:{titolo,testo,pin,media:nuoviMedia,aree:_bchAreeF,data:new Date().toLocaleDateString('it-IT'),autore:'Leone Consulting',autoreNome:'Leone Consulting',autoreEmail:'amministrazione@leoneconsultingitalia.it',isAdmin:true}})
+      if(document.getElementById('bch-email')&&document.getElementById('bch-email').checked){ await _emailBachecaTutti(titolo, testo, _bchAreeF) }
       document.getElementById('bch-titolo').value=''; document.getElementById('bch-testo').value=''; document.getElementById('bch-pin').checked=false
       await caricaBacheca()
       syncStatus('ok','Pubblicato'); toast('📣 Comunicazione pubblicata sul portale')
@@ -8253,6 +8293,7 @@ function modificaBacheca(id){
   document.getElementById('bch-titolo').value=p.titolo||''
   document.getElementById('bch-testo').value=p.testo||''
   document.getElementById('bch-pin').checked=!!p.pin
+  _setBchAree(_docAree(p))
   document.getElementById('bch-form-title').textContent='Modifica comunicazione'
   document.getElementById('btn-bch-pub').innerHTML='💾 Salva modifiche'
   document.getElementById('btn-bch-annulla').style.display=''
@@ -8264,6 +8305,7 @@ function annullaModificaBacheca(){
   document.getElementById('bch-form-title').textContent='Nuova comunicazione'
   document.getElementById('btn-bch-pub').innerHTML='📣 Pubblica'
   document.getElementById('btn-bch-annulla').style.display='none'
+  _setBchAreeDefault()
 }
 async function eliminaBacheca(id){
   if(!confirm('Eliminare questa comunicazione?')) return
