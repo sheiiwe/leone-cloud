@@ -309,6 +309,10 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('provv-doc',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M9 9h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H15"/></svg>Provvigioni
     </div>
+    <div class="nav-sec">Contratti</div>
+    <div class="nav-item" onclick="sp('contratti-doc',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><polyline points="10 17 8 17 8 19"/></svg>Contratti & Firme
+    </div>
     <div class="nav-sec">Listino</div>
     <div class="nav-item" onclick="sp('listino',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Listino prodotti
@@ -345,6 +349,10 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-sec">Contratti</div>
     <div class="nav-item" onclick="sp('contratti-dip',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><polyline points="10 17 8 17 8 19"/></svg>Contratti & Firme
+    </div>
+    <div class="nav-sec">Listino</div>
+    <div class="nav-item" onclick="sp('listino',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Listino prodotti
     </div>
     <div class="nav-sec">Notifiche</div>
     <div class="nav-item" onclick="sp('avvisi',this)">
@@ -892,6 +900,20 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="tbl-wrap"><table>
       <thead><tr><th>Destinatario</th><th>Tipo contratto</th><th>Inviato via</th><th>Data invio</th><th>Stato firma</th><th>Data firma</th><th>Azioni</th></tr></thead>
       <tbody id="tbl-contratti-dip"><tr><td colspan="7" class="empty">Nessun contratto inviato</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<div class="page" id="page-contratti-doc">
+  <div class="pg-title">Contratti & Firme — Docenti</div>
+  <div class="card">
+    <div class="card-hdr">
+      <h3>Invia contratto per firma</h3>
+      <button class="btn btn-p" onclick="openM('m-invia-contratto-doc')">✉ Invia contratto</button>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Destinatario</th><th>Tipo contratto</th><th>Inviato via</th><th>Data invio</th><th>Stato firma</th><th>Data firma</th><th>Azioni</th></tr></thead>
+      <tbody id="tbl-contratti-doc"><tr><td colspan="7" class="empty">Nessun contratto inviato</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -1961,6 +1983,16 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<div class="modal-overlay" id="m-invia-contratto-doc">
+  <div class="modal">
+    <h3>✉ Invia contratto docente per firma</h3>
+    <div class="fr"><div class="fg"><label>Docente *</label><select id="ctdoc-doc" onchange="onCtDocenteSel()"><option value="">-- Seleziona --</option></select></div><div class="fg"><label>Tipo contratto</label><select id="ctdoc-tipo"><option value="Contratto di Prestazione d&#39;Opera Autonoma">Prestazione d&#39;Opera Autonoma</option><option value="Contratto di Prestazione di Servizi Didattici">Prestazione di Servizi Didattici</option><option value="Lettera di Incarico">Lettera di Incarico</option><option value="Aggiornamento Contratto">Aggiornamento Contratto</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Email destinatario *</label><input id="ctdoc-email" type="email" placeholder="email@esempio.it"></div><div class="fg"><label>Nome destinatario</label><input id="ctdoc-nome" type="text" placeholder="Mario Rossi"></div></div>
+    <div class="fr"><div class="fg"><label>Invia tramite</label><select id="ctdoc-via"><option value="email">📧 Email — amministrazione@leoneconsultingitalia.it</option><option value="pec">🔒 PEC — amministratore@pec.leoneconsultingitalia.it</option></select></div></div>
+    <div class="mact"><button class="btn" onclick="closeM('m-invia-contratto-doc')">Annulla</button><button class="btn btn-p" id="btn-invia-ctdoc" onclick="inviaContratto('doc')">✉ Invia contratto</button></div>
+  </div>
+</div>
+
 <script>
 // ── SUPABASE ──────────────────────────────────────────────────
 const SUPA_URL='https://uljdbdbkiulbcquuhfwd.supabase.co'
@@ -2520,7 +2552,7 @@ function pushNotifica(o){
 }
 function aggiungiNotifica(d){
   const ora=new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})
-  pushNotifica({ icon:'✅', titolo:(d.nomeDestinatario||'—'), sottotitolo:(d.tipoContratto||'Contratto firmato'), riga3:'Firmato alle '+ora+(d.dataFirma&&d.dataFirma!=='—'?(' · '+d.dataFirma):''), target:(d.sezione==='dip'?'contratti-dip':'contratti') })
+  pushNotifica({ icon:'✅', titolo:(d.nomeDestinatario||'—'), sottotitolo:(d.tipoContratto||'Contratto firmato'), riga3:'Firmato alle '+ora+(d.dataFirma&&d.dataFirma!=='—'?(' · '+d.dataFirma):''), target:(d.sezione==='dip'?'contratti-dip':(d.sezione==='doc'?'contratti-doc':'contratti')) })
   { const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='block' }
 }
 
@@ -2577,7 +2609,7 @@ function apriDaNotifica(i){
   aggiornaBadge()
   notifPanelOpen = false
   document.getElementById('notif-panel').style.display = 'none'
-  let target = n.target || (n.sezione === 'dip' ? 'contratti-dip' : 'contratti')
+  let target = n.target || (n.sezione === 'dip' ? 'contratti-dip' : (n.sezione === 'doc' ? 'contratti-doc' : 'contratti'))
   switchSezione(target === 'contratti-dip' ? 'dip' : 'proc')
   const navEl = document.querySelector('.nav-item[onclick*="' + target + '"]')
   sp(target, navEl)
@@ -2659,7 +2691,7 @@ function sp(id,el){
   if(el)el.classList.add('active')
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
-  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':caricaDocComm,'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':caricaDocComm,'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -2751,6 +2783,7 @@ function openM(id){
     fillDocFirmaSel()
   }
   if(id==='m-invia-contratto-dip'){fillDipSel('ctd-dip')}
+  if(id==='m-invia-contratto-doc'){fillDocenteSel('ctdoc-doc')}
   document.getElementById(id).classList.add('open')
   {const _m=document.querySelector('#'+id+' .modal'); if(_m)_m.scrollTop=0}
 }
@@ -4993,11 +5026,23 @@ function renderContratti(){
   if(!ct.length){tb.innerHTML='<tr><td colspan="7" class="empty">'+(_cq?'Nessun contratto trovato per la ricerca':'Nessun contratto inviato')+'</td></tr>';return}
   tb.innerHTML=ct.map(c=>`<tr><td><strong style="font-weight:600">${c.nomeDestinatario}</strong><br><span style="font-size:11px;color:var(--text2)">${c.emailDestinatario}</span></td><td style="font-size:12px">${c.tipoContratto}</td><td><span class="badge ${c.via==='pec'?'bp':'bb'}">${c.via==='pec'?'🔒 PEC':'📧 Email'}</span></td><td style="color:var(--text2)">${c.dataInvio}</td><td>${statoBadge(c.statoFirma)}</td><td style="color:var(--text2)">${c.dataFirma||'—'}</td><td class="acts">${c.statoFirma==='Firmato'?`<button class="btn btn-sm btn-p" onclick="creaProcDaFirma('${c._id}')" title="Crea scheda procacciatore dai dati della firma">➕ Proc.</button>`:''}${c.pdfFirmatoPath?`<button class="btn btn-sm" onclick="apriPdfFirmato('${c._id}')" title="Apri PDF firmato">📄 PDF</button>`:(c.statoFirma==='Firmato'?`<button class="btn btn-sm" onclick="generaEApriPdfFirmato('${c._id}')" title="Genera il PDF firmato">📄 Genera PDF</button>`:'')}${(c.documentiCaricati&&Object.keys(c.documentiCaricati).length)?`<button class="btn btn-sm" onclick="apriAllegatiFirma('${c._id}')" title="Documenti del firmatario">📎 Doc.</button>`:''}<button class="btn btn-sm" onclick="reinviaContratto('${c._id}')">↺ Reinvia</button><button class="btn btn-sm btn-r" onclick="eliminaContratto('${c._id}')" title="Elimina">✕</button></td></tr>`).join('')
 }
-function renderContrattiDip(){
-  const tb=document.getElementById('tbl-contratti-dip')
-  const ct=contratti.filter(c=>c.sezione==='dip')
+function renderContrattiDoc(){
+  const tb=document.getElementById('tbl-contratti-doc'); if(!tb) return
+  const ct=contratti.filter(c=>c.sezione==='doc')
   if(!ct.length){tb.innerHTML='<tr><td colspan="7" class="empty">Nessun contratto inviato</td></tr>';return}
   tb.innerHTML=ct.map(c=>`<tr><td><strong style="font-weight:600">${c.nomeDestinatario}</strong><br><span style="font-size:11px;color:var(--text2)">${c.emailDestinatario}</span></td><td style="font-size:12px">${c.tipoContratto}</td><td><span class="badge ${c.via==='pec'?'bp':'bb'}">${c.via==='pec'?'🔒 PEC':'📧 Email'}</span></td><td style="color:var(--text2)">${c.dataInvio}</td><td>${statoBadge(c.statoFirma)}</td><td style="color:var(--text2)">${c.dataFirma||'—'}</td><td class="acts">${(c.documentiCaricati&&Object.keys(c.documentiCaricati).length)?`<button class="btn btn-sm" onclick="apriAllegatiFirma('${c._id}')" title="Documenti del firmatario">📎 Doc.</button>`:''}<button class="btn btn-sm" onclick="reinviaContratto('${c._id}')">↺ Reinvia</button><button class="btn btn-sm btn-r" onclick="eliminaContratto('${c._id}')" title="Elimina">✕</button></td></tr>`).join('')
+}
+function fillDocenteSel(sid){
+  const s=document.getElementById(sid); if(!s) return
+  s.innerHTML='<option value="">-- Seleziona --</option>'
+  ;(docenti||[]).forEach((d,i)=>s.innerHTML+=`<option value="${i}">${(d.nome||'—')}</option>`)
+}
+function onCtDocenteSel(){
+  const i=document.getElementById('ctdoc-doc')?.value
+  if(i===''||i==null) return
+  const d=(docenti||[])[parseInt(i)]; if(!d) return
+  const em=document.getElementById('ctdoc-email'); if(em) em.value=(d.email||d.email_aziendale||'')
+  const nm=document.getElementById('ctdoc-nome'); if(nm) nm.value=(d.nome||'')
 }
 
 async function fillDocFirmaSel(){
@@ -5119,11 +5164,12 @@ async function preparaDocFirma(docId, token, p, scelte){
 
 async function inviaContratto(sezione){
   const isProc=sezione==='proc'
-  const emailId=isProc?'ct-email':'ctd-email'
-  const nomeId=isProc?'ct-nome':'ctd-nome'
-  const tipoId=isProc?'ct-tipo':'ctd-tipo'
-  const viaId=isProc?'ct-via':'ctd-via'
-  const btnId=isProc?'btn-invia-ct':'btn-invia-ctd'
+  const pre = sezione==='proc'?'ct':(sezione==='dip'?'ctd':'ctdoc')
+  const emailId=pre+'-email'
+  const nomeId=pre+'-nome'
+  const tipoId=pre+'-tipo'
+  const viaId=pre+'-via'
+  const btnId = sezione==='proc'?'btn-invia-ct':(sezione==='dip'?'btn-invia-ctd':'btn-invia-ctdoc')
 
   const email=document.getElementById(emailId).value.trim()
   const nome=document.getElementById(nomeId).value.trim()
@@ -5195,9 +5241,9 @@ async function inviaContratto(sezione){
       alert(`Contratto salvato!\n\nLink per la firma (copia e invia manualmente):\n${signUrl}`)
     }
 
-    closeM(isProc?'m-invia-contratto':'m-invia-contratto-dip')
+    closeM(sezione==='proc'?'m-invia-contratto':(sezione==='dip'?'m-invia-contratto-dip':'m-invia-contratto-doc'))
     await loadAll()
-    if(isProc)renderContratti(); else renderContrattiDip()
+    if(sezione==='proc')renderContratti(); else if(sezione==='dip')renderContrattiDip(); else renderContrattiDoc()
   }catch(e){alert('Errore invio: '+e.message)}
   finally{btn.disabled=false;btn.innerHTML='✉ Invia contratto'}
 }
