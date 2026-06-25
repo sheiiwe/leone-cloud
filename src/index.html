@@ -332,6 +332,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="apriRicercaGlobale()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Ricerca globale
     </div>
+    <div class="nav-item" onclick="apriStatoDocumenti()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>Stato documenti
+    </div>
     <div class="nav-item" onclick="apriScadenzeSolleciti()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Scadenze e solleciti
     </div>
@@ -375,6 +378,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-sec">Sistema</div>
     <div class="nav-item" onclick="apriRicercaGlobale()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Ricerca globale
+    </div>
+    <div class="nav-item" onclick="apriStatoDocumenti()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>Stato documenti
     </div>
     <div class="nav-item" onclick="apriScadenzeSolleciti()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Scadenze e solleciti
@@ -5533,7 +5539,37 @@ function _docsFirmaPerEmail(email){
   ;(contratti||[]).forEach(c=>{ if((c.emailDestinatario||'').trim().toLowerCase()===email && c.documentiCaricati) Object.assign(out, c.documentiCaricati) })
   return out
 }
+function _statoDocArea(list, label, sez){
+  const old=document.getElementById('stato-doc-modal'); if(old) old.remove()
+  const esc=s=>(s||'').toString().replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))
+  const ic=ok=>ok?'<span style="color:#1e8449;font-weight:700">\u2713</span>':'<span style="color:#c0392b;font-weight:700">\u2717</span>'
+  const isDoc=sez==='doc'
+  const rows=(list||[]).slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).map(p=>{
+    const email=(p.email||p.email_aziendale||'').trim().toLowerCase()
+    const firmato=(contratti||[]).some(c=>c.sezione===sez && (c.emailDestinatario||'').trim().toLowerCase()===email && c.statoFirma==='Firmato')
+    const nCert=isDoc?(((p.certificatiFile&&p.certificatiFile.length)||(p.certificati&&p.certificati.length)||0)):0
+    return '<tr style="border-bottom:0.5px solid var(--border)">'+
+      '<td style="padding:7px 8px;font-weight:600">'+esc(p.nome||'\u2014')+'</td>'+
+      '<td style="padding:7px 8px;text-align:center">'+ic(!!(p.cf&&(''+p.cf).trim()))+'</td>'+
+      '<td style="padding:7px 8px;text-align:center">'+ic(!!(p.iban&&(''+p.iban).trim()))+'</td>'+
+      (isDoc?('<td style="padding:7px 8px;text-align:center">'+(nCert?('<span style="color:#1e8449;font-weight:700">'+nCert+'</span>'):'<span style="color:#c0392b;font-weight:700">0</span>')+'</td>'):'')+
+      '<td style="padding:7px 8px;text-align:center">'+ic(firmato)+'</td></tr>'
+  }).join('')
+  const certHead=isDoc?'<th style="padding:6px 8px;text-align:center">Certificati</th>':''
+  const colspan=isDoc?5:4
+  const div=document.createElement('div'); div.id='stato-doc-modal'
+  div.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99998;display:flex;align-items:center;justify-content:center;padding:30px 20px'
+  div.innerHTML='<div style="background:var(--surface);border-radius:12px;max-width:720px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.4)" onclick="event.stopPropagation()">'+
+    '<div style="padding:14px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between"><div style="font-weight:700;font-size:16px">\ud83d\udccb Stato documenti '+esc(label.toLowerCase())+'</div><button onclick="document.getElementById(\'stato-doc-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)">\u00d7</button></div>'+
+    '<div style="overflow:auto;padding:6px 12px 14px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="text-align:left;color:var(--text2);font-size:11px"><th style="padding:6px 8px">'+esc(label)+'</th><th style="padding:6px 8px;text-align:center">CF</th><th style="padding:6px 8px;text-align:center">IBAN</th>'+certHead+'<th style="padding:6px 8px;text-align:center">Contratto<br>firmato</th></tr></thead><tbody>'+(rows||'<tr><td colspan="'+colspan+'" style="padding:16px;text-align:center;color:var(--text2)">Nessun nominativo.</td></tr>')+'</tbody></table></div>'+
+    '<div style="padding:8px 16px;border-top:0.5px solid var(--border);font-size:11px;color:var(--text2)">\u2713 presente \u00b7 \u2717 mancante. Il contratto firmato \u00e8 quello inviato dall\u0027area '+esc(label)+'.</div></div>'
+  div.onclick=()=>div.remove()
+  document.body.appendChild(div)
+}
 function apriStatoDocumenti(){
+  const _area=(sezioneAttiva||'proc')
+  if(_area==='doc') return _statoDocArea(docenti,'Docenti','doc')
+  if(_area==='dip') return _statoDocArea(dipendenti,'Dipendenti','dip')
   const old=document.getElementById('stato-doc-modal'); if(old) old.remove()
   const esc=s=>(s||'').toString().replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))
   const oggi=new Date(); oggi.setHours(0,0,0,0)
