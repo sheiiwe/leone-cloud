@@ -690,6 +690,12 @@ tbody tr:hover td{background:var(--surface2)}
         <input id="dc-cat" type="text" placeholder="Categoria (es. Brochure, Listini, Modulistica)" list="dc-cat-list" style="width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box">
         <datalist id="dc-cat-list"><option value="Brochure"><option value="Listini"><option value="Modulistica"><option value="Contrattualistica"><option value="Marketing"><option value="Formazione"></datalist>
         <textarea id="dc-desc" rows="2" placeholder="Descrizione (facoltativa)" style="width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box;resize:vertical;font-family:inherit"></textarea>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:13px;padding:2px 0">
+          <span style="color:var(--text2);font-weight:600">Visibile a:</span>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="dc-area-proc" style="width:15px;height:15px">Procacciatori</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="dc-area-doc" style="width:15px;height:15px">Docenti</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="dc-area-dip" style="width:15px;height:15px">Dipendenti</label>
+        </div>
         <div><input type="file" id="dc-file" style="font-size:13px"></div>
         <div><button class="btn btn-p" id="btn-dc-up" onclick="uploadDocComm()">⬆ Carica documento</button></div>
       </div>
@@ -2705,7 +2711,7 @@ function sp(id,el){
   if(el)el.classList.add('active')
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
-  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':caricaDocComm,'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -7061,11 +7067,37 @@ async function caricaDocComm(){
 }
 function _iconDC(ext){ ext=(ext||'').toLowerCase(); if(ext==='pdf')return '\ud83d\udcd5'; if(['doc','docx'].includes(ext))return '\ud83d\udcd8'; if(['xls','xlsx','csv'].includes(ext))return '\ud83d\udcd7'; if(['ppt','pptx'].includes(ext))return '\ud83d\udcd9'; if(['jpg','jpeg','png','gif','webp'].includes(ext))return '\ud83d\uddbc\ufe0f'; if(['zip','rar'].includes(ext))return '\ud83d\udddc\ufe0f'; if(['mp4','mov','avi'].includes(ext))return '\ud83c\udfac'; return '\ud83d\udcc4' }
 function _fmtSizeDC(b){ b=Number(b)||0; if(b<1024)return b+' B'; if(b<1048576)return Math.round(b/1024)+' KB'; return (Math.round(b/104857.6)/10)+' MB' }
+function _docAree(d){ if(Array.isArray(d.aree)&&d.aree.length) return d.aree; if(d.area) return [d.area]; return ['proc'] }
+function _getDcAree(){ const a=[]; if(document.getElementById('dc-area-proc')?.checked) a.push('proc'); if(document.getElementById('dc-area-doc')?.checked) a.push('doc'); if(document.getElementById('dc-area-dip')?.checked) a.push('dip'); return a }
+function _setDcAree(aree){ const set=new Set(aree||[]); const p=document.getElementById('dc-area-proc'); if(p)p.checked=set.has('proc'); const d=document.getElementById('dc-area-doc'); if(d)d.checked=set.has('doc'); const i=document.getElementById('dc-area-dip'); if(i)i.checked=set.has('dip') }
+function _setDcAreeDefault(){ if(typeof _dcEditId!=='undefined' && _dcEditId) return; _setDcAree([(sezioneAttiva||'proc')]) }
+function _lblAree(aree){ const m={proc:'Procacciatori',doc:'Docenti',dip:'Dipendenti'}; return (aree||[]).map(a=>m[a]||a).join(', ') }
+function _dcAreaChips(d){
+  const aree=_docAree(d); const m=[['proc','Procacciatori'],['doc','Docenti'],['dip','Dipendenti']]
+  return '<div style="display:flex;align-items:center;gap:5px;margin-top:6px;flex-wrap:wrap"><span style="font-size:10px;color:var(--text3)">Visibile a:</span>'+m.map(([a,l])=>{
+    const on=aree.includes(a)
+    return '<span onclick="toggleDocCommArea(\''+d._id+'\',\''+a+'\')" title="Clic per mostrare/nascondere a '+l+'" style="display:inline-block;cursor:pointer;font-size:10px;font-weight:700;padding:3px 9px;border-radius:11px;border:0.5px solid '+(on?'var(--accent)':'var(--border)')+';'+(on?'background:var(--accent);color:#fff':'background:var(--surface2);color:var(--text3)')+'">'+(on?'\u2713 ':'')+l+'</span>'
+  }).join('')+'</div>'
+}
+async function toggleDocCommArea(id, area){
+  const d=docCommList.find(x=>x._id===id); if(!d) return
+  let aree=_docAree(d).slice()
+  if(aree.includes(area)){ if(aree.length<=1){ alert('Il documento deve restare visibile ad almeno un\u0027area.'); return } aree=aree.filter(a=>a!==area) }
+  else aree.push(area)
+  try{
+    const newData={...d, aree}; delete newData._id; delete newData.created; delete newData.area
+    const upd=await db.from('documenti_commerciali').update({data:newData}).eq('id',id)
+    if(upd.error) throw upd.error
+    d.aree=aree; delete d.area
+    renderDocCommApp()
+    toast('Visibilit\u00e0 aggiornata')
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+}
 function renderDocCommApp(){
   const box=document.getElementById('doc-comm-lista'); if(!box) return
   _rebuildDcCatList()
   const q=(document.getElementById('dc-search')?.value||'').trim().toLowerCase()
-  const base=docCommList.filter(d=>(d.area||'proc')===(sezioneAttiva||'proc'))
+  const base=docCommList.slice()
   const lista=base.filter(d=> !q || ((d.nome||'')+' '+(d.categoria||'')+' '+(d.descrizione||'')).toLowerCase().includes(q))
   if(!base.length){ box.innerHTML='<div style="padding:12px;color:var(--text2)">Nessun documento caricato.</div>'; return }
   if(!lista.length){ box.innerHTML='<div style="padding:12px;color:var(--text2)">Nessun risultato per la ricerca.</div>'; return }
@@ -7073,7 +7105,7 @@ function renderDocCommApp(){
     '<div style="font-size:24px">'+_iconDC(d.ext)+'</div>'+
     '<div style="flex:1;min-width:0"><div style="font-weight:600">'+escB(d.nome||'Documento')+(d.categoria?' <span class="pill">'+escB(d.categoria)+'</span>':'')+'</div>'+
     (d.descrizione?'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+escB(d.descrizione)+'</div>':'')+
-    '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+escB((d.ext||'').toUpperCase())+(d.size?' \u00b7 '+_fmtSizeDC(d.size):'')+(d.data?' \u00b7 '+escB(d.data):'')+'</div></div>'+
+    '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+escB((d.ext||'').toUpperCase())+(d.size?' \u00b7 '+_fmtSizeDC(d.size):'')+(d.data?' \u00b7 '+escB(d.data):'')+'</div>'+_dcAreaChips(d)+'</div>'+
     '<a href="'+escB(d.url)+'" target="_blank" class="btn btn-sm">\u2b07 Apri</a>'+
     '<button class="btn btn-sm" onclick="modificaDocComm(\''+d._id+'\')" title="Modifica">\u270f\ufe0f</button>'+
     '<button class="btn btn-sm btn-r" onclick="eliminaDocComm(\''+d._id+'\')">\ud83d\uddd1</button>'+
@@ -7085,6 +7117,8 @@ async function uploadDocComm(){
   const categoria=document.getElementById('dc-cat').value.trim()
   const descrizione=document.getElementById('dc-desc').value.trim()
   const btn=document.getElementById('btn-dc-up')
+  const areeSel=_getDcAree()
+  if(!areeSel.length) return alert('Seleziona almeno un\u0027area in "Visibile a:" (Procacciatori, Docenti o Dipendenti).')
   // ── MODIFICA documento esistente ──
   if(_dcEditId){
     const d=docCommList.find(x=>x._id===_dcEditId)
@@ -7101,8 +7135,8 @@ async function uploadDocComm(){
         if(d.path){ try{ await db.storage.from('documenti').remove([d.path]) }catch(e){} }
         url=(pub&&pub.data&&pub.data.publicUrl)||''; path=np; ext=nx; size=f.size
       }
-      const newData={...d, nome:nome||d.nome, categoria, descrizione, url, path, ext, size}
-      delete newData._id; delete newData.created
+      const newData={...d, nome:nome||d.nome, categoria, descrizione, url, path, ext, size, aree:areeSel}
+      delete newData._id; delete newData.created; delete newData.area
       const upd=await db.from('documenti_commerciali').update({data:newData}).eq('id',_dcEditId)
       if(upd.error) throw upd.error
       if(categoria) await _saveDcCat(categoria)
@@ -7123,10 +7157,11 @@ async function uploadDocComm(){
     if(up.error) throw up.error
     const pub=db.storage.from('documenti').getPublicUrl(path)
     const url=(pub&&pub.data&&pub.data.publicUrl)||''
-    const ins=await db.from('documenti_commerciali').insert({data:{nome,categoria,descrizione,url,path,ext,size:f.size,data:new Date().toLocaleDateString('it-IT'),area:(sezioneAttiva||'proc')}})
+    const ins=await db.from('documenti_commerciali').insert({data:{nome,categoria,descrizione,url,path,ext,size:f.size,data:new Date().toLocaleDateString('it-IT'),aree:areeSel}})
     if(ins.error) throw ins.error
     if(categoria) await _saveDcCat(categoria)
     document.getElementById('dc-nome').value=''; document.getElementById('dc-cat').value=''; document.getElementById('dc-desc').value=''; inp.value=''
+    _setDcAreeDefault()
     await caricaDocComm()
     toast('\u2705 Documento caricato')
   }catch(e){ alert('Errore: '+(e.message||e)) }
@@ -7152,6 +7187,7 @@ function modificaDocComm(id){
   document.getElementById('dc-nome').value=d.nome||''
   document.getElementById('dc-cat').value=d.categoria||''
   document.getElementById('dc-desc').value=d.descrizione||''
+  _setDcAree(_docAree(d))
   const btn=document.getElementById('btn-dc-up')
   if(btn){ btn.innerHTML='\ud83d\udcbe Salva modifiche'
     if(!document.getElementById('btn-dc-canc')){ const c=document.createElement('button'); c.id='btn-dc-canc'; c.className='btn btn-sm'; c.style.marginLeft='8px'; c.textContent='Annulla'; c.onclick=annullaModificaDocComm; btn.parentNode.insertBefore(c, btn.nextSibling) } }
@@ -7162,6 +7198,7 @@ function annullaModificaDocComm(){
   _dcEditId=null
   document.getElementById('dc-nome').value=''; document.getElementById('dc-cat').value=''; document.getElementById('dc-desc').value=''
   const inp=document.getElementById('dc-file'); if(inp) inp.value=''
+  _setDcAreeDefault()
   const btn=document.getElementById('btn-dc-up'); if(btn) btn.innerHTML='\u2b06 Carica documento'
   const canc=document.getElementById('btn-dc-canc'); if(canc) canc.remove()
 }
