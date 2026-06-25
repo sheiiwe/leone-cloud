@@ -305,6 +305,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('studenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>Studenti
     </div>
+    <div class="nav-item" onclick="sp('calendario',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendario
+    </div>
     <div class="nav-sec">Compensi</div>
     <div class="nav-item" onclick="sp('provv-doc',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M9 9h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H15"/></svg>Provvigioni
@@ -366,6 +369,9 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="nav-item" onclick="sp('dipendenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Dipendenti
+    </div>
+    <div class="nav-item" onclick="sp('calendario',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendario
     </div>
     <div class="nav-sec">Paghe</div>
     <div class="nav-item" onclick="sp('buste',this)">
@@ -878,6 +884,53 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div id="provv-doc-lista"></div>
 </div>
+<div class="page" id="page-calendario">
+  <div class="pg-title">Calendario disponibilità</div>
+  <div class="info-card">Seleziona una persona e gestisci il suo calendario. Le modifiche si sincronizzano col suo portale (stesso record).</div>
+  <div class="card">
+    <div class="fr">
+      <div class="fg"><label>Tipo</label><select id="cal-tipo" onchange="calAdminFillPersone()"><option value="docenti">Docente</option><option value="studenti">Studente</option><option value="dipendenti">Dipendente</option></select></div>
+      <div class="fg"><label>Persona</label><select id="cal-persona" onchange="calAdminLoad()"><option value="">— Seleziona —</option></select></div>
+    </div>
+  </div>
+  <div id="cal-admin-area" style="display:none">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="btn btn-sm" onclick="calAdminSett(-1)">‹ Prec.</button>
+        <button class="btn btn-sm" onclick="calAdminOggi()">Oggi</button>
+        <button class="btn btn-sm" onclick="calAdminSett(1)">Succ. ›</button>
+        <div id="cal-admin-range" style="font-weight:700;margin-left:6px"></div>
+        <div style="margin-left:auto;font-size:12px;color:var(--text2)"><span style="display:inline-block;width:11px;height:11px;background:#2a9d5c;border-radius:3px;vertical-align:middle"></span> ricorrente &nbsp; <span style="display:inline-block;width:11px;height:11px;background:#185FA5;border-radius:3px;vertical-align:middle"></span> solo questa data</div>
+      </div>
+      <div style="overflow-x:auto"><div id="cal-admin-grid"></div></div>
+      <div style="display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-p" onclick="calAdminSalva()">💾 Salva</button>
+        <span id="cal-admin-stato" style="color:var(--text2);font-size:13px"></span>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:6px">Disponibilità ricorrenti</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px" id="caladm-giorni">
+        <label><input type="checkbox" class="caladm-wd" value="1"> Lun</label>
+        <label><input type="checkbox" class="caladm-wd" value="2"> Mar</label>
+        <label><input type="checkbox" class="caladm-wd" value="3"> Mer</label>
+        <label><input type="checkbox" class="caladm-wd" value="4"> Gio</label>
+        <label><input type="checkbox" class="caladm-wd" value="5"> Ven</label>
+        <label><input type="checkbox" class="caladm-wd" value="6"> Sab</label>
+        <label><input type="checkbox" class="caladm-wd" value="7"> Dom</label>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Dalle</label><select id="caladm-ric-da"></select></div>
+        <div class="fg"><label>Alle</label><select id="caladm-ric-a"></select></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-p" onclick="calAdminApplicaRic()">Applica ogni settimana</button>
+        <button class="btn btn-sm" onclick="calAdminSvuotaRic()">Svuota ricorrenti</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="page" id="page-bonus">
   <div class="pg-title">Bonus porta cliente</div>
   <div class="info-card">
@@ -2787,7 +2840,7 @@ function sp(id,el){
   if(el)el.classList.add('active')
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
-  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -7919,6 +7972,91 @@ function resetBonus(){
   ['bp-nome','bp-email','bp-tel','bp-cf','bp-doc','bp-iban','bp-cliente-seg','bp-prodotto-seg'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
   document.getElementById('bp-compenso').value='10'
   calcolaBonus()
+}
+
+// ── CALENDARIO DISPONIBILITÀ (admin) ──────────────────────────
+let _DISPA={ric:[],add:[],rem:[]}, _calARef=null, _calARec=null, _calATipo='docenti'
+function _calMonday(d){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); x.setHours(0,0,0,0); return x }
+function _calYmd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') }
+function _calWd1(d){ return ((d.getDay()+6)%7)+1 }
+function _calArr(t){ return t==='studenti'?(studenti||[]):t==='dipendenti'?(dipendenti||[]):(docenti||[]) }
+function renderCalendarioAdmin(){
+  const tip=document.getElementById('cal-tipo')
+  if(tip && !tip._init){ tip.value=(sezioneAttiva==='dip')?'dipendenti':'docenti'; tip._init=1 }
+  calAdminFillPersone()
+  const ps=document.getElementById('cal-persona'); if(ps) ps.value=''
+  const ar=document.getElementById('cal-admin-area'); if(ar) ar.style.display='none'
+}
+function calAdminFillPersone(){
+  const t=document.getElementById('cal-tipo').value
+  const sel=document.getElementById('cal-persona')
+  sel.innerHTML='<option value="">— Seleziona —</option>'+_calArr(t).map(p=>'<option value="'+p._id+'">'+escB(p.nome||'—')+'</option>').join('')
+  const ar=document.getElementById('cal-admin-area'); if(ar) ar.style.display='none'
+}
+function calAdminLoad(){
+  const t=document.getElementById('cal-tipo').value, id=document.getElementById('cal-persona').value
+  const ar=document.getElementById('cal-admin-area')
+  if(!id){ if(ar) ar.style.display='none'; return }
+  const rec=_calArr(t).find(p=>String(p._id)===String(id)); if(!rec) return
+  _calATipo=t; _calARec=rec
+  const dd=rec.disponibilita||{}
+  _DISPA={ ric:Array.isArray(dd.ric)?[...dd.ric]:[], add:Array.isArray(dd.add)?[...dd.add]:[], rem:Array.isArray(dd.rem)?[...dd.rem]:[] }
+  const da=document.getElementById('caladm-ric-da'), a=document.getElementById('caladm-ric-a')
+  if(da&&!da.options.length){ let o=''; for(let h=8;h<22;h++) o+='<option value="'+h+'">'+String(h).padStart(2,'0')+':00</option>'; da.innerHTML=o
+    let o2=''; for(let h=9;h<=22;h++) o2+='<option value="'+h+'">'+String(h).padStart(2,'0')+':00</option>'; a.innerHTML=o2; a.value='11' }
+  _calARef=_calMonday(new Date())
+  ar.style.display='block'
+  renderCalAdminGrid()
+}
+function calAdminOggi(){ _calARef=_calMonday(new Date()); renderCalAdminGrid() }
+function calAdminSett(n){ const x=new Date(_calARef); x.setDate(x.getDate()+n*7); _calARef=x; renderCalAdminGrid() }
+function _aAvail(ymd,wd,h){ const ric=_DISPA.ric.includes(wd+':'+h); const rem=_DISPA.rem.includes(ymd+':'+h); const add=_DISPA.add.includes(ymd+':'+h); return (ric&&!rem)||add }
+function renderCalAdminGrid(){
+  const grid=document.getElementById('cal-admin-grid'); if(!grid) return
+  const start=new Date(_calARef); const days=[]; for(let i=0;i<7;i++){ const d=new Date(start); d.setDate(start.getDate()+i); days.push(d) }
+  const rng=document.getElementById('cal-admin-range'); if(rng) rng.textContent=days[0].toLocaleDateString('it-IT',{day:'2-digit',month:'short'})+' – '+days[6].toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})
+  const gN=['Lun','Mar','Mer','Gio','Ven','Sab','Dom']; const oggi=_calYmd(new Date())
+  let h='<table style="border-collapse:separate;border-spacing:2px;width:100%;min-width:640px;font-size:12px">'
+  h+='<thead><tr><th style="width:48px"></th>'+days.map((d,i)=>{ const t=_calYmd(d)===oggi; return '<th style="padding:5px 2px;text-align:center;font-weight:700;'+(t?'color:var(--accent)':'')+'">'+gN[i]+'<br><span style="font-weight:500;color:var(--text3)">'+d.getDate()+'</span></th>' }).join('')+'</tr></thead><tbody>'
+  for(let hh=8;hh<22;hh++){
+    h+='<tr><td style="padding:2px 4px;color:var(--text3);text-align:right;white-space:nowrap">'+String(hh).padStart(2,'0')+':00</td>'
+    days.forEach(d=>{ const ymd=_calYmd(d), wd=_calWd1(d), on=_aAvail(ymd,wd,hh)
+      const ric=_DISPA.ric.includes(wd+':'+hh)&&!_DISPA.rem.includes(ymd+':'+hh)
+      const bg=on?(ric?'#2a9d5c':'#185FA5'):'var(--surface)'; const bd=on?bg:'var(--border)'
+      h+='<td onclick="calAdminToggle(\''+ymd+'\','+wd+','+hh+')" title="'+String(hh).padStart(2,'0')+':00" style="cursor:pointer;height:24px;border:1px solid '+bd+';background:'+bg+';border-radius:4px"></td>' })
+    h+='</tr>'
+  }
+  h+='</tbody></table>'
+  grid.innerHTML=h
+}
+function calAdminToggle(ymd,wd,h){
+  const ricKey=wd+':'+h, dateKey=ymd+':'+h
+  const ric=_DISPA.ric.includes(ricKey), add=_DISPA.add.includes(dateKey), rem=_DISPA.rem.includes(dateKey)
+  const on=(ric&&!rem)||add
+  if(on){ if(add){ _DISPA.add=_DISPA.add.filter(x=>x!==dateKey) } else if(!rem){ _DISPA.rem.push(dateKey) } }
+  else { if(rem){ _DISPA.rem=_DISPA.rem.filter(x=>x!==dateKey) } else if(!_DISPA.add.includes(dateKey)){ _DISPA.add.push(dateKey) } }
+  renderCalAdminGrid()
+}
+function calAdminApplicaRic(){
+  const giorni=[...document.querySelectorAll('.caladm-wd:checked')].map(c=>+c.value)
+  if(!giorni.length){ alert('Seleziona almeno un giorno della settimana.'); return }
+  const da=+document.getElementById('caladm-ric-da').value, a=+document.getElementById('caladm-ric-a').value
+  if(a<=da){ alert('L\u0027ora di fine deve essere successiva all\u0027inizio.'); return }
+  giorni.forEach(wd=>{ for(let h=da;h<a;h++){ const k=wd+':'+h; if(!_DISPA.ric.includes(k)) _DISPA.ric.push(k) } })
+  document.querySelectorAll('.caladm-wd:checked').forEach(c=>c.checked=false)
+  renderCalAdminGrid()
+}
+function calAdminSvuotaRic(){ if(!confirm('Rimuovere tutte le disponibilità ricorrenti di questa persona?')) return; _DISPA.ric=[]; _DISPA.rem=[]; renderCalAdminGrid() }
+async function calAdminSalva(){
+  if(!_calARec) return
+  const st=document.getElementById('cal-admin-stato'); st.textContent='Salvataggio…'
+  try{
+    const base=Object.assign({}, _calARec); delete base._id
+    base.disponibilita={ ric:_DISPA.ric, add:_DISPA.add, rem:_DISPA.rem }
+    const { error }=await db.from(_calATipo).update({ data:base }).eq('id',_calARec._id); if(error) throw error
+    _calARec.disponibilita=base.disponibilita
+    st.textContent='Salvato ✓'; setTimeout(()=>{ st.textContent='' },2000)
+  }catch(e){ st.textContent='Errore: '+((e&&e.message)||e) }
 }
 
 function _bonusKey(){ const s=(sezioneAttiva||'proc'); return s==='proc'?'leone_bonus':'leone_bonus_'+s }
