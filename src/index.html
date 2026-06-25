@@ -1342,7 +1342,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div style="display:flex;gap:16px;height:calc(100vh - 280px)">
 
       <!-- LISTA DOCUMENTI -->
-      <div style="width:200px;flex-shrink:0;display:flex;flex-direction:column;min-height:0">
+      <div style="width:clamp(220px, 24%, 360px);flex-shrink:0;display:flex;flex-direction:column;min-height:0">
         <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Documenti</div>
         <div id="editor-doc-list" style="flex:1;overflow-y:auto;min-height:0;padding-right:4px"></div>
         <button class="btn btn-p" style="font-size:11px;width:100%;margin-top:8px;flex-shrink:0" onclick="aggiungiDocumento()">+ Aggiungi documento</button>
@@ -9365,14 +9365,14 @@ function renderEditorDocList(){
   if(!allDocs.length){ el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:10px 4px;line-height:1.5">Nessun documento per questa area.<br>Carica un PDF qui sotto: verrà salvato per <b>'+({proc:'Procacciatori',doc:'Docenti',dip:'Dipendenti'}[areaCur]||areaCur)+'</b>.</div>'; return }
   el.innerHTML = allDocs.map(d => `
     <div onclick="selectEditorDoc('${d.id}',${d.pages})"
-      style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:6px;cursor:pointer;
+      style="display:flex;flex-direction:column;gap:5px;padding:8px 10px;border-radius:6px;cursor:pointer;
              margin-bottom:4px;border:1px solid var(--border);
              background:${editorDocId===d.id?'var(--accent-faint, rgba(192,57,43,.12))':'var(--surface)'};
              color:${editorDocId===d.id?'var(--accent)':'var(--text)'}">
-      <div style="flex:1;min-width:0;font-size:12px;font-weight:500;line-height:1.35;word-break:break-word">
+      <div style="font-size:12px;font-weight:500;line-height:1.35;word-break:break-word">
         ${d.label}${d.dynamic?' ☁':(d.hasPdf?' 📄':'')}${d.nMarkers?`<span style="color:var(--accent);font-size:10px;margin-left:5px;white-space:nowrap">●${d.nMarkers}</span>`:''}
       </div>
-      <div style="display:flex;align-items:center;gap:1px;flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:1px;justify-content:flex-end">
         <button onclick="event.stopPropagation();rinominaDocId('${d.id}')" title="Rinomina documento" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1">✏️</button>
         <button onclick="event.stopPropagation();sostituisciPdfId('${d.id}')" title="${d.dynamic?'Sostituisci PDF':'Carica/Sostituisci il PDF'}" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1">🔄</button>
         <button onclick="event.stopPropagation();agganciaPdfEsistente('${d.id}')" title="Aggancia un PDF gi\u00e0 caricato a questa voce" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1">🔗</button>
