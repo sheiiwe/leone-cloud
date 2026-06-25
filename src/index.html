@@ -684,7 +684,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px">
     <input id="doc-search" type="text" placeholder="🔍 Cerca per nome, materia, livello..." oninput="renderDocenti()" style="flex:1;min-width:180px;padding:9px 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <select id="doc-f-materia" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutte le materie</option></select>
-    <select id="doc-f-livello" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutti i livelli</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select>
+    <select id="doc-f-livello" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutti i gradi di istruzione</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select>
     <select id="doc-f-qualifica" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutte le qualifiche</option><option value="procacciatore">Docente procacciatore</option><option value="assunto">Docente assunto</option></select>
   </div>
   <div id="docenti-lista"></div>
@@ -693,7 +693,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="card-hdr"><h3>Studenti</h3><button class="btn btn-p" onclick="apriStudente()">+ Nuovo studente</button></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px">
     <input id="stu-search" type="text" placeholder="🔍 Cerca per nome, materia, scuola..." oninput="renderStudenti()" style="flex:1;min-width:180px;padding:9px 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
-    <select id="stu-f-livello" onchange="renderStudenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutti i livelli</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select>
+    <select id="stu-f-livello" onchange="renderStudenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutti i gradi di istruzione</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select>
     <select id="stu-f-docente" onchange="renderStudenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutti i docenti</option></select>
   </div>
   <div id="studenti-lista"></div>
@@ -1525,7 +1525,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="fr"><div class="fg"><label>% Compenso docente <span style="font-size:10px;color:var(--text3)">(il resto all'azienda)</span></label><input id="doc-pct" type="number" min="0" max="100" step="1" placeholder="70" oninput="_docPctEcho()"></div><div class="fg"><label>Quota azienda</label><input id="doc-pct-az" type="text" disabled placeholder="30%"></div><div class="fg"><label>Stato</label><select id="doc-stato"><option>Attivo</option><option>In pausa</option><option>Terminato</option></select></div></div>
     <div class="fr"><div class="fg"><label>Qualifica</label><select id="doc-qualifica"><option value="procacciatore">Docente procacciatore (autonomo)</option><option value="assunto">Docente assunto (dipendente)</option></select></div></div>
     <div class="msec">Insegnamento</div>
-    <div class="fg"><label>Livelli</label><div style="display:flex;gap:14px;flex-wrap:wrap;padding:4px 0">
+    <div class="fg"><label>Gradi di istruzione</label><div style="display:flex;gap:14px;flex-wrap:wrap;padding:4px 0">
       <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" class="doc-liv" value="Elementari"> Elementari</label>
       <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" class="doc-liv" value="Medie"> Medie</label>
       <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" class="doc-liv" value="Superiori"> Superiori</label>
@@ -1552,10 +1552,14 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="fr"><div class="fg"><label>Cognome e nome *</label><input id="stu-nome" type="text" placeholder="Bianchi Giulia"></div><div class="fg"><label>Data di nascita</label><input id="stu-nascita" type="date"></div></div>
     <div class="fr"><div class="fg"><label>Telefono</label><input id="stu-tel" type="tel" placeholder="+39 333 000000"></div><div class="fg"><label>Email</label><input id="stu-email" type="email" placeholder="giulia@email.com"></div></div>
     <div class="fr"><div class="fg"><label>Indirizzo</label><input id="stu-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>Città</label><input id="stu-citta" type="text" placeholder="Roma"></div><div class="fg"><label>CAP</label><input id="stu-cap" type="text" maxlength="5" placeholder="00100"></div></div>
-    <div class="msec">Genitore / Tutore (se minorenne)</div>
-    <div class="fr"><div class="fg"><label>Nome genitore/tutore</label><input id="stu-genitore" type="text" placeholder="Bianchi Marco"></div><div class="fg"><label>Telefono genitore</label><input id="stu-tel-genitore" type="tel" placeholder="+39 333 000000"></div></div>
+    <div class="msec" id="stu-genitore-msec">Genitore / Tutore <span style="font-weight:400;color:var(--text2)">(obbligatorio per minorenni)</span></div>
+    <div class="fr"><div class="fg"><label>Nome e cognome genitore/tutore</label><input id="stu-genitore" type="text" placeholder="Bianchi Marco"></div><div class="fg"><label>Codice fiscale genitore</label><input id="stu-genitore-cf" type="text" placeholder="BNCMRC75A01H501U" style="text-transform:uppercase"></div></div>
+    <div class="fr"><div class="fg"><label>Telefono genitore</label><input id="stu-tel-genitore" type="tel" placeholder="+39 333 000000"></div><div class="fg"><label>Email genitore</label><input id="stu-genitore-email" type="email" placeholder="marco@email.com"></div></div>
+    <div class="fr"><div class="fg"><label>Tipo documento</label><select id="stu-genitore-doctipo"><option value="">—</option><option>Carta d'Identità</option><option>Passaporto</option><option>Patente</option></select></div><div class="fg"><label>Numero documento</label><input id="stu-genitore-docnum" type="text" placeholder="es. AB1234567"></div></div>
+    <div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="stu-autorizz"> Autorizzazione del genitore/tutore acquisita</label></div>
+    <div class="fg"><label>Documento / autorizzazione (PDF o foto)</label><div style="display:flex;gap:8px;align-items:center"><label class="btn btn-sm" style="cursor:pointer">📤 Carica<input type="file" id="stu-genitore-file" accept="application/pdf,image/*" style="display:none" onchange="caricaDocGenitore(this)"></label> <span id="stu-genitore-file-stato" style="font-size:11px;color:var(--text2)"></span></div></div>
     <div class="msec">Scuola e ripetizioni</div>
-    <div class="fr"><div class="fg"><label>Livello scolastico</label><select id="stu-livello"><option value="">—</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select></div><div class="fg"><label>Classe / Anno</label><input id="stu-classe" type="text" placeholder="es. 3ª media"></div><div class="fg"><label>Istituto / Scuola</label><input id="stu-istituto" type="text" placeholder="es. I.C. Velletri"></div></div>
+    <div class="fr"><div class="fg"><label>Grado di istruzione</label><select id="stu-livello" onchange="_stuCheckMinore()"><option value="">—</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select></div><div class="fg"><label>Classe / Anno</label><input id="stu-classe" type="text" placeholder="es. 3ª media"></div><div class="fg"><label>Istituto / Scuola</label><input id="stu-istituto" type="text" placeholder="es. I.C. Velletri"></div></div>
     <div class="fg"><label>Materie richieste</label>
       <div style="display:flex;gap:6px"><input id="stu-materia-in" type="text" placeholder="es. Inglese" list="dl-materie" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();_stuAddMateria()}"><button type="button" class="btn btn-sm" onclick="_stuAddMateria()">+ Aggiungi</button></div>
       <div id="stu-materie-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
@@ -2644,6 +2648,27 @@ function closeM(id){document.getElementById(id).classList.remove('open')}
 
 // ── STUDENTI (Settore Insegnamento) ─────────────────────────
 let _stuMaterie=[]
+let _stuGenitoreDoc=null
+function _stuMinore(){ const l=document.getElementById('stu-livello'); return l && (l.value==='Elementari'||l.value==='Medie') }
+function _stuCheckMinore(){
+  const sec=document.getElementById('stu-genitore-msec'); if(!sec) return
+  if(_stuMinore()){ sec.style.color='#c0392b'; sec.style.fontWeight='700' }
+  else { sec.style.color=''; sec.style.fontWeight='' }
+}
+async function caricaDocGenitore(input){
+  const f=input.files&&input.files[0]; if(!f) return
+  const st=document.getElementById('stu-genitore-file-stato'); if(st) st.textContent='Caricamento…'
+  try{
+    const ext=(f.name.split('.').pop()||'').toLowerCase()
+    const path='studenti/genitori/'+Date.now()+'_'+Math.random().toString(36).slice(2,8)+'.'+ext
+    const up=await db.storage.from('documenti').upload(path, f, {upsert:true, contentType:f.type||'application/octet-stream'})
+    if(up.error) throw up.error
+    const pub=db.storage.from('documenti').getPublicUrl(path)
+    _stuGenitoreDoc={ url:(pub&&pub.data&&pub.data.publicUrl)||'', path, nome:f.name }
+    if(st) st.innerHTML='✓ '+escB(f.name)+' — <a href="'+escB(_stuGenitoreDoc.url)+'" target="_blank">apri</a>'
+  }catch(e){ if(st) st.textContent='Errore: '+(e.message||e) }
+  input.value=''
+}
 function _stuRenderChips(){ const mc=document.getElementById('stu-materie-chips'); if(mc) mc.innerHTML=_stuMaterie.map((m,i)=>'<span style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:14px;padding:3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:6px">'+escB(m)+' <span style="cursor:pointer;color:#c0392b;font-weight:700" onclick="_stuDelMateria('+i+')">×</span></span>').join('') }
 function _stuAddMateria(){ const i=document.getElementById('stu-materia-in'); const v=(i.value||'').trim(); if(v&&!_stuMaterie.some(x=>x.toLowerCase()===v.toLowerCase())){ _stuMaterie.push(v); _stuRenderChips() } i.value=''; i.focus() }
 function _stuDelMateria(i){ _stuMaterie.splice(i,1); _stuRenderChips() }
@@ -2664,19 +2689,25 @@ function apriStudente(id){
   set('stu-nome',s&&s.nome); set('stu-nascita',s&&s.nascita); set('stu-tel',s&&s.tel); set('stu-email',s&&s.email)
   set('stu-indirizzo',s&&s.indirizzo); set('stu-citta',s&&s.citta); set('stu-cap',s&&s.cap)
   set('stu-genitore',s&&s.genitore); set('stu-tel-genitore',s&&s.tel_genitore)
+  set('stu-genitore-cf',s&&s.genitore_cf); set('stu-genitore-email',s&&s.genitore_email); set('stu-genitore-docnum',s&&s.genitore_docnum)
+  document.getElementById('stu-genitore-doctipo').value=(s&&s.genitore_doctipo)||''
+  document.getElementById('stu-autorizz').checked=!!(s&&s.autorizzazione)
+  _stuGenitoreDoc=(s&&s.genitore_doc)?s.genitore_doc:null
+  { const st=document.getElementById('stu-genitore-file-stato'); if(st) st.innerHTML=_stuGenitoreDoc?('✓ '+escB(_stuGenitoreDoc.nome||'documento caricato')+' — <a href="'+escB(_stuGenitoreDoc.url)+'" target="_blank">apri</a>'):'' }
   set('stu-classe',s&&s.classe); set('stu-istituto',s&&s.istituto); set('stu-note',s&&s.note)
   document.getElementById('stu-livello').value=(s&&s.livello)||''
   document.getElementById('stu-stato').value=(s&&s.stato)||'Attivo'
   document.getElementById('stu-docente').value=(s&&s.docenteId)||''
   _stuMaterie=(s&&Array.isArray(s.materie))?[...s.materie]:[]
   _stuRenderChips()
+  _stuCheckMinore()
   openM('m-studente')
 }
 async function salvaStudente(){
   const nome=(document.getElementById('stu-nome').value||'').trim()
   if(!nome) return alert('Inserisci cognome e nome.')
   const g=k=>{ const e=document.getElementById(k); return e?e.value.trim():'' }
-  const obj={ nome, nascita:g('stu-nascita'), tel:g('stu-tel'), email:g('stu-email'), indirizzo:g('stu-indirizzo'), citta:g('stu-citta'), cap:g('stu-cap'), genitore:g('stu-genitore'), tel_genitore:g('stu-tel-genitore'), livello:document.getElementById('stu-livello').value, classe:g('stu-classe'), istituto:g('stu-istituto'), materie:_stuMaterie, docenteId:document.getElementById('stu-docente').value, stato:document.getElementById('stu-stato').value, note:g('stu-note') }
+  const obj={ nome, nascita:g('stu-nascita'), tel:g('stu-tel'), email:g('stu-email'), indirizzo:g('stu-indirizzo'), citta:g('stu-citta'), cap:g('stu-cap'), genitore:g('stu-genitore'), genitore_cf:g('stu-genitore-cf').toUpperCase(), genitore_email:g('stu-genitore-email'), tel_genitore:g('stu-tel-genitore'), genitore_doctipo:document.getElementById('stu-genitore-doctipo').value, genitore_docnum:g('stu-genitore-docnum'), autorizzazione:document.getElementById('stu-autorizz').checked, genitore_doc:_stuGenitoreDoc||null, livello:document.getElementById('stu-livello').value, classe:g('stu-classe'), istituto:g('stu-istituto'), materie:_stuMaterie, docenteId:document.getElementById('stu-docente').value, stato:document.getElementById('stu-stato').value, note:g('stu-note') }
   const id=document.getElementById('stu-id').value
   try{
     if(id){ const r=await db.from('studenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
@@ -2711,12 +2742,16 @@ function renderStudenti(){
     const col=s.stato==='Attivo'?'#2a9d5c':'#888'
     const badge='<span style="background:'+col+';color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">'+escB(s.stato||'Attivo')+'</span>'
     const scuola=[s.livello,s.classe,s.istituto].filter(Boolean).join(' · ')
+    const minore=(s.livello==='Elementari'||s.livello==='Medie')
+    const warnAut=(minore && !s.autorizzazione)?'<div style="font-size:11px;color:#c0392b;margin-top:4px">⚠ Manca l\u0027autorizzazione del genitore/tutore</div>':''
+    const docG=(s.genitore_doc&&s.genitore_doc.url)?' · <a href="'+escB(s.genitore_doc.url)+'" target="_blank">documento genitore</a>':''
     return '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
       '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(s.nome||'—')+' '+badge+'</div>'+
       (scuola?'<div style="font-size:12px;color:var(--text2);margin:3px 0">🎓 '+escB(scuola)+'</div>':'')+
       (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
       (dn?'<div style="font-size:11px;color:var(--text2);margin-top:5px">👨\u200d🏫 Docente: '+escB(dn)+'</div>':'<div style="font-size:11px;color:#c0392b;margin-top:5px">Nessun docente assegnato</div>')+
-      '<div style="font-size:11px;color:var(--text3);margin-top:4px">'+escB(s.email||'')+(s.tel?(' · '+escB(s.tel)):'')+(s.genitore?(' · tutore: '+escB(s.genitore)):'')+'</div>'+
+      warnAut+
+      '<div style="font-size:11px;color:var(--text3);margin-top:4px">'+escB(s.email||'')+(s.tel?(' · '+escB(s.tel)):'')+(s.genitore?(' · tutore: '+escB(s.genitore)):'')+docG+'</div>'+
       '</div>'+
       '<div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="apriStudente(\''+s._id+'\')">✏️</button><button class="btn btn-sm btn-r" onclick="eliminaStudente(\''+s._id+'\')">🗑</button></div>'+
       '</div></div>'
