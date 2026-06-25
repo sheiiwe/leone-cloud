@@ -8194,9 +8194,12 @@ function renderImpostazioni(){
     'imp-soglia-occ': 'soglia_occ',
     'imp-aliquota-ritenuta': 'aliquota_ritenuta',
   }
+  const noFill = new Set(['imp-link-generico','imp-email-notifiche'])
   Object.entries(map).forEach(([id, chiave]) => {
     const el = document.getElementById(id)
-    if(el && impostazioni[chiave]) el.value = impostazioni[chiave]
+    if(!el) return
+    if(impostazioni[chiave]!=null && impostazioni[chiave]!=='') el.value = impostazioni[chiave]
+    else if(!noFill.has(id)){ const ph=el.getAttribute('placeholder'); if(ph) el.value = ph }
   })
   // Popola anteprime logo
   ;[['logo_giorno','prev-logo-giorno'],['logo_notte','prev-logo-notte'],['logo_entrambi','prev-logo-entrambi'],['logo_splash','prev-logo-splash'],['portale_logo','prev-logo-portale']].forEach(([chiave,prevId])=>{
