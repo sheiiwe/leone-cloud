@@ -252,6 +252,10 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('bonus',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>Bonus porta cliente
     </div>
+    <div class="nav-sec">Insegnamento</div>
+    <div class="nav-item" onclick="sp('docenti',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Docenti
+    </div>
     <div class="nav-sec">Sistema</div>
     <div class="nav-item" onclick="apriRicercaGlobale()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Ricerca globale
@@ -1483,6 +1487,47 @@ tbody tr:hover td{background:var(--surface2)}
 </div>
 
 <!-- MODAL PROCACCIATORE -->
+<div class="page" id="page-docenti">
+  <div class="card-hdr"><h3>Docenti</h3><button class="btn btn-p" onclick="apriDocente()">+ Nuovo docente</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px">
+    <input id="doc-search" type="text" placeholder="🔍 Cerca per nome, materia, livello..." oninput="renderDocenti()" style="flex:1;min-width:180px;padding:9px 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
+    <select id="doc-f-materia" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutte le materie</option></select>
+    <select id="doc-f-livello" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutti i livelli</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select>
+  </div>
+  <div id="docenti-lista"></div>
+</div>
+<div class="modal-overlay" id="m-docente">
+  <div class="modal">
+    <h3 id="doc-modal-title">Nuovo docente</h3>
+    <input type="hidden" id="doc-id">
+    <div class="msec">Dati anagrafici</div>
+    <div class="fr"><div class="fg"><label>Cognome e nome *</label><input id="doc-nome" type="text" placeholder="Rossi Mario"></div><div class="fg"><label>Data di nascita</label><input id="doc-nascita" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Codice fiscale</label><input id="doc-cf" type="text" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase"></div><div class="fg"><label>Telefono</label><input id="doc-tel" type="tel" placeholder="+39 333 000000"></div></div>
+    <div class="fr"><div class="fg"><label>Email personale</label><input id="doc-email" type="email" placeholder="mario@email.com"></div><div class="fg"><label>Email aziendale (login portale)</label><input id="doc-email-az" type="email" placeholder="nome.cognome@..."></div></div>
+    <div class="fr"><div class="fg"><label>Indirizzo</label><input id="doc-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>Città</label><input id="doc-citta" type="text" placeholder="Roma"></div><div class="fg"><label>CAP</label><input id="doc-cap" type="text" maxlength="5" placeholder="00100"></div></div>
+    <div class="msec">Dati fiscali e pagamento</div>
+    <div class="fr"><div class="fg"><label>IBAN</label><input id="doc-iban" type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"></div><div class="fg"><label>Regime</label><select id="doc-regime"><option value="ritenuta">Prestazione occasionale</option><option value="piva">Partita IVA</option></select></div><div class="fg"><label>P.IVA (se presente)</label><input id="doc-piva" type="text" placeholder="01234567890"></div></div>
+    <div class="fr"><div class="fg"><label>% Compenso docente <span style="font-size:10px;color:var(--text3)">(il resto all'azienda)</span></label><input id="doc-pct" type="number" min="0" max="100" step="1" placeholder="70" oninput="_docPctEcho()"></div><div class="fg"><label>Quota azienda</label><input id="doc-pct-az" type="text" disabled placeholder="30%"></div><div class="fg"><label>Stato</label><select id="doc-stato"><option>Attivo</option><option>In pausa</option><option>Terminato</option></select></div></div>
+    <div class="msec">Insegnamento</div>
+    <div class="fg"><label>Livelli</label><div style="display:flex;gap:14px;flex-wrap:wrap;padding:4px 0">
+      <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" class="doc-liv" value="Elementari"> Elementari</label>
+      <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" class="doc-liv" value="Medie"> Medie</label>
+      <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" class="doc-liv" value="Superiori"> Superiori</label>
+      <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" class="doc-liv" value="Università"> Università</label>
+    </div></div>
+    <div class="fg"><label>Materie</label>
+      <div style="display:flex;gap:6px"><input id="doc-materia-in" type="text" placeholder="es. Inglese" list="dl-materie" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();_docAddMateria()}"><button type="button" class="btn btn-sm" onclick="_docAddMateria()">+ Aggiungi</button></div>
+      <datalist id="dl-materie"></datalist>
+      <div id="doc-materie-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
+    </div>
+    <div class="fg"><label>Certificati <span style="font-size:10px;color:var(--text3)">(i PDF si caricano dal portale)</span></label>
+      <div style="display:flex;gap:6px"><input id="doc-cert-in" type="text" placeholder="es. Certificazione B2 Inglese" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();_docAddCert()}"><button type="button" class="btn btn-sm" onclick="_docAddCert()">+ Aggiungi</button></div>
+      <div id="doc-cert-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
+    </div>
+    <div class="fg"><label>Note</label><textarea id="doc-note" rows="2" placeholder="Note interne"></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeM('m-docente')">Annulla</button><button class="btn btn-p" onclick="salvaDocente()">Salva docente</button></div>
+  </div>
+</div>
 <div class="modal-overlay" id="m-proc">
   <div class="modal">
     <h3 id="proc-modal-title">Nuovo procacciatore</h3>
@@ -1803,7 +1848,7 @@ function syncStatus(state,msg){
 }
 
 // ── STATO ────────────────────────────────────────────────────
-let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[]
+let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[]
 const AVC=['av-b','av-t','av-c','av-p','av-a']
 const avc=i=>AVC[i%AVC.length]
 function avatarImg(i,size=26){
@@ -1831,16 +1876,18 @@ async function setupTables(){
 async function loadAll(){
   syncStatus('syncing','Caricamento...')
   try{
-    const [rP,rV,rL,rD,rB,rC]=await Promise.all([
+    const [rP,rV,rL,rD,rB,rC,rDoc]=await Promise.all([
       db.from('procacciatori').select('*').order('created_at'),
       db.from('vendite').select('*').order('created_at'),
       db.from('leads').select('*').order('created_at'),
       db.from('dipendenti').select('*').order('created_at'),
       db.from('buste_paga').select('*').order('created_at'),
       db.from('contratti_firme').select('*').order('created_at'),
+      db.from('docenti').select('*').order('created_at'),
     ])
     if(rP.error)throw rP.error
     procs=rP.data.map(r=>({_id:r.id,created:r.created_at,...r.data}))
+    docenti=(rDoc&&rDoc.data?rDoc.data:[]).map(r=>({_id:r.id,created:r.created_at,...r.data}))
     vendite=rV.data.map(r=>({_id:r.id,created:r.created_at,...r.data}))
     leads=rL.data.map(r=>({_id:r.id,created:r.created_at,...r.data}))
     const _leadTot=leads.length
@@ -2459,7 +2506,7 @@ function sp(id,el){
   if(el)el.classList.add('active')
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
-  const renders={dashboard:renderDash,proc:renderProc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':caricaDocComm,'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':caricaDocComm,'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -2555,6 +2602,94 @@ function openM(id){
   {const _m=document.querySelector('#'+id+' .modal'); if(_m)_m.scrollTop=0}
 }
 function closeM(id){document.getElementById(id).classList.remove('open')}
+
+// ── DOCENTI (Settore Insegnamento) ──────────────────────────
+let _docMaterie=[], _docCerti=[]
+const _MATERIE_SUGG=['Italiano','Matematica','Inglese','Spagnolo','Francese','Tedesco','Storia','Geografia','Scienze','Fisica','Chimica','Biologia','Latino','Greco','Filosofia','Informatica','Economia','Diritto','Disegno','Musica']
+function _docPctEcho(){ const v=parseFloat(document.getElementById('doc-pct').value); const az=document.getElementById('doc-pct-az'); if(az) az.value=(isFinite(v)?(Math.max(0,Math.min(100,100-v))+'%'):'') }
+function _docFillMaterieSugg(){
+  const dl=document.getElementById('dl-materie'); if(dl){ const used=[...new Set([..._MATERIE_SUGG, ...docenti.flatMap(d=>d.materie||[])])].sort((a,b)=>a.localeCompare(b,'it')); dl.innerHTML=used.map(m=>'<option value="'+escB(m)+'"></option>').join('') }
+  const sel=document.getElementById('doc-f-materia'); if(sel){ const cur=sel.value; const all=[...new Set(docenti.flatMap(d=>d.materie||[]))].sort((a,b)=>a.localeCompare(b,'it')); sel.innerHTML='<option value="">Tutte le materie</option>'+all.map(m=>'<option'+(m===cur?' selected':'')+'>'+escB(m)+'</option>').join('') }
+}
+function _docRenderChips(){
+  const mc=document.getElementById('doc-materie-chips'); if(mc) mc.innerHTML=_docMaterie.map((m,i)=>'<span style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:14px;padding:3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:6px">'+escB(m)+' <span style="cursor:pointer;color:#c0392b;font-weight:700" onclick="_docDelMateria('+i+')">×</span></span>').join('')
+  const cc=document.getElementById('doc-cert-chips'); if(cc) cc.innerHTML=_docCerti.map((c,i)=>'<span style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:14px;padding:3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:6px">📄 '+escB(c)+' <span style="cursor:pointer;color:#c0392b;font-weight:700" onclick="_docDelCert('+i+')">×</span></span>').join('')
+}
+function _docAddMateria(){ const i=document.getElementById('doc-materia-in'); const v=(i.value||'').trim(); if(v&&!_docMaterie.some(x=>x.toLowerCase()===v.toLowerCase())){ _docMaterie.push(v); _docRenderChips() } i.value=''; i.focus() }
+function _docDelMateria(i){ _docMaterie.splice(i,1); _docRenderChips() }
+function _docAddCert(){ const i=document.getElementById('doc-cert-in'); const v=(i.value||'').trim(); if(v&&!_docCerti.includes(v)){ _docCerti.push(v); _docRenderChips() } i.value=''; i.focus() }
+function _docDelCert(i){ _docCerti.splice(i,1); _docRenderChips() }
+function apriDocente(id){
+  _docMaterie=[]; _docCerti=[]
+  const d=id?docenti.find(x=>x._id===id):null
+  document.getElementById('doc-modal-title').textContent=d?'Modifica docente':'Nuovo docente'
+  const set=(k,v)=>{ const e=document.getElementById(k); if(e) e.value=v||'' }
+  document.getElementById('doc-id').value=d?d._id:''
+  set('doc-nome',d&&d.nome); set('doc-nascita',d&&d.nascita); set('doc-cf',d&&d.cf); set('doc-tel',d&&d.tel)
+  set('doc-email',d&&d.email); set('doc-email-az',d&&d.email_aziendale); set('doc-indirizzo',d&&d.indirizzo); set('doc-citta',d&&d.citta); set('doc-cap',d&&d.cap)
+  set('doc-iban',d&&d.iban); set('doc-piva',d&&d.piva); set('doc-note',d&&d.note)
+  document.getElementById('doc-regime').value=(d&&d.regime)||'ritenuta'
+  document.getElementById('doc-stato').value=(d&&d.stato)||'Attivo'
+  document.getElementById('doc-pct').value=(d&&d.pctDocente!=null)?d.pctDocente:''
+  _docPctEcho()
+  document.querySelectorAll('.doc-liv').forEach(c=>{ c.checked=!!(d&&(d.livelli||[]).includes(c.value)) })
+  _docMaterie=(d&&Array.isArray(d.materie))?[...d.materie]:[]
+  _docCerti=(d&&Array.isArray(d.certificati))?[...d.certificati]:[]
+  _docFillMaterieSugg(); _docRenderChips()
+  openM('m-docente')
+}
+async function salvaDocente(){
+  const nome=(document.getElementById('doc-nome').value||'').trim()
+  if(!nome) return alert('Inserisci cognome e nome.')
+  const livelli=[...document.querySelectorAll('.doc-liv')].filter(c=>c.checked).map(c=>c.value)
+  const g=k=>{ const e=document.getElementById(k); return e?e.value.trim():'' }
+  const pct=parseFloat(document.getElementById('doc-pct').value)
+  const obj={ nome, nascita:g('doc-nascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note') }
+  const id=document.getElementById('doc-id').value
+  try{
+    if(id){ const r=await db.from('docenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
+    else { const r=await db.from('docenti').insert({data:obj}); if(r.error) throw r.error }
+    closeM('m-docente'); await caricaDocenti(); toast('✅ Docente salvato')
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+}
+async function caricaDocenti(){
+  try{ const r=await db.from('docenti').select('*').order('created_at'); docenti=(r.data||[]).map(x=>({_id:x.id,created:x.created_at,...x.data})) }catch(e){}
+  renderDocenti()
+}
+async function eliminaDocente(id){
+  const d=docenti.find(x=>x._id===id); if(!d) return
+  if(!confirm('Eliminare il docente "'+(d.nome||'')+'"?')) return
+  try{ const r=await db.from('docenti').delete().eq('id',id); if(r.error) throw r.error; await caricaDocenti(); toast('Docente eliminato') }catch(e){ alert('Errore: '+(e.message||e)) }
+}
+function renderDocenti(){
+  _docFillMaterieSugg()
+  const box=document.getElementById('docenti-lista'); if(!box) return
+  const q=(document.getElementById('doc-search')?.value||'').trim().toLowerCase()
+  const fm=document.getElementById('doc-f-materia')?.value||''
+  const fl=document.getElementById('doc-f-livello')?.value||''
+  let list=docenti.slice()
+  if(fm) list=list.filter(d=>(d.materie||[]).includes(fm))
+  if(fl) list=list.filter(d=>(d.livelli||[]).includes(fl))
+  if(q) list=list.filter(d=>((d.nome||'')+' '+(d.materie||[]).join(' ')+' '+(d.livelli||[]).join(' ')+' '+(d.email||'')).toLowerCase().includes(q))
+  if(!docenti.length){ box.innerHTML='<div class="empty" style="padding:3rem">Nessun docente. Premi "+ Nuovo docente" per iniziare.</div>'; return }
+  if(!list.length){ box.innerHTML='<div class="empty" style="padding:2rem">Nessun docente trovato con questi filtri.</div>'; return }
+  box.innerHTML=list.map(d=>{
+    const mat=(d.materie||[]).map(m=>'<span style="background:var(--surface2);border-radius:10px;padding:2px 8px;font-size:11px">'+escB(m)+'</span>').join(' ')
+    const liv=(d.livelli||[]).join(', ')
+    const az=(d.pctDocente!=null&&isFinite(d.pctDocente))?(100-d.pctDocente):null
+    const col=d.stato==='Attivo'?'#2a9d5c':(d.stato==='In pausa'?'#888':'#c0392b')
+    const badge='<span style="background:'+col+';color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">'+escB(d.stato||'Attivo')+'</span>'
+    return '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
+      '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(d.nome||'—')+' '+badge+'</div>'+
+      '<div style="font-size:12px;color:var(--text2);margin:3px 0">'+(liv?('📚 '+escB(liv)):'')+(d.pctDocente!=null?('  ·  💶 docente '+d.pctDocente+'% / azienda '+az+'%'):'')+'</div>'+
+      (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
+      ((d.certificati||[]).length?'<div style="font-size:11px;color:var(--text2);margin-top:5px">📄 '+(d.certificati||[]).map(escB).join(', ')+'</div>':'')+
+      '<div style="font-size:11px;color:var(--text3);margin-top:5px">'+escB(d.email||'')+(d.tel?(' · '+escB(d.tel)):'')+'</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="apriDocente(\''+d._id+'\')">✏️</button><button class="btn btn-sm btn-r" onclick="eliminaDocente(\''+d._id+'\')">🗑</button></div>'+
+      '</div></div>'
+  }).join('')
+}
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}))
 // Chiudi modal con tasto Esc
 document.addEventListener('keydown', e=>{
