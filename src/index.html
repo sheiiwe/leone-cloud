@@ -8233,11 +8233,29 @@ async function upsertImpostazioni(){
     const r = await db.from('impostazioni').select('*')
     const rows = (r && r.data) ? r.data : (Array.isArray(r) ? r : [])
     if(rows.length > 0){
+      const remote = rows[0].data || {}
+      const nRemote = Object.keys(remote).length
+      const nLocal = Object.keys(impostazioni).length
+      // GUARDIA ANTI-SVUOTAMENTO: se in memoria mancano troppe chiavi rispetto al DB,
+      // il caricamento e' probabilmente incompleto -> NON sovrascrivo, ricarico e annullo.
+      if(nRemote >= 8 && nLocal < nRemote * 0.7 && (nRemote - nLocal) > 4){
+        console.error('upsertImpostazioni ANNULLATO per sicurezza: memoria='+nLocal+' DB='+nRemote)
+        impostazioni = Object.assign({}, remote)
+        try{ toast('\u26a0\ufe0f Salvataggio annullato per sicurezza: impostazioni ricaricate. Riprova.') }catch(e){}
+        return false
+      }
+      // TRACCIA: backup del valore remoto PRIMA di sovrascrivere (tiene gli ultimi 40)
+      try{
+        await db.from('impostazioni_backup').insert({ origine:'auto_pre_save', data: remote })
+        const old = await db.from('impostazioni_backup').select('id').order('created_at',{ascending:false}).range(40,9999)
+        if(old && old.data && old.data.length){ await db.from('impostazioni_backup').delete().in('id', old.data.map(x=>x.id)) }
+      }catch(e){}
       await db.from('impostazioni').update({data: impostazioni}).eq('id', rows[0].id)
     } else {
       await db.from('impostazioni').insert({data: impostazioni})
     }
-  } catch(e){ console.error('upsertImpostazioni:', e) }
+    return true
+  } catch(e){ console.error('upsertImpostazioni:', e); return false }
 }
 
 async function renderPortaleLink(){
