@@ -5520,7 +5520,8 @@ function creaProcDaFirma(id){
   if(typeof onRegime==='function') onRegime()
   let docNote=[]
   if(c.documentiCaricati){
-    if(c.documentiCaricati.carta_identita) docNote.push('Carta identità')
+    if(c.documentiCaricati.carta_identita) docNote.push('Carta identità (fronte)')
+    if(c.documentiCaricati.carta_identita_retro) docNote.push('Carta identità (retro)')
     if(c.documentiCaricati.codice_fiscale) docNote.push('Codice fiscale')
     if(c.documentiCaricati.visura_camerale) docNote.push('Visura camerale')
   }
@@ -5567,7 +5568,7 @@ async function apriDocFirmatario(id, chiave){
 // Popup con i documenti del firmatario + contratto firmato
 function mostraDocFirmatario(id){
   const c=contratti.find(x=>x._id===id); const docs=(c&&c.documentiCaricati)||{}
-  const etich={ carta_identita:'Carta d\u0027identità', codice_fiscale:'Codice fiscale / Tessera', visura_camerale:'Visura camerale' }
+  const etich={ carta_identita:'Carta d\u0027identità (fronte)', carta_identita_retro:'Carta d\u0027identità (retro)', codice_fiscale:'Codice fiscale / Tessera', visura_camerale:'Visura camerale' }
   const keys=Object.keys(docs).filter(k=>docs[k])
   const old=document.getElementById('doc-firm-pop'); if(old) old.remove()
   const div=document.createElement('div'); div.id='doc-firm-pop'
@@ -8931,17 +8932,33 @@ async function onDocumentoCaricato(input){
     
     setProgress(80, 'Salvataggio configurazione...', nome)
     const id = 'CUSTOM_' + storageName.replace('.pdf','').replace(/[^a-zA-Z0-9]/g,'_').toUpperCase()
-    impostazioni['pages_' + id] = numPages
-    impostazioni['docname_' + id] = nome.replace(/\.pdf$/i,'')   // mostra il nome originale (con spazi)
-    impostazioni['docarea_' + id] = (sezioneAttiva||'proc')      // a quale area appartiene questo documento
-    // se questo documento era stato cancellato/nascosto, ricaricandolo torna visibile
-    delete impostazioni['dochidden_' + id]
-    delete impostazioni['docpurged_' + id]
-    delete impostazioni['docdeleted_' + id]
+    const docLabel = nome.replace(/\.pdf$/i,'')   // nome originale (con spazi)
+    const docArea = (sezioneAttiva||'proc')       // a quale area appartiene questo documento
+    const _applicaChiaviDoc = () => {
+      impostazioni['pages_' + id] = numPages
+      impostazioni['docname_' + id] = docLabel
+      impostazioni['docarea_' + id] = docArea
+      // se questo documento era stato cancellato/nascosto, ricaricandolo torna visibile
+      delete impostazioni['dochidden_' + id]
+      delete impostazioni['docpurged_' + id]
+      delete impostazioni['docdeleted_' + id]
+    }
+    _applicaChiaviDoc()
     await upsertImpostazioni()
+    // La guardia anti-svuotamento puo' ricaricare le impostazioni dal DB e perdere queste chiavi:
+    // se sono sparite le ri-applico e risalvo, altrimenti le riconfermo soltanto.
+    if(impostazioni['docname_' + id] !== docLabel){ _applicaChiaviDoc(); await upsertImpostazioni() }
+    else _applicaChiaviDoc()
     
     setProgress(95, 'Aggiornamento lista...', nome)
     await caricaDocumentiCustom()
+    // Lo Storage di Supabase e' a consistenza eventuale: subito dopo l'upload la list() puo' non
+    // restituire ancora il file appena caricato. Lo inietto in memoria cosi' e' selezionabile
+    // per tipo di contratto SENZA riavviare l'app; al refresh successivo la list lo riallinea.
+    if(!editorDocsCustom.some(d => d.id === id)){
+      editorDocsCustom.push({ id, label: docLabel, pages: numPages, storageFile: storageName, dynamic: true })
+      try{ renderEditorDocList() }catch(e){}
+    }
     
     setDone(true, nome + ' aggiunto con ' + numPages + ' pagine!')
     
