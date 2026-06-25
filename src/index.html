@@ -36,6 +36,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .section-btn{flex:1;text-align:center;padding:9px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;border-radius:5px;transition:all .15s;user-select:none}
 .section-btn.active{background:var(--accent);color:#fff}
 
+/* SELETTORE AREA (popup) */
+.area-select{position:relative;margin:0 .9rem .8rem}
+.area-trigger{display:flex;align-items:center;gap:8px;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--rsm);padding:10px 12px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);user-select:none;transition:border-color .15s}
+.area-trigger:hover{border-color:var(--accent)}
+.area-trigger .chev{width:15px;height:15px;margin-left:auto;opacity:.55;transition:transform .18s}
+.area-select.open .chev{transform:rotate(180deg)}
+.area-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.dot-proc{background:#185FA5}.dot-doc{background:#C0392B}.dot-dip{background:#117A65}
+.area-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rsm);box-shadow:0 8px 26px rgba(0,0,0,.16);z-index:60;overflow:hidden}
+.area-menu.open{display:block}
+.area-opt{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;transition:background .12s}
+.area-opt:hover{background:var(--surface2);color:var(--text)}
+.area-opt.active{color:var(--text)}
+
 .main{flex:1;overflow-y:auto;padding:2rem;padding-top:calc(2rem + 34px);background:var(--bg)}
 .page{display:none}.page.active{display:block}
 .pg-title{font-size:22px;font-weight:600;margin-bottom:1.5rem;color:var(--text);letter-spacing:-.3px}
@@ -181,11 +195,18 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="sub2">Gestionale amministrativo</div>
   </div>
 
-  <!-- SWITCH PROCACCIATORI / DIPENDENTI -->
-  <div class="section-switch">
-    <div class="section-btn active" id="sw-proc" onclick="switchSezione('proc')">Procacciatori</div>
-    <div class="section-btn" id="sw-doc" onclick="switchSezione('doc')">Docenti</div>
-    <div class="section-btn" id="sw-dip" onclick="switchSezione('dip')">Dipendenti</div>
+  <!-- SELETTORE AREA (popup) -->
+  <div class="area-select" id="area-select">
+    <div class="area-trigger" onclick="toggleAreaMenu(event)">
+      <span class="area-dot" id="area-dot"></span>
+      <span id="area-current">Procacciatori</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="area-menu" id="area-menu">
+      <div class="area-opt active" data-area="proc" onclick="switchSezione('proc')"><span class="area-dot dot-proc"></span>Procacciatori</div>
+      <div class="area-opt" data-area="doc" onclick="switchSezione('doc')"><span class="area-dot dot-doc"></span>Docenti</div>
+      <div class="area-opt" data-area="dip" onclick="switchSezione('dip')"><span class="area-dot dot-dip"></span>Dipendenti</div>
+    </div>
   </div>
 
   <!-- NAV PROCACCIATORI -->
@@ -318,6 +339,20 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-sec">Contratti</div>
     <div class="nav-item" onclick="sp('contratti-dip',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><polyline points="10 17 8 17 8 19"/></svg>Contratti & Firme
+    </div>
+    <div class="nav-sec">Notifiche</div>
+    <div class="nav-item" onclick="sp('avvisi',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Avvisi
+    </div>
+    <div class="nav-sec">Sistema</div>
+    <div class="nav-item" onclick="apriRicercaGlobale()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Ricerca globale
+    </div>
+    <div class="nav-item" onclick="apriScadenzeSolleciti()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Scadenze e solleciti
+    </div>
+    <div class="nav-item" onclick="sp('impostazioni',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Impostazioni
     </div>
   </div>
 </div>
@@ -1124,7 +1159,7 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="acc-body" id="acc-editor-doc">
     <div style="font-size:12px;color:var(--text2);margin-bottom:14px">
-      Seleziona un documento, naviga le pagine e trascina i marker colorati per indicare dove vanno scritti i dati del procacciatore.
+      Seleziona un documento, naviga le pagine e trascina i marker colorati per indicare dove vanno scritti i dati del destinatario. I documenti sono divisi per area (Procacciatori / Docenti / Dipendenti): vedi e carichi solo quelli dell'area selezionata in alto a sinistra.
     </div>
     <!-- Layout: lista sx + editor dx -->
     <div style="display:flex;gap:16px;height:calc(100vh - 280px)">
@@ -2584,9 +2619,12 @@ document.addEventListener('click', e => {
 let sezioneAttiva='proc'
 function switchSezione(sez){
   sezioneAttiva=sez
-  document.getElementById('sw-proc').classList.toggle('active',sez==='proc')
-  document.getElementById('sw-doc').classList.toggle('active',sez==='doc')
-  document.getElementById('sw-dip').classList.toggle('active',sez==='dip')
+  const labels={proc:'Procacciatori',doc:'Docenti',dip:'Dipendenti'}
+  const cur=document.getElementById('area-current'); if(cur) cur.textContent=labels[sez]||''
+  const dot=document.getElementById('area-dot'); if(dot) dot.className='area-dot dot-'+sez
+  document.querySelectorAll('.area-opt').forEach(o=>o.classList.toggle('active',o.dataset.area===sez))
+  const am=document.getElementById('area-menu'); if(am) am.classList.remove('open')
+  const as=document.getElementById('area-select'); if(as) as.classList.remove('open')
   document.getElementById('nav-proc').style.display=sez==='proc'?'block':'none'
   document.getElementById('nav-doc').style.display=sez==='doc'?'block':'none'
   document.getElementById('nav-dip').style.display=sez==='dip'?'block':'none'
@@ -2594,7 +2632,18 @@ function switchSezione(sez){
   if(sez==='proc'){sp('dashboard',null);document.querySelector('#nav-proc .nav-item').classList.add('active')}
   else if(sez==='doc'){sp('docenti',null);document.querySelector('#nav-doc .nav-item').classList.add('active')}
   else{sp('dip-dash',null);document.querySelector('#nav-dip .nav-item').classList.add('active')}
+  try{ if(document.getElementById('editor-doc-list')) renderEditorDocList() }catch(e){}
 }
+function toggleAreaMenu(ev){
+  if(ev) ev.stopPropagation()
+  const am=document.getElementById('area-menu'), as=document.getElementById('area-select')
+  if(!am) return
+  const open=am.classList.toggle('open'); if(as) as.classList.toggle('open',open)
+}
+document.addEventListener('click',function(e){
+  const sel=document.getElementById('area-select')
+  if(sel && !sel.contains(e.target)){ const am=document.getElementById('area-menu'); if(am) am.classList.remove('open'); sel.classList.remove('open') }
+})
 
 // ── NAVIGAZIONE ───────────────────────────────────────────────
 function sp(id,el){
@@ -8200,6 +8249,7 @@ async function onDocumentoCaricato(input){
     const id = 'CUSTOM_' + storageName.replace('.pdf','').replace(/[^a-zA-Z0-9]/g,'_').toUpperCase()
     impostazioni['pages_' + id] = numPages
     impostazioni['docname_' + id] = nome.replace(/\.pdf$/i,'')   // mostra il nome originale (con spazi)
+    impostazioni['docarea_' + id] = (sezioneAttiva||'proc')      // a quale area appartiene questo documento
     // se questo documento era stato cancellato/nascosto, ricaricandolo torna visibile
     delete impostazioni['dochidden_' + id]
     delete impostazioni['docpurged_' + id]
@@ -8640,9 +8690,13 @@ function confermaScelte(docId, idx){
 function renderEditorDocList(){
   const el = document.getElementById('editor-doc-list')
   if(!el) return
+  const areaCur=(sezioneAttiva||'proc')
+  const docArea=d=> d.id.startsWith('CUSTOM_') ? (impostazioni['docarea_'+d.id]||'proc') : 'proc'
   const allDocs = [...EDITOR_DOCS, ...editorDocsCustom]
     .filter(d => !impostazioni['dochidden_'+d.id])
+    .filter(d => docArea(d)===areaCur)
     .map(d => ({ id:d.id, dynamic:!!d.dynamic, label: impostazioni['docname_'+d.id]||d.label, pages: impostazioni['pages_'+d.id]||d.pages, hasPdf: d.dynamic || !!impostazioni['docpdf_'+d.id], nMarkers:(editorMarkers[d.id]||[]).length }))
+  if(!allDocs.length){ el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:10px 4px;line-height:1.5">Nessun documento per questa area.<br>Carica un PDF qui sotto: verrà salvato per <b>'+({proc:'Procacciatori',doc:'Docenti',dip:'Dipendenti'}[areaCur]||areaCur)+'</b>.</div>'; return }
   el.innerHTML = allDocs.map(d => `
     <div onclick="selectEditorDoc('${d.id}',${d.pages})"
       style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:6px;cursor:pointer;
