@@ -184,6 +184,7 @@ tbody tr:hover td{background:var(--surface2)}
   <!-- SWITCH PROCACCIATORI / DIPENDENTI -->
   <div class="section-switch">
     <div class="section-btn active" id="sw-proc" onclick="switchSezione('proc')">Procacciatori</div>
+    <div class="section-btn" id="sw-doc" onclick="switchSezione('doc')">Docenti</div>
     <div class="section-btn" id="sw-dip" onclick="switchSezione('dip')">Dipendenti</div>
   </div>
 
@@ -195,12 +196,6 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="nav-item" onclick="sp('proc',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Procacciatori
-    </div>
-    <div class="nav-item" onclick="sp('docenti',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Docenti
-    </div>
-    <div class="nav-item" onclick="sp('studenti',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>Studenti
     </div>
     <div class="nav-sec">Attività</div>
     <div class="nav-item" onclick="sp('vendite',this)">
@@ -273,6 +268,17 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
   </div>
 
+  <!-- NAV DOCENTI -->
+  <div id="nav-doc" style="display:none">
+    <div class="nav-sec">Generale</div>
+    <div class="nav-item" onclick="sp('docenti',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Docenti
+    </div>
+    <div class="nav-item" onclick="sp('studenti',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>Studenti
+    </div>
+  </div>
+
   <!-- NAV DIPENDENTI -->
   <div id="nav-dip" style="display:none">
     <div class="nav-sec">Generale</div>
@@ -281,9 +287,6 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="nav-item" onclick="sp('dipendenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Dipendenti
-    </div>
-    <div class="nav-item" onclick="sp('docenti',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Docenti
     </div>
     <div class="nav-sec">Paghe</div>
     <div class="nav-item" onclick="sp('buste',this)">
@@ -2533,11 +2536,14 @@ let sezioneAttiva='proc'
 function switchSezione(sez){
   sezioneAttiva=sez
   document.getElementById('sw-proc').classList.toggle('active',sez==='proc')
+  document.getElementById('sw-doc').classList.toggle('active',sez==='doc')
   document.getElementById('sw-dip').classList.toggle('active',sez==='dip')
   document.getElementById('nav-proc').style.display=sez==='proc'?'block':'none'
+  document.getElementById('nav-doc').style.display=sez==='doc'?'block':'none'
   document.getElementById('nav-dip').style.display=sez==='dip'?'block':'none'
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'))
   if(sez==='proc'){sp('dashboard',null);document.querySelector('#nav-proc .nav-item').classList.add('active')}
+  else if(sez==='doc'){sp('docenti',null);document.querySelector('#nav-doc .nav-item').classList.add('active')}
   else{sp('dip-dash',null);document.querySelector('#nav-dip .nav-item').classList.add('active')}
 }
 
