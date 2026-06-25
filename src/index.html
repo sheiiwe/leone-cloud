@@ -313,6 +313,12 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('contratti-doc',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><polyline points="10 17 8 17 8 19"/></svg>Contratti & Firme
     </div>
+    <div class="nav-item" onclick="sp('proposte',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Proposte
+    </div>
+    <div class="nav-item" onclick="sp('bonus',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>Bonus porta cliente
+    </div>
     <div class="nav-sec">Listino</div>
     <div class="nav-item" onclick="sp('listino',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Listino prodotti
@@ -368,6 +374,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-sec">Contratti</div>
     <div class="nav-item" onclick="sp('contratti-dip',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><polyline points="10 17 8 17 8 19"/></svg>Contratti & Firme
+    </div>
+    <div class="nav-item" onclick="sp('bonus',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>Bonus porta cliente
     </div>
     <div class="nav-sec">Listino</div>
     <div class="nav-item" onclick="sp('listino',this)">
@@ -524,6 +533,8 @@ tbody tr:hover td{background:var(--surface2)}
   <div style="margin-bottom:12px"><button class="btn btn-p" onclick="filterList('Telefonia & Internet')" style="font-size:13.5px;padding:9px 18px">📱 Mostra solo Telefonia &amp; Cellulari</button> <button class="btn" onclick="filterList('')" style="font-size:13px;padding:9px 14px">Tutti i prodotti</button></div>
   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center" id="listino-cats"></div>
   <div id="listino-subfilter" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center"></div>
+  <div style="margin-bottom:1rem"><button class="btn btn-sm" onclick="toggleListinoVis()" id="btn-listino-vis">👁 Visibilità categorie nei portali</button></div>
+  <div id="listino-vis-panel" class="card" style="display:none;margin-bottom:1rem"></div>
   <input id="listino-search" type="text" oninput="filterList(activeCat)" placeholder="🔍 Cerca prodotto o categoria..." style="width:100%;max-width:420px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:1rem;background:var(--surface);color:var(--text);box-sizing:border-box">
   <div class="card"><div class="card-hdr"><h3 id="listino-title">Tutti i prodotti</h3><button class="btn btn-p" onclick="openM('m-prodotto')">+ Nuovo prodotto</button></div>
     <div class="tbl-wrap"><table>
@@ -821,8 +832,8 @@ tbody tr:hover td{background:var(--surface2)}
 
 <!-- PROPOSTE / CARRELLI -->
 <div class="page" id="page-proposte">
-  <div class="pg-title">Proposte dai procacciatori</div>
-  <div class="info-card">
+  <div class="pg-title" id="proposte-title">Proposte dai procacciatori</div>
+  <div class="info-card" id="proposte-info">
     <strong>Come funziona:</strong> i procacciatori compongono un carrello di corsi/servizi per un cliente nel portale e te lo inviano. Qui le vedi tutte: segnale come <strong>gestite</strong> quando le hai lavorate.
   </div>
   <div class="card">
@@ -6270,6 +6281,47 @@ function renderDipDash(){
 let activeCat=''
 let activeTipoCliente=''
 function filterTipoCliente(k){ activeTipoCliente=k; filterList(activeCat) }
+// ── VISIBILITÀ CATEGORIE LISTINO (per area/portale) ───────────
+let _listVisCats=[]
+function _listCatAree(cat){
+  const m=impostazioni['listino_cat_aree']||{}
+  const a=m[cat]
+  return (Array.isArray(a)&&a.length)?a:['proc','doc','dip']
+}
+function toggleListinoVis(){
+  const p=document.getElementById('listino-vis-panel'); if(!p) return
+  if(p.style.display!=='none'){ p.style.display='none'; return }
+  p.style.display='block'; renderListinoVis()
+}
+function renderListinoVis(){
+  const p=document.getElementById('listino-vis-panel'); if(!p) return
+  const cats=[...new Set(LISTINO.map(x=>x.cat).filter(Boolean))]
+  _listVisCats=cats
+  const m=[['proc','Procacciatori'],['doc','Docenti'],['dip','Dipendenti']]
+  if(!cats.length){ p.innerHTML='<div style="color:var(--text2)">Nessuna categoria nel listino.</div>'; return }
+  p.innerHTML='<div style="font-weight:700;margin-bottom:4px">Visibilità categorie nei portali</div>'+
+    '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Scegli quali aree vedono ogni categoria nel proprio portale. Di default ogni categoria è visibile a tutti.</div>'+
+    cats.map((cat,i)=>{
+      const aree=_listCatAree(cat)
+      return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 0;border-bottom:0.5px solid var(--border)"><span style="font-weight:600;min-width:160px">'+escB(cat)+'</span>'+
+        m.map(([a,l])=>{ const on=aree.includes(a); return '<span onclick="toggleListinoCatArea('+i+',\''+a+'\')" style="cursor:pointer;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;border:0.5px solid '+(on?'var(--accent)':'var(--border)')+';'+(on?'background:var(--accent);color:#fff':'background:var(--surface2);color:var(--text3)')+'">'+(on?'\u2713 ':'')+l+'</span>' }).join('')+
+      '</div>'
+    }).join('')
+}
+async function toggleListinoCatArea(i, area){
+  const cat=_listVisCats[i]; if(!cat) return
+  const m=Object.assign({}, impostazioni['listino_cat_aree']||{})
+  let aree=Array.isArray(m[cat])&&m[cat].length?m[cat].slice():['proc','doc','dip']
+  if(aree.includes(area)){
+    if(aree.length<=1){ alert('Ogni categoria deve restare visibile ad almeno un\u0027area.'); return }
+    aree=aree.filter(x=>x!==area)
+  } else aree.push(area)
+  m[cat]=aree
+  impostazioni['listino_cat_aree']=m
+  try{ await upsertImpostazioni() }catch(e){ alert('Errore salvataggio: '+(e.message||e)); return }
+  renderListinoVis()
+}
+
 function renderListino(){
   const el=document.getElementById('listino-cats')
   if(!el) return
@@ -6279,6 +6331,7 @@ function renderListino(){
   const sel=document.getElementById('pd-cat-sel')
   if(sel){sel.innerHTML='<option value="">-- Seleziona esistente --</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join('')}
   filterList(activeCat,true)
+  const _vp=document.getElementById('listino-vis-panel'); if(_vp&&_vp.style.display!=='none') renderListinoVis()
 }
 function filterList(cat,silent){
   activeCat=cat;if(!silent)renderListino()
@@ -7851,9 +7904,9 @@ async function inviaBonus(){
   if(window.electronAPI?.sendReport){
     await window.electronAPI.sendReport({..._ec(),to:email,name:nome,via,mese:'Bonus Porta Cliente',reportHtml:html})
     // Salva nello storico
-    const bonus=JSON.parse(localStorage.getItem('leone_bonus')||'[]')
+    const bonus=JSON.parse(localStorage.getItem(_bonusKey())||'[]')
     bonus.unshift({nome,email,clienteSeg,prodSeg,lordo,netto,data:oggi,stato:'Inviato'})
-    localStorage.setItem('leone_bonus',JSON.stringify(bonus))
+    localStorage.setItem(_bonusKey(),JSON.stringify(bonus))
     renderBonus()
     alert(`✅ Prospetto bonus inviato a ${email}!`)
   } else {
@@ -7868,9 +7921,10 @@ function resetBonus(){
   calcolaBonus()
 }
 
+function _bonusKey(){ const s=(sezioneAttiva||'proc'); return s==='proc'?'leone_bonus':'leone_bonus_'+s }
 function renderBonus(){
   const tb=document.getElementById('tbl-bonus')
-  let bonus=JSON.parse(localStorage.getItem('leone_bonus')||'[]')
+  let bonus=JSON.parse(localStorage.getItem(_bonusKey())||'[]')
   const _bq=(document.getElementById('bonus-search')&&document.getElementById('bonus-search').value||'').trim().toLowerCase()
   if(_bq) bonus=bonus.filter(b=>((b.nome||'')+' '+(b.clienteSeg||'')).toLowerCase().includes(_bq))
   if(!bonus.length){tb.innerHTML='<tr><td colspan="6" class="empty">'+(_bq?'Nessun risultato per la ricerca':'Nessun bonus inviato')+'</td></tr>';return}
@@ -8070,7 +8124,7 @@ async function caricaProposte(){
   renderProposteApp(); aggiornaDotProposte()
 }
 function aggiornaDotProposte(){
-  const n=PROPOSTE.filter(p=>(p.stato||'Nuova')==='Nuova').length
+  const n=PROPOSTE.filter(p=>(p.stato||'Nuova')==='Nuova' && (p.area||'proc')==='proc').length
   const dot=document.getElementById('nav-dot-proposte'); if(dot) dot.style.display=n>0?'block':'none'
 }
 let _propFilter='attive'
@@ -8081,6 +8135,10 @@ function setPropFilter(f){
 }
 function renderProposteApp(){
   const box=document.getElementById('proposte-lista'); if(!box) return
+  const sez=(sezioneAttiva||'proc')
+  const _tt=document.getElementById('proposte-title'); const _inf=document.getElementById('proposte-info')
+  if(_tt) _tt.textContent = sez==='doc'?'Proposte dai docenti':(sez==='dip'?'Proposte dai dipendenti':'Proposte dai procacciatori')
+  if(_inf){ const chi = sez==='doc'?'docenti':(sez==='dip'?'dipendenti':'procacciatori'); _inf.innerHTML='<strong>Come funziona:</strong> i '+chi+' compongono un carrello di corsi/servizi per un cliente nel portale e te lo inviano. Qui le vedi tutte: segnale come <strong>gestite</strong> quando le hai lavorate.' }
   const q=(document.getElementById('prop-search')?.value||'').toLowerCase().trim()
   const col={Nuova:'#e63946',Gestita:'#2e7d32',Annullata:'#9e9e98'}
   let list
@@ -8093,6 +8151,7 @@ function renderProposteApp(){
       if(_propFilter==='annullate') return s==='Annullata'
       return true })
   }
+  list=list.filter(p=>((p.area||'proc')===sez))
   if(!list.length){ box.innerHTML='<div style="padding:16px;color:var(--text2)">'+(q?'Nessun risultato per la ricerca.':'Nessuna proposta in questa vista.')+'</div>'; return }
   box.innerHTML=list.map(p=>{
     const s=p.stato||'Nuova'
