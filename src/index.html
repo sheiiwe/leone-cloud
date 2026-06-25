@@ -698,13 +698,15 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="fg"><label>Tipo documento *</label>
         <select id="iva-tipo" onchange="onIvaTipo()">
           <option value="">-- Seleziona --</option>
+          <option value="rinnovo">📄 Rinnovo Contratto</option>
+          <option value="recesso">📄 Atto di Recesso</option>
           <option value="archivio">📁 Da archivio documenti</option>
           <option value="gencampi">📝 Documento da gestione campi (compilato)</option>
         </select>
       </div>
     </div>
     <div id="iva-arch-row" class="fg" style="display:none;margin-top:.5rem"><label>Documento dall'archivio *</label><select id="iva-arch-doc"><option value="">-- Seleziona --</option></select></div>
-    <div id="iva-gc-row" class="fg" style="display:none;margin-top:.5rem"><label>Documento da gestione campi *</label><select id="iva-gc-doc"><option value="">-- Seleziona --</option></select></div>
+    <div id="iva-gc-row" class="fg" style="display:none;margin-top:.5rem"><label id="iva-gc-label">Documento da gestione campi *</label><select id="iva-gc-doc"><option value="">-- Seleziona --</option></select></div>
     <div class="fr" style="margin-top:1rem">
       <div class="fg"><label>Invia tramite</label>
         <select id="iva-via"><option value="email">📧 Email — amministrazione@leoneconsultingitalia.it</option><option value="pec">🔒 PEC — amministratore@pec.leoneconsultingitalia.it</option></select>
@@ -3501,19 +3503,23 @@ function onIvaTipo(){
   const sez=(sezioneAttiva||'proc')
   const tipo=document.getElementById('iva-tipo').value
   const ar=document.getElementById('iva-arch-row'), gr=document.getElementById('iva-gc-row')
+  const usaGc=['gencampi','rinnovo','recesso'].includes(tipo)
   if(ar) ar.style.display = tipo==='archivio'?'block':'none'
-  if(gr) gr.style.display = tipo==='gencampi'?'block':'none'
+  if(gr) gr.style.display = usaGc?'block':'none'
+  const lbl=document.getElementById('iva-gc-label')
+  if(lbl) lbl.textContent = tipo==='rinnovo'?'Documento di rinnovo (da gestione campi) *' : tipo==='recesso'?'Documento di recesso (da gestione campi) *' : 'Documento da gestione campi *'
   if(tipo==='archivio'){
     const sel=document.getElementById('iva-arch-doc')
     const docs=(documentiLocali||[]).filter(d=>(d.area||'proc')===sez && d.storagePath)
     sel.innerHTML='<option value="">-- Seleziona --</option>'+docs.map(d=>`<option value="${d._id}">${d.nome}</option>`).join('')
   }
-  if(tipo==='gencampi'){
+  if(usaGc){
     const sel=document.getElementById('iva-gc-doc')
     sel.innerHTML='<option value="">Caricamento\u2026</option>'
     caricaDocumentiCustom().then(()=>loadEditorCoordinate()).then(()=>{
       const docs=(editorDocsCustom||[]).filter(d=>(impostazioni['docarea_'+d.id]||'proc')===sez)
       sel.innerHTML='<option value="">-- Seleziona --</option>'+docs.map(d=>`<option value="${d.id}">${impostazioni['docname_'+d.id]||d.label}</option>`).join('')
+      if(!docs.length) sel.innerHTML='<option value="">(nessun documento in gestione campi per quest\u0027area \u2014 caricalo prima)</option>'
     }).catch(()=>{ sel.innerHTML='<option value="">-- Seleziona --</option>' })
   }
 }
