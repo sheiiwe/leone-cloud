@@ -10,6 +10,12 @@
 @media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--surface:#2a2a28;--surface2:#222220;--border:rgba(255,255,255,.10);--border2:rgba(255,255,255,.18);--text:#f0efe9;--text2:#a8a8a0;--text3:#6b6b66}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;font-size:13px;-webkit-font-smoothing:antialiased}
+*{scrollbar-color:var(--border2) var(--surface2)}
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-track{background:var(--surface2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:6px;border:2px solid var(--surface2)}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+::-webkit-scrollbar-corner{background:var(--surface2)}
 .app{display:flex;height:100vh}
 #sync-bar{position:fixed;top:0;left:250px;right:0;height:34px;background:var(--surface);border-bottom:0.5px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;gap:10px;z-index:50;font-size:12px;color:var(--text2)}
 #sync-dot{width:8px;height:8px;border-radius:50%;background:#9e9e98;flex-shrink:0;transition:background .3s}
