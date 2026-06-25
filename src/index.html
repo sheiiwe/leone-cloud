@@ -321,6 +321,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('documenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Documenti
     </div>
+    <div class="nav-item" onclick="sp('invio-doc-area',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Invio documenti
+    </div>
     <div class="nav-item" onclick="sp('doc-comm',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Documenti commerciali
     </div>
@@ -367,6 +370,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-sec">Strumenti</div>
     <div class="nav-item" onclick="sp('documenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Documenti
+    </div>
+    <div class="nav-item" onclick="sp('invio-doc-area',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Invio documenti
     </div>
     <div class="nav-item" onclick="sp('doc-comm',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Documenti commerciali
@@ -675,6 +681,43 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="tbl-wrap"><table>
       <thead><tr><th>Procacciatore</th><th>Documento</th><th>Inviato a</th><th>Via</th><th>Data</th><th>Azioni</th></tr></thead>
       <tbody id="tbl-inv-storico"><tr><td colspan="6" class="empty">Nessun documento inviato</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- INVIO DOCUMENTI — DOCENTI/DIPENDENTI -->
+<div class="page" id="page-invio-doc-area">
+  <div class="pg-title" id="iva-title">Invio Documenti</div>
+  <div class="info-card">Seleziona un destinatario, scegli un documento (dall'archivio o dalla gestione campi della sua area) e invialo via email o PEC.</div>
+  <div class="card">
+    <div class="card-hdr"><h3>Componi e invia documento</h3></div>
+    <div class="fr">
+      <div class="fg"><label id="iva-dest-label">Destinatario *</label>
+        <select id="iva-dest" onchange="onIvaDestSel()"><option value="">-- Seleziona --</option></select>
+      </div>
+      <div class="fg"><label>Tipo documento *</label>
+        <select id="iva-tipo" onchange="onIvaTipo()">
+          <option value="">-- Seleziona --</option>
+          <option value="archivio">📁 Da archivio documenti</option>
+          <option value="gencampi">📝 Documento da gestione campi (compilato)</option>
+        </select>
+      </div>
+    </div>
+    <div id="iva-arch-row" class="fg" style="display:none;margin-top:.5rem"><label>Documento dall'archivio *</label><select id="iva-arch-doc"><option value="">-- Seleziona --</option></select></div>
+    <div id="iva-gc-row" class="fg" style="display:none;margin-top:.5rem"><label>Documento da gestione campi *</label><select id="iva-gc-doc"><option value="">-- Seleziona --</option></select></div>
+    <div class="fr" style="margin-top:1rem">
+      <div class="fg"><label>Invia tramite</label>
+        <select id="iva-via"><option value="email">📧 Email — amministrazione@leoneconsultingitalia.it</option><option value="pec">🔒 PEC — amministratore@pec.leoneconsultingitalia.it</option></select>
+      </div>
+      <div class="fg"><label>Email destinatario</label><input id="iva-email" type="email" placeholder="email@esempio.it"></div>
+    </div>
+    <div style="margin-top:1rem"><button class="btn btn-g" id="btn-iva-invia" onclick="inviaDocArea()">✉️ Genera e invia documento</button></div>
+  </div>
+  <div class="card" style="margin-top:1rem">
+    <div class="card-hdr"><h3>Documenti inviati di recente</h3></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Destinatario</th><th>Documento</th><th>Inviato a</th><th>Via</th><th>Data</th></tr></thead>
+      <tbody id="tbl-iva-storico"><tr><td colspan="5" class="empty">Nessun documento inviato</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -2717,7 +2760,7 @@ function sp(id,el){
   if(el)el.classList.add('active')
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
-  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -3432,6 +3475,95 @@ function renderDpDocList(){
       <button class="btn btn-sm" style="padding:2px 6px" onclick="apriAllegato(${i},'dp')">👁</button>
       <button class="btn btn-sm btn-r" style="padding:2px 6px" onclick="_dpDocFiles.splice(${i},1);renderDpDocList()">✕</button>
     </div>`).join('')
+}
+
+// ── INVIO DOCUMENTI — DOCENTI/DIPENDENTI ──────────────────────
+function _ivaList(){ return (sezioneAttiva||'proc')==='dip' ? (dipendenti||[]) : (docenti||[]) }
+function _ivaLabel(){ return (sezioneAttiva||'proc')==='dip' ? 'Dipendente' : 'Docente' }
+function _ivaStoricoKey(){ return 'leone_inv_storico_'+(sezioneAttiva||'proc') }
+function renderInvioDocArea(){
+  const sez=(sezioneAttiva||'proc')
+  const t=document.getElementById('iva-title'); if(t) t.textContent='Invio Documenti \u2014 '+(sez==='dip'?'Dipendenti':'Docenti')
+  const dl=document.getElementById('iva-dest-label'); if(dl) dl.textContent=_ivaLabel()+' *'
+  const sel=document.getElementById('iva-dest')
+  if(sel){ sel.innerHTML='<option value="">-- Seleziona --</option>'+_ivaList().map((p,i)=>`<option value="${i}">${(p.nome||'\u2014')}</option>`).join('') }
+  const tipo=document.getElementById('iva-tipo'); if(tipo) tipo.value=''
+  const em=document.getElementById('iva-email'); if(em) em.value=''
+  ;['iva-arch-row','iva-gc-row'].forEach(id=>{const e=document.getElementById(id); if(e) e.style.display='none'})
+  renderStoricoDocArea()
+}
+function onIvaDestSel(){
+  const i=document.getElementById('iva-dest').value; if(i==='') return
+  const p=_ivaList()[parseInt(i)]; if(!p) return
+  const em=document.getElementById('iva-email'); if(em) em.value=(p.email||p.email_aziendale||'')
+}
+function onIvaTipo(){
+  const sez=(sezioneAttiva||'proc')
+  const tipo=document.getElementById('iva-tipo').value
+  const ar=document.getElementById('iva-arch-row'), gr=document.getElementById('iva-gc-row')
+  if(ar) ar.style.display = tipo==='archivio'?'block':'none'
+  if(gr) gr.style.display = tipo==='gencampi'?'block':'none'
+  if(tipo==='archivio'){
+    const sel=document.getElementById('iva-arch-doc')
+    const docs=(documentiLocali||[]).filter(d=>(d.area||'proc')===sez && d.storagePath)
+    sel.innerHTML='<option value="">-- Seleziona --</option>'+docs.map(d=>`<option value="${d._id}">${d.nome}</option>`).join('')
+  }
+  if(tipo==='gencampi'){
+    const sel=document.getElementById('iva-gc-doc')
+    sel.innerHTML='<option value="">Caricamento\u2026</option>'
+    caricaDocumentiCustom().then(()=>loadEditorCoordinate()).then(()=>{
+      const docs=(editorDocsCustom||[]).filter(d=>(impostazioni['docarea_'+d.id]||'proc')===sez)
+      sel.innerHTML='<option value="">-- Seleziona --</option>'+docs.map(d=>`<option value="${d.id}">${impostazioni['docname_'+d.id]||d.label}</option>`).join('')
+    }).catch(()=>{ sel.innerHTML='<option value="">-- Seleziona --</option>' })
+  }
+}
+function renderStoricoDocArea(){
+  const tb=document.getElementById('tbl-iva-storico'); if(!tb) return
+  let st=[]; try{ st=JSON.parse(localStorage.getItem(_ivaStoricoKey())||'[]') }catch(e){}
+  if(!st.length){ tb.innerHTML='<tr><td colspan="5" class="empty">Nessun documento inviato</td></tr>'; return }
+  const esc=s=>(s||'').toString().replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))
+  tb.innerHTML=st.map(r=>`<tr><td>${esc(r.dest)}</td><td>${esc(r.doc)}</td><td style="color:var(--text2)">${esc(r.email)}</td><td><span class="badge ${r.via==='pec'?'bp':'bb'}">${r.via==='pec'?'\ud83d\udd12 PEC':'\ud83d\udce7 Email'}</span></td><td style="color:var(--text2)">${esc(r.data)}</td></tr>`).join('')
+}
+async function inviaDocArea(){
+  const sez=(sezioneAttiva||'proc')
+  const i=document.getElementById('iva-dest').value
+  if(i==='') return alert('Seleziona un '+_ivaLabel().toLowerCase())
+  const p=_ivaList()[parseInt(i)]; if(!p) return
+  const tipo=document.getElementById('iva-tipo').value
+  if(!tipo) return alert('Seleziona il tipo di documento')
+  const email=document.getElementById('iva-email').value.trim()
+  if(!email) return alert('Inserisci email destinatario')
+  const via=document.getElementById('iva-via').value
+  const btn=document.getElementById('btn-iva-invia'); btn.disabled=true; btn.textContent='Invio in corso...'
+  try{
+    if(!emailCfg) await caricaEmailConfig()
+    let nomeDoc='Documento', buf=null, fileName='documento.pdf'
+    if(tipo==='archivio'){
+      const docId=document.getElementById('iva-arch-doc').value
+      if(!docId) throw new Error('Seleziona un documento dall\u0027archivio')
+      const doc=(documentiLocali||[]).find(x=>x._id===docId); if(!doc) throw new Error('Documento non trovato')
+      const {data,error}=await db.storage.from('documenti').download(doc.storagePath); if(error) throw error
+      buf=Array.from(new Uint8Array(await data.arrayBuffer())); nomeDoc=doc.nome; fileName=doc.fileName||(doc.nome+'.pdf')
+    } else {
+      const docId=document.getElementById('iva-gc-doc').value
+      if(!docId) throw new Error('Seleziona un documento dalla gestione campi')
+      const out=await compilaPdfBytes(docId, p, {})
+      buf=Array.from(new Uint8Array(out))
+      const d=(editorDocsCustom||[]).find(x=>x.id===docId)
+      nomeDoc=(d&&(impostazioni['docname_'+d.id]||d.label))||'Documento'
+      fileName=nomeDoc.replace(/[^a-zA-Z0-9]+/g,'_')+'.pdf'
+    }
+    const oggi=new Date().toLocaleDateString('it-IT')
+    const html=`<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a18"><div style="background:#185FA5;padding:20px 24px"><h2 style="color:#fff;margin:0">${nomeDoc}</h2><p style="color:rgba(255,255,255,.8);margin:4px 0 0;font-size:13px">Leone Consulting di Leonardo Angelucci</p></div><div style="padding:24px"><p>Gentile ${p.nome||''},</p><p>in allegato trovi il documento <strong>${nomeDoc}</strong>.</p><p style="color:#666;font-size:12px">Data invio: ${oggi}</p></div><div style="background:#f5f5f0;padding:16px 24px;font-size:11px;color:#888">Leone Consulting di Leonardo Angelucci \u2014 amministrazione@leoneconsultingitalia.it</div></body></html>`
+    const r=await window.electronAPI.sendMail({..._ec(), via, to:email, subject:`${nomeDoc} \u2014 Leone Consulting`, html, attachments:[{filename:fileName, content:buf}]})
+    if(!r || r.ok===false) throw new Error((r&&r.errore)||'Invio non riuscito. Controlla la configurazione Email in Impostazioni.')
+    let st=[]; try{ st=JSON.parse(localStorage.getItem(_ivaStoricoKey())||'[]') }catch(e){}
+    st.unshift({dest:p.nome||'', doc:nomeDoc, email, via, data:oggi})
+    localStorage.setItem(_ivaStoricoKey(), JSON.stringify(st.slice(0,50)))
+    renderStoricoDocArea()
+    alert('\u2705 Documento inviato a '+email)
+  }catch(e){ alert('Errore invio: '+(e.message||e)) }
+  finally{ btn.disabled=false; btn.textContent='\u2709\ufe0f Genera e invia documento' }
 }
 
 // ── INVIO DOCUMENTI ──────────────────────────────────────────
