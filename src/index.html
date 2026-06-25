@@ -196,6 +196,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('proc',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Procacciatori
     </div>
+    <div class="nav-item" onclick="sp('docenti',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Docenti
+    </div>
     <div class="nav-sec">Attività</div>
     <div class="nav-item" onclick="sp('vendite',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Vendite
@@ -252,10 +255,6 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('bonus',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>Bonus porta cliente
     </div>
-    <div class="nav-sec">Insegnamento</div>
-    <div class="nav-item" onclick="sp('docenti',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Docenti
-    </div>
     <div class="nav-sec">Sistema</div>
     <div class="nav-item" onclick="apriRicercaGlobale()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Ricerca globale
@@ -279,6 +278,9 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="nav-item" onclick="sp('dipendenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Dipendenti
+    </div>
+    <div class="nav-item" onclick="sp('docenti',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Docenti
     </div>
     <div class="nav-sec">Paghe</div>
     <div class="nav-item" onclick="sp('buste',this)">
@@ -674,6 +676,16 @@ tbody tr:hover td{background:var(--surface2)}
 </div>
 
 <!-- BONUS PORTA CLIENTE -->
+<div class="page" id="page-docenti">
+  <div class="card-hdr"><h3>Docenti</h3><button class="btn btn-p" onclick="apriDocente()">+ Nuovo docente</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px">
+    <input id="doc-search" type="text" placeholder="🔍 Cerca per nome, materia, livello..." oninput="renderDocenti()" style="flex:1;min-width:180px;padding:9px 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
+    <select id="doc-f-materia" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutte le materie</option></select>
+    <select id="doc-f-livello" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutti i livelli</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select>
+    <select id="doc-f-qualifica" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutte le qualifiche</option><option value="procacciatore">Docente procacciatore</option><option value="assunto">Docente assunto</option></select>
+  </div>
+  <div id="docenti-lista"></div>
+</div>
 <div class="page" id="page-bonus">
   <div class="pg-title">Bonus porta cliente</div>
   <div class="info-card">
@@ -1487,15 +1499,6 @@ tbody tr:hover td{background:var(--surface2)}
 </div>
 
 <!-- MODAL PROCACCIATORE -->
-<div class="page" id="page-docenti">
-  <div class="card-hdr"><h3>Docenti</h3><button class="btn btn-p" onclick="apriDocente()">+ Nuovo docente</button></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px">
-    <input id="doc-search" type="text" placeholder="🔍 Cerca per nome, materia, livello..." oninput="renderDocenti()" style="flex:1;min-width:180px;padding:9px 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
-    <select id="doc-f-materia" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutte le materie</option></select>
-    <select id="doc-f-livello" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutti i livelli</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select>
-  </div>
-  <div id="docenti-lista"></div>
-</div>
 <div class="modal-overlay" id="m-docente">
   <div class="modal">
     <h3 id="doc-modal-title">Nuovo docente</h3>
@@ -1508,6 +1511,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="msec">Dati fiscali e pagamento</div>
     <div class="fr"><div class="fg"><label>IBAN</label><input id="doc-iban" type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"></div><div class="fg"><label>Regime</label><select id="doc-regime"><option value="ritenuta">Prestazione occasionale</option><option value="piva">Partita IVA</option></select></div><div class="fg"><label>P.IVA (se presente)</label><input id="doc-piva" type="text" placeholder="01234567890"></div></div>
     <div class="fr"><div class="fg"><label>% Compenso docente <span style="font-size:10px;color:var(--text3)">(il resto all'azienda)</span></label><input id="doc-pct" type="number" min="0" max="100" step="1" placeholder="70" oninput="_docPctEcho()"></div><div class="fg"><label>Quota azienda</label><input id="doc-pct-az" type="text" disabled placeholder="30%"></div><div class="fg"><label>Stato</label><select id="doc-stato"><option>Attivo</option><option>In pausa</option><option>Terminato</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Qualifica</label><select id="doc-qualifica"><option value="procacciatore">Docente procacciatore (autonomo)</option><option value="assunto">Docente assunto (dipendente)</option></select></div></div>
     <div class="msec">Insegnamento</div>
     <div class="fg"><label>Livelli</label><div style="display:flex;gap:14px;flex-wrap:wrap;padding:4px 0">
       <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" class="doc-liv" value="Elementari"> Elementari</label>
@@ -2629,6 +2633,7 @@ function apriDocente(id){
   set('doc-email',d&&d.email); set('doc-email-az',d&&d.email_aziendale); set('doc-indirizzo',d&&d.indirizzo); set('doc-citta',d&&d.citta); set('doc-cap',d&&d.cap)
   set('doc-iban',d&&d.iban); set('doc-piva',d&&d.piva); set('doc-note',d&&d.note)
   document.getElementById('doc-regime').value=(d&&d.regime)||'ritenuta'
+  document.getElementById('doc-qualifica').value=(d&&d.qualifica)||'procacciatore'
   document.getElementById('doc-stato').value=(d&&d.stato)||'Attivo'
   document.getElementById('doc-pct').value=(d&&d.pctDocente!=null)?d.pctDocente:''
   _docPctEcho()
@@ -2644,7 +2649,7 @@ async function salvaDocente(){
   const livelli=[...document.querySelectorAll('.doc-liv')].filter(c=>c.checked).map(c=>c.value)
   const g=k=>{ const e=document.getElementById(k); return e?e.value.trim():'' }
   const pct=parseFloat(document.getElementById('doc-pct').value)
-  const obj={ nome, nascita:g('doc-nascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note') }
+  const obj={ nome, nascita:g('doc-nascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), qualifica:document.getElementById('doc-qualifica').value, pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note') }
   const id=document.getElementById('doc-id').value
   try{
     if(id){ const r=await db.from('docenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
@@ -2667,9 +2672,11 @@ function renderDocenti(){
   const q=(document.getElementById('doc-search')?.value||'').trim().toLowerCase()
   const fm=document.getElementById('doc-f-materia')?.value||''
   const fl=document.getElementById('doc-f-livello')?.value||''
+  const fq=document.getElementById('doc-f-qualifica')?.value||''
   let list=docenti.slice()
   if(fm) list=list.filter(d=>(d.materie||[]).includes(fm))
   if(fl) list=list.filter(d=>(d.livelli||[]).includes(fl))
+  if(fq) list=list.filter(d=>(d.qualifica||'procacciatore')===fq)
   if(q) list=list.filter(d=>((d.nome||'')+' '+(d.materie||[]).join(' ')+' '+(d.livelli||[]).join(' ')+' '+(d.email||'')).toLowerCase().includes(q))
   if(!docenti.length){ box.innerHTML='<div class="empty" style="padding:3rem">Nessun docente. Premi "+ Nuovo docente" per iniziare.</div>'; return }
   if(!list.length){ box.innerHTML='<div class="empty" style="padding:2rem">Nessun docente trovato con questi filtri.</div>'; return }
@@ -2679,8 +2686,9 @@ function renderDocenti(){
     const az=(d.pctDocente!=null&&isFinite(d.pctDocente))?(100-d.pctDocente):null
     const col=d.stato==='Attivo'?'#2a9d5c':(d.stato==='In pausa'?'#888':'#c0392b')
     const badge='<span style="background:'+col+';color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">'+escB(d.stato||'Attivo')+'</span>'
+    const ql=(d.qualifica==='assunto')?'<span style="background:#3a5a8c;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">Assunto</span>':'<span style="background:#7a5c2e;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">Procacciatore</span>'
     return '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
-      '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(d.nome||'—')+' '+badge+'</div>'+
+      '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(d.nome||'—')+' '+badge+' '+ql+'</div>'+
       '<div style="font-size:12px;color:var(--text2);margin:3px 0">'+(liv?('📚 '+escB(liv)):'')+(d.pctDocente!=null?('  ·  💶 docente '+d.pctDocente+'% / azienda '+az+'%'):'')+'</div>'+
       (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
       ((d.certificati||[]).length?'<div style="font-size:11px;color:var(--text2);margin-top:5px">📄 '+(d.certificati||[]).map(escB).join(', ')+'</div>':'')+
