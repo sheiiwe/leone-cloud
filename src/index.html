@@ -6378,7 +6378,9 @@ async function toggleListinoCatArea(i, area){
 function renderListino(){
   const el=document.getElementById('listino-cats')
   if(!el) return
-  const cats=[...new Set(LISTINO.map(p=>p.cat))]
+  const _sez=(sezioneAttiva||'proc')
+  const cats=[...new Set(LISTINO.map(p=>p.cat))].filter(c=>_listCatAree(c).includes(_sez))
+  if(activeCat && !cats.includes(activeCat)) activeCat=''
   el.innerHTML=[{key:'',label:'Tutti'},...cats.map(c=>({key:c,label:c}))].map(c=>`<button class="btn btn-sm${activeCat===c.key?' btn-p':''}" style="border-radius:20px" onclick="filterList('${c.key}')">${c.label}</button>`).join('')
   // Popola select categorie nel modal
   const sel=document.getElementById('pd-cat-sel')
@@ -6396,7 +6398,8 @@ function filterList(cat,silent){
     sf.innerHTML='<span style="font-size:12px;color:var(--text2);margin-right:4px">Cliente:</span>'+b('','Tutti e due')+b('privati','Privati')+b('business','Business')
   }
   const q=(document.getElementById('listino-search')?.value||'').toLowerCase().trim()
-  let filtered=cat?LISTINO.filter(p=>p.cat===cat):LISTINO.slice()
+  const _sezF=(sezioneAttiva||'proc')
+  let filtered=(cat?LISTINO.filter(p=>p.cat===cat):LISTINO.slice()).filter(p=>_listCatAree(p.cat||'').includes(_sezF))
   if(activeTipoCliente){
     filtered=filtered.filter(p=>{ const tc=(p.tipoCliente||'entrambi'); return tc===activeTipoCliente || tc==='entrambi' })
   }
