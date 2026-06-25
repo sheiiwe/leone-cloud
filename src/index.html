@@ -17,7 +17,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 #sync-dot.syncing{background:#854F0B;animation:pulse 1s infinite}
 #sync-dot.err{background:#A32D2D}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.sidebar{width:220px;background:var(--surface);border-right:0.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar{width:250px;background:var(--surface);border-right:0.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
 .logo{padding:.75rem 1.25rem;border-bottom:0.5px solid var(--border);margin-bottom:.5rem}
 .logo img{width:72px;height:72px;border-radius:50%;margin-bottom:4px;display:block;object-fit:cover}
 .logo h1{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.2px}
@@ -32,8 +32,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .nav-divider{height:0.5px;background:var(--border);margin:.5rem 1.25rem}
 
 /* SEZIONE SWITCH */
-.section-switch{display:flex;margin:0 1.25rem .75rem;background:var(--surface2);border-radius:var(--rsm);padding:3px;border:0.5px solid var(--border)}
-.section-btn{flex:1;text-align:center;padding:6px 4px;font-size:11px;font-weight:500;color:var(--text2);cursor:pointer;border-radius:4px;transition:all .15s;user-select:none}
+.section-switch{display:flex;margin:0 .5rem .75rem;background:var(--surface2);border-radius:var(--rsm);padding:3px;border:0.5px solid var(--border)}
+.section-btn{flex:1;text-align:center;padding:6px 2px;font-size:10.5px;font-weight:500;color:var(--text2);cursor:pointer;border-radius:4px;transition:all .15s;user-select:none;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .section-btn.active{background:var(--accent);color:#fff}
 
 .main{flex:1;overflow-y:auto;padding:2rem;background:var(--bg);margin-top:62px}
