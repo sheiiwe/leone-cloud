@@ -9409,7 +9409,8 @@ async function loadEditorPage(){
         if(data){
           // Usa pdf.js per renderizzare la pagina corretta
           const url = URL.createObjectURL(data)
-          await renderPDFPage(url, editorPage, img)
+          const _np = await renderPDFPage(url, editorPage, img)
+          if(_np) await _fixPages(editorDocId, _np)
         }
       } catch(e){ img.src = ''; img.alt = 'Errore caricamento' }
     }
@@ -9422,7 +9423,7 @@ async function loadEditorPage(){
   if(impostazioni['docpdf_'+editorDocId]){
     try {
       const { data } = await db.storage.from('documenti').download(impostazioni['docpdf_'+editorDocId])
-      if(data){ const url = URL.createObjectURL(data); await renderPDFPage(url, editorPage, img) }
+      if(data){ const url = URL.createObjectURL(data); const _np = await renderPDFPage(url, editorPage, img); if(_np) await _fixPages(editorDocId, _np) }
     } catch(e){ img.src=''; img.alt='Errore caricamento' }
     document.getElementById('editor-page-info').textContent = `${editorPage}/${editorTotalPages}`
     renderEditorMarkers()
@@ -9457,14 +9458,25 @@ async function renderPDFPage(url, pageNum, imgEl){
   }
   try {
     const pdf = await pdfjsLib.getDocument(url).promise
-    const page = await pdf.getPage(pageNum)
+    const page = await pdf.getPage(Math.min(Math.max(1,pageNum), pdf.numPages))
     const viewport = page.getViewport({scale: 1.5})
     const canvas = document.createElement('canvas')
     canvas.width = viewport.width
     canvas.height = viewport.height
     await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise
     imgEl.src = canvas.toDataURL()
-  } catch(e){ imgEl.src = ''; imgEl.alt = 'Errore rendering' }
+    return pdf.numPages
+  } catch(e){ imgEl.src = ''; imgEl.alt = 'Errore rendering'; return null }
+}
+async function _fixPages(id, n){
+  if(!n || n===editorTotalPages) return
+  editorTotalPages = n
+  if(editorPage > n) editorPage = 1
+  impostazioni['pages_'+id] = n
+  const cd = editorDocsCustom.find(d=>d.id===id); if(cd) cd.pages = n
+  try{ await upsertImpostazioni() }catch(e){}
+  const pinfo=document.getElementById('editor-page-info'); if(pinfo) pinfo.textContent = editorPage+'/'+editorTotalPages
+  renderEditorDocList()
 }
 
 function editorNextPage(){
