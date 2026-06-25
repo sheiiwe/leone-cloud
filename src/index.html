@@ -324,6 +324,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('invio-doc-area',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Invio documenti
     </div>
+    <div class="nav-item" onclick="sp('cedolini',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 4v16"/></svg>Cedolini
+    </div>
     <div class="nav-item" onclick="sp('doc-comm',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Documenti commerciali
     </div>
@@ -7071,6 +7074,7 @@ const MESI_IT=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio',
 function _meseLabelCed(m){ const p=(m||'').split('-'); return (MESI_IT[parseInt(p[1],10)-1]||m) }
 function _ovrMese(p, mese){ let ovr=0;(p.rete||[]).forEach(n=>{const vNet=vendite.filter(v=>v.pidx===n.idx&&v.stato==='Incassato'&&(v.data||'').startsWith(mese));ovr+=vNet.reduce((s,v)=>s+v.val,0)*(n.pct/100)});return ovr }
 async function renderCedolini(){
+  if((sezioneAttiva||'proc')==='doc') return renderCedoliniDoc()
   const box=document.getElementById('cedolini-body'); if(!box) return
   box.innerHTML='<div style="padding:14px;color:var(--text2)">Caricamento\u2026</div>'
   try{ await loadImpostazioni() }catch(e){}
@@ -7229,6 +7233,139 @@ async function generaCedoliniTutti(){
   if(!attivi.length) return alert('Nessun procacciatore attivo.')
   if(!confirm('Genero il cedolino di '+_meseLabelCed(mese)+' per '+attivi.length+' procacciatori attivi?')) return
   for(const x of attivi){ await generaCedolino(x.i, mese) }
+}
+
+// ── CEDOLINI DOCENTI (forfettario, da compensi docenti) ───────
+function _lordoMeseDoc(d, mese){ return (compensiDoc||[]).filter(c=>String(c.docenteId)===String(d._id) && (c.data||'').startsWith(mese)).reduce((s,c)=>s+(+c.compDocente||0),0) }
+async function renderCedoliniDoc(){
+  const box=document.getElementById('cedolini-body'); if(!box) return
+  box.innerHTML='<div style="padding:14px;color:var(--text2)">Caricamento\u2026</div>'
+  try{ await loadImpostazioni() }catch(e){}
+  if(!editorDocsCustom.length){ try{ await caricaDocumentiCustom() }catch(e){} }
+  const docs=(editorDocsCustom||[]).filter(d=>(impostazioni['docarea_'+d.id]||'proc')==='doc')
+  const sel=impostazioni['cedolino_docid_doc']||''
+  const mesi=[]; for(let mm=1;mm<=12;mm++) mesi.push('2026-'+String(mm).padStart(2,'0'))
+  const curM=(typeof curMese==='function')?curMese():'2026-06'
+  const inp='font-size:13px;padding:7px 10px;border:0.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)'
+  let h=''
+  h+='<div class="card" style="margin-bottom:14px"><div style="font-weight:700;margin-bottom:8px">Modello cedolino docenti</div>'+
+     '<div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6">Scegli il PDF del cedolino docente (regime <b>forfettario</b>: niente ritenuta, lordo = netto). Caricalo da <b>Documenti</b> dell\u0027area Docenti col pulsante \ud83d\udd04, poi posiziona i campi del gruppo <b>CEDOLINO</b> nell\u0027editor.</div>'+
+     '<select id="ced-doc-doc" onchange="salvaCedolinoModelloDoc()" style="'+inp+';min-width:300px"><option value="">\u2014 Seleziona documento \u2014</option>'+
+     docs.map(d=>'<option value="'+d.id+'"'+(d.id===sel?' selected':'')+'>'+escB(impostazioni['docname_'+d.id]||d.label)+'</option>').join('')+'</select>'+
+     (docs.length?'':'<div style="font-size:12px;color:var(--red);margin-top:8px">Nessun documento docente caricato. Vai in Documenti (area Docenti) e carica il PDF del cedolino.</div>')+'</div>'
+  h+='<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><div style="font-weight:700">Genera cedolini del mese</div>'+
+     '<select id="ced-mese-doc" onchange="renderCedoliniDocRows()" style="'+inp+'">'+
+     mesi.map(m=>'<option value="'+m+'"'+(m===curM?' selected':'')+'>'+_meseLabelCed(m)+' '+m.split('-')[0]+'</option>').join('')+'</select>'+
+     '<button class="btn btn-sm btn-p" onclick="generaCedoliniDocTutti()">\u2b07 Genera per tutti</button>'+
+     '<input id="ced-search-doc" type="text" placeholder="\ud83d\udd0d Cerca docente..." oninput="renderCedoliniDocRows()" style="'+inp+';flex:1;min-width:160px"></div>'+
+     '<div class="tbl-wrap"><table><thead><tr><th>Docente</th><th>Compensi</th><th>Lordo mese</th><th></th></tr></thead><tbody id="ced-tbody-doc"></tbody></table></div></div>'
+  h+='<div class="card" style="margin-top:14px"><div class="card-hdr"><h3>Storico cedolini docenti</h3></div><div id="cedolini-storico-doc-box" style="font-size:13px"></div></div>'
+  box.innerHTML=h
+  renderCedoliniDocRows()
+  renderStoricoCedoliniDoc()
+}
+function renderCedoliniDocRows(){
+  const tb=document.getElementById('ced-tbody-doc'); if(!tb) return
+  const mese=document.getElementById('ced-mese-doc').value
+  const rows=(docenti||[]).map((d,i)=>({d,i,lordo:_lordoMeseDoc(d,mese),n:(compensiDoc||[]).filter(c=>String(c.docenteId)===String(d._id)&&(c.data||'').startsWith(mese)).length}))
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="4" class="empty">Nessun docente</td></tr>'; return }
+  const q=(document.getElementById('ced-search-doc')?.value||'').trim().toLowerCase()
+  const vis=q?rows.filter(r=>(r.d.nome||'').toLowerCase().includes(q)):rows
+  if(!vis.length){ tb.innerHTML='<tr><td colspan="4" class="empty">Nessun risultato</td></tr>'; return }
+  tb.innerHTML=vis.map(r=>'<tr><td>'+escB(r.d.nome||'\u2014')+'</td><td>'+r.n+'</td><td style="font-weight:600">'+(r.lordo>0?fmtE(r.lordo):'\u2014')+'</td><td><button class="btn btn-sm btn-p" onclick="generaCedolinoDoc('+r.i+',\''+mese+'\')">\u2b07 Cedolino</button></td></tr>').join('')
+}
+async function salvaCedolinoModelloDoc(){
+  impostazioni['cedolino_docid_doc']=document.getElementById('ced-doc-doc').value
+  try{ await upsertImpostazioni(); toast('Modello cedolino docenti salvato') }catch(e){ alert('Errore salvataggio: '+(e.message||e)) }
+}
+async function generaCedolinoDoc(idx, mese){
+  const docId=impostazioni['cedolino_docid_doc']
+  if(!docId) return alert('Prima scegli il modello cedolino docenti qui sopra.')
+  const d=(docenti||[])[idx]; if(!d) return
+  const righe=(compensiDoc||[]).filter(c=>String(c.docenteId)===String(d._id) && (c.data||'').startsWith(mese))
+  const lordo=righe.reduce((s,c)=>s+(+c.compDocente||0),0)
+  if(lordo<=0 && !confirm('Nessun compenso per '+d.nome+' in '+_meseLabelCed(mese)+'.\nGenero comunque il cedolino?')) return
+  const fmtN=n=>(n||0).toFixed(2).replace('.',',')
+  const affari=righe.map((c,k)=>({n:String(k+1),cliente:(c.studenteNome||'').slice(0,30),desc:(c.materia||'').slice(0,34),pct:(c.pct?c.pct+'%':''),lorda:fmtN(+c.compDocente||0)}))
+  const extraBase={
+    ced_causale:(d.nome||'')+' - Compensi didattici '+_meseLabelCed(mese)+' '+mese.split('-')[0],
+    ced_compenso_lordo:'\u20ac '+fmtN(lordo),
+    ced_mese:_meseLabelCed(mese), ced_anno:mese.split('-')[0], ced_data_emiss:new Date().toLocaleDateString('it-IT'),
+    ced_n_prosp:mese.replace('-','')+'-D'+String(idx+1).padStart(2,'0'),
+    ced_prodotto:'Lezioni / corsi',
+    ced_tot_lorde:'\u20ac '+fmtN(lordo), ced_rimborsi:'\u20ac 0,00',
+    ced_imponibile:'\u20ac '+fmtN(lordo), ced_iva:'\u20ac 0,00',
+    ced_base_rit:'\u20ac 0,00', ced_ritenuta:'\u20ac 0,00', ced_bollo:'\u20ac 0,00',
+    ced_netto_fattura:'\u20ac '+fmtN(lordo), ced_netto_pagare:'\u20ac '+fmtN(lordo)
+  }
+  toast('Genero il cedolino...')
+  try{
+    const chunks=affari.length?[]:[[]]
+    for(let s=0;s<affari.length;s+=6) chunks.push(affari.slice(s,s+6))
+    const pdfs=[]
+    for(const ch of chunks){ const extra=Object.assign({},extraBase,{__affari:ch}); pdfs.push(await compilaPdfBytes(docId, d, {}, [], extra, 1)) }
+    let outBytes
+    if(pdfs.length===1){ outBytes=pdfs[0] }
+    else { const merged=await PDFLib.PDFDocument.create(); for(const b of pdfs){ const dd=await PDFLib.PDFDocument.load(b); const pgs=await merged.copyPages(dd, dd.getPageIndices()); pgs.forEach(pg=>merged.addPage(pg)) } outBytes=await merged.save() }
+    const arr=Array.from(new Uint8Array(outBytes))
+    const fileName='Cedolino_'+_meseLabelCed(mese)+'_'+mese.split('-')[0]+'_'+(d.nome||'').replace(/[^a-zA-Z0-9]+/g,'_')+'.pdf'
+    if(window.electronAPI?.apriFileTmp){ await window.electronAPI.apriFileTmp(arr, fileName) }
+    else { const blob=new Blob([outBytes],{type:'application/pdf'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=fileName; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000) }
+    await _salvaStoricoCedolinoDoc(d, mese, lordo, outBytes, fileName)
+    renderStoricoCedoliniDoc()
+    toast('\u2705 Cedolino generato: '+d.nome)
+  }catch(e){ alert('Errore generazione cedolino: '+(e.message||e)) }
+}
+async function generaCedoliniDocTutti(){
+  const mese=document.getElementById('ced-mese-doc').value
+  if(!impostazioni['cedolino_docid_doc']) return alert('Prima scegli il modello cedolino docenti.')
+  const lista=(docenti||[]).map((d,i)=>({d,i})).filter(x=>_lordoMeseDoc(x.d,mese)>0)
+  if(!lista.length) return alert('Nessun docente con compensi in '+_meseLabelCed(mese)+'.')
+  if(!confirm('Genero il cedolino di '+_meseLabelCed(mese)+' per '+lista.length+' docenti?')) return
+  for(const x of lista){ await generaCedolinoDoc(x.i, mese) }
+}
+async function _salvaStoricoCedolinoDoc(d, mese, lordo, outBytes, fileName){
+  try{
+    let saved=''
+    const path='cedolini/doc_'+(mese||'x')+'_'+((d.email||d.email_aziendale||d.nome||'x').replace(/[^a-zA-Z0-9]+/g,'_'))+'_'+Date.now()+'.pdf'
+    try{ const up=await db.storage.from('documenti').upload(path, new Blob([outBytes],{type:'application/pdf'}), {upsert:true, contentType:'application/pdf'}); if(!up.error) saved=path }catch(e){}
+    const rec={ id:'cedd_'+Date.now()+'_'+Math.floor(Math.random()*1000), nome:d.nome||'', email:(d.email||d.email_aziendale||''), mese, lordo, netto:lordo, data:new Date().toISOString(), path:saved, fileName }
+    const lista=Array.isArray(impostazioni['cedolini_storico_doc'])?impostazioni['cedolini_storico_doc']:[]
+    lista.unshift(rec)
+    impostazioni['cedolini_storico_doc']=lista.slice(0,300)
+    await upsertImpostazioni()
+  }catch(e){ console.error('storico cedolino doc:',e) }
+}
+function renderStoricoCedoliniDoc(){
+  const box=document.getElementById('cedolini-storico-doc-box'); if(!box) return
+  const lista=Array.isArray(impostazioni['cedolini_storico_doc'])?impostazioni['cedolini_storico_doc']:[]
+  if(!lista.length){ box.innerHTML='<div style="color:var(--text2);padding:6px 2px">Nessun cedolino docente generato finora.</div>'; return }
+  const esc=s=>(s||'').toString().replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))
+  const eur=v=>'\u20ac '+(Math.round((+v||0)*100)/100).toFixed(2).replace('.',',')
+  box.innerHTML='<div class="tbl-wrap"><table><thead><tr><th>Docente</th><th>Mese</th><th>Lordo</th><th>Netto</th><th>Generato il</th><th></th></tr></thead><tbody>'+
+    lista.map(r=>'<tr><td style="font-weight:600">'+esc(r.nome)+'</td><td>'+esc(_meseLabelCed(r.mese)+' '+(r.mese||'').split('-')[0])+'</td><td>'+eur(r.lordo)+'</td><td>'+eur(r.netto)+'</td><td style="color:var(--text2)">'+(r.data?new Date(r.data).toLocaleString('it-IT'):'\u2014')+'</td><td class="acts">'+(r.path?'<button class="btn btn-sm" onclick="scaricaStoricoCedolinoDoc(\''+r.id+'\')" title="Scarica">\u2b07 PDF</button> ':'')+'<button class="btn btn-sm btn-r" onclick="eliminaStoricoCedolinoDoc(\''+r.id+'\')" title="Elimina">\ud83d\uddd1</button></td></tr>').join('')+
+    '</tbody></table></div>'
+}
+async function scaricaStoricoCedolinoDoc(id){
+  const lista=Array.isArray(impostazioni['cedolini_storico_doc'])?impostazioni['cedolini_storico_doc']:[]
+  const r=lista.find(x=>x.id===id); if(!r||!r.path){ alert('PDF non disponibile per questo cedolino.'); return }
+  try{
+    const dl=await db.storage.from('documenti').download(r.path)
+    if(dl.error||!dl.data) throw new Error(dl.error?.message||'file non trovato')
+    const buf=await dl.data.arrayBuffer()
+    if(window.electronAPI?.apriFileTmp){ await window.electronAPI.apriFileTmp(Array.from(new Uint8Array(buf)), r.fileName||'cedolino.pdf') }
+    else { const url=URL.createObjectURL(new Blob([buf],{type:'application/pdf'})); const a=document.createElement('a'); a.href=url; a.download=r.fileName||'cedolino.pdf'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1500) }
+  }catch(e){ alert('Errore: '+e.message) }
+}
+async function eliminaStoricoCedolinoDoc(id){
+  let lista=Array.isArray(impostazioni['cedolini_storico_doc'])?impostazioni['cedolini_storico_doc']:[]
+  const r=lista.find(x=>x.id===id); if(!r) return
+  if(!confirm('Eliminare questo cedolino dallo storico'+(r.nome?(' di '+r.nome):'')+'?')) return
+  if(r.path){ try{ await db.storage.from('documenti').remove([r.path]) }catch(e){} }
+  impostazioni['cedolini_storico_doc']=lista.filter(x=>x.id!==id)
+  try{ await upsertImpostazioni() }catch(e){ alert('Errore salvataggio: '+e.message); return }
+  renderStoricoCedoliniDoc()
+  toast('Cedolino eliminato dallo storico')
 }
 
 // ── DOCUMENTI COMMERCIALI ──────────────────────────────────────
