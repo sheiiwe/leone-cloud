@@ -5522,7 +5522,8 @@ function creaProcDaFirma(id){
   if(c.documentiCaricati){
     if(c.documentiCaricati.carta_identita) docNote.push('Carta identità (fronte)')
     if(c.documentiCaricati.carta_identita_retro) docNote.push('Carta identità (retro)')
-    if(c.documentiCaricati.codice_fiscale) docNote.push('Codice fiscale')
+    if(c.documentiCaricati.codice_fiscale) docNote.push('Codice fiscale (fronte)')
+    if(c.documentiCaricati.codice_fiscale_retro) docNote.push('Codice fiscale (retro)')
     if(c.documentiCaricati.visura_camerale) docNote.push('Visura camerale')
   }
   const extra = docNote.length ? (' · Documenti firma: '+docNote.join(', ')) : ''
@@ -5568,7 +5569,7 @@ async function apriDocFirmatario(id, chiave){
 // Popup con i documenti del firmatario + contratto firmato
 function mostraDocFirmatario(id){
   const c=contratti.find(x=>x._id===id); const docs=(c&&c.documentiCaricati)||{}
-  const etich={ carta_identita:'Carta d\u0027identità (fronte)', carta_identita_retro:'Carta d\u0027identità (retro)', codice_fiscale:'Codice fiscale / Tessera', visura_camerale:'Visura camerale' }
+  const etich={ carta_identita:'Carta d\u0027identità (fronte)', carta_identita_retro:'Carta d\u0027identità (retro)', codice_fiscale:'Codice fiscale / Tessera (fronte)', codice_fiscale_retro:'Codice fiscale / Tessera (retro)', visura_camerale:'Visura camerale' }
   const keys=Object.keys(docs).filter(k=>docs[k])
   const old=document.getElementById('doc-firm-pop'); if(old) old.remove()
   const div=document.createElement('div'); div.id='doc-firm-pop'
