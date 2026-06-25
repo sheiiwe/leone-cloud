@@ -199,6 +199,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('docenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Docenti
     </div>
+    <div class="nav-item" onclick="sp('studenti',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>Studenti
+    </div>
     <div class="nav-sec">Attività</div>
     <div class="nav-item" onclick="sp('vendite',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Vendite
@@ -685,6 +688,15 @@ tbody tr:hover td{background:var(--surface2)}
     <select id="doc-f-qualifica" onchange="renderDocenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutte le qualifiche</option><option value="procacciatore">Docente procacciatore</option><option value="assunto">Docente assunto</option></select>
   </div>
   <div id="docenti-lista"></div>
+</div>
+<div class="page" id="page-studenti">
+  <div class="card-hdr"><h3>Studenti</h3><button class="btn btn-p" onclick="apriStudente()">+ Nuovo studente</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px">
+    <input id="stu-search" type="text" placeholder="🔍 Cerca per nome, materia, scuola..." oninput="renderStudenti()" style="flex:1;min-width:180px;padding:9px 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
+    <select id="stu-f-livello" onchange="renderStudenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutti i livelli</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select>
+    <select id="stu-f-docente" onchange="renderStudenti()" style="padding:9px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"><option value="">Tutti i docenti</option></select>
+  </div>
+  <div id="studenti-lista"></div>
 </div>
 <div class="page" id="page-bonus">
   <div class="pg-title">Bonus porta cliente</div>
@@ -1532,6 +1544,27 @@ tbody tr:hover td{background:var(--surface2)}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeM('m-docente')">Annulla</button><button class="btn btn-p" onclick="salvaDocente()">Salva docente</button></div>
   </div>
 </div>
+<div class="modal-overlay" id="m-studente">
+  <div class="modal">
+    <h3 id="stu-modal-title">Nuovo studente</h3>
+    <input type="hidden" id="stu-id">
+    <div class="msec">Dati anagrafici</div>
+    <div class="fr"><div class="fg"><label>Cognome e nome *</label><input id="stu-nome" type="text" placeholder="Bianchi Giulia"></div><div class="fg"><label>Data di nascita</label><input id="stu-nascita" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Telefono</label><input id="stu-tel" type="tel" placeholder="+39 333 000000"></div><div class="fg"><label>Email</label><input id="stu-email" type="email" placeholder="giulia@email.com"></div></div>
+    <div class="fr"><div class="fg"><label>Indirizzo</label><input id="stu-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>Città</label><input id="stu-citta" type="text" placeholder="Roma"></div><div class="fg"><label>CAP</label><input id="stu-cap" type="text" maxlength="5" placeholder="00100"></div></div>
+    <div class="msec">Genitore / Tutore (se minorenne)</div>
+    <div class="fr"><div class="fg"><label>Nome genitore/tutore</label><input id="stu-genitore" type="text" placeholder="Bianchi Marco"></div><div class="fg"><label>Telefono genitore</label><input id="stu-tel-genitore" type="tel" placeholder="+39 333 000000"></div></div>
+    <div class="msec">Scuola e ripetizioni</div>
+    <div class="fr"><div class="fg"><label>Livello scolastico</label><select id="stu-livello"><option value="">—</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select></div><div class="fg"><label>Classe / Anno</label><input id="stu-classe" type="text" placeholder="es. 3ª media"></div><div class="fg"><label>Istituto / Scuola</label><input id="stu-istituto" type="text" placeholder="es. I.C. Velletri"></div></div>
+    <div class="fg"><label>Materie richieste</label>
+      <div style="display:flex;gap:6px"><input id="stu-materia-in" type="text" placeholder="es. Inglese" list="dl-materie" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();_stuAddMateria()}"><button type="button" class="btn btn-sm" onclick="_stuAddMateria()">+ Aggiungi</button></div>
+      <div id="stu-materie-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
+    </div>
+    <div class="fr"><div class="fg"><label>Docente assegnato</label><select id="stu-docente"><option value="">— Nessuno —</option></select></div><div class="fg"><label>Stato</label><select id="stu-stato"><option>Attivo</option><option>Inattivo</option></select></div></div>
+    <div class="fg"><label>Note</label><textarea id="stu-note" rows="2" placeholder="Note interne"></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeM('m-studente')">Annulla</button><button class="btn btn-p" onclick="salvaStudente()">Salva studente</button></div>
+  </div>
+</div>
 <div class="modal-overlay" id="m-proc">
   <div class="modal">
     <h3 id="proc-modal-title">Nuovo procacciatore</h3>
@@ -1880,7 +1913,7 @@ async function setupTables(){
 async function loadAll(){
   syncStatus('syncing','Caricamento...')
   try{
-    const [rP,rV,rL,rD,rB,rC,rDoc]=await Promise.all([
+    const [rP,rV,rL,rD,rB,rC,rDoc,rStu]=await Promise.all([
       db.from('procacciatori').select('*').order('created_at'),
       db.from('vendite').select('*').order('created_at'),
       db.from('leads').select('*').order('created_at'),
@@ -1888,10 +1921,12 @@ async function loadAll(){
       db.from('buste_paga').select('*').order('created_at'),
       db.from('contratti_firme').select('*').order('created_at'),
       db.from('docenti').select('*').order('created_at'),
+      db.from('studenti').select('*').order('created_at'),
     ])
     if(rP.error)throw rP.error
     procs=rP.data.map(r=>({_id:r.id,created:r.created_at,...r.data}))
     docenti=(rDoc&&rDoc.data?rDoc.data:[]).map(r=>({_id:r.id,created:r.created_at,...r.data}))
+    studenti=(rStu&&rStu.data?rStu.data:[]).map(r=>({_id:r.id,created:r.created_at,...r.data}))
     vendite=rV.data.map(r=>({_id:r.id,created:r.created_at,...r.data}))
     leads=rL.data.map(r=>({_id:r.id,created:r.created_at,...r.data}))
     const _leadTot=leads.length
@@ -2510,7 +2545,7 @@ function sp(id,el){
   if(el)el.classList.add('active')
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
-  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':caricaDocComm,'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'cedolini':renderCedolini,'doc-comm':caricaDocComm,'portale-link':renderPortaleLink,'bacheca':caricaBacheca,'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -2606,6 +2641,87 @@ function openM(id){
   {const _m=document.querySelector('#'+id+' .modal'); if(_m)_m.scrollTop=0}
 }
 function closeM(id){document.getElementById(id).classList.remove('open')}
+
+// ── STUDENTI (Settore Insegnamento) ─────────────────────────
+let _stuMaterie=[]
+function _stuRenderChips(){ const mc=document.getElementById('stu-materie-chips'); if(mc) mc.innerHTML=_stuMaterie.map((m,i)=>'<span style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:14px;padding:3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:6px">'+escB(m)+' <span style="cursor:pointer;color:#c0392b;font-weight:700" onclick="_stuDelMateria('+i+')">×</span></span>').join('') }
+function _stuAddMateria(){ const i=document.getElementById('stu-materia-in'); const v=(i.value||'').trim(); if(v&&!_stuMaterie.some(x=>x.toLowerCase()===v.toLowerCase())){ _stuMaterie.push(v); _stuRenderChips() } i.value=''; i.focus() }
+function _stuDelMateria(i){ _stuMaterie.splice(i,1); _stuRenderChips() }
+function _stuFillDocenti(){
+  const opt='<option value="">— Nessuno —</option>'+docenti.filter(d=>d.stato!=='Terminato').map(d=>'<option value="'+d._id+'">'+escB(d.nome||'')+'</option>').join('')
+  const s=document.getElementById('stu-docente'); if(s){ const c=s.value; s.innerHTML=opt; s.value=c }
+  const f=document.getElementById('stu-f-docente'); if(f){ const c=f.value; f.innerHTML='<option value="">Tutti i docenti</option>'+docenti.map(d=>'<option value="'+d._id+'">'+escB(d.nome||'')+'</option>').join(''); f.value=c }
+}
+function _nomeDocente(id){ const d=docenti.find(x=>x._id===id); return d?d.nome:'' }
+function apriStudente(id){
+  _stuMaterie=[]
+  try{ if(typeof _docFillMaterieSugg==='function') _docFillMaterieSugg() }catch(e){}
+  _stuFillDocenti()
+  const s=id?studenti.find(x=>x._id===id):null
+  document.getElementById('stu-modal-title').textContent=s?'Modifica studente':'Nuovo studente'
+  const set=(k,v)=>{ const e=document.getElementById(k); if(e) e.value=v||'' }
+  document.getElementById('stu-id').value=s?s._id:''
+  set('stu-nome',s&&s.nome); set('stu-nascita',s&&s.nascita); set('stu-tel',s&&s.tel); set('stu-email',s&&s.email)
+  set('stu-indirizzo',s&&s.indirizzo); set('stu-citta',s&&s.citta); set('stu-cap',s&&s.cap)
+  set('stu-genitore',s&&s.genitore); set('stu-tel-genitore',s&&s.tel_genitore)
+  set('stu-classe',s&&s.classe); set('stu-istituto',s&&s.istituto); set('stu-note',s&&s.note)
+  document.getElementById('stu-livello').value=(s&&s.livello)||''
+  document.getElementById('stu-stato').value=(s&&s.stato)||'Attivo'
+  document.getElementById('stu-docente').value=(s&&s.docenteId)||''
+  _stuMaterie=(s&&Array.isArray(s.materie))?[...s.materie]:[]
+  _stuRenderChips()
+  openM('m-studente')
+}
+async function salvaStudente(){
+  const nome=(document.getElementById('stu-nome').value||'').trim()
+  if(!nome) return alert('Inserisci cognome e nome.')
+  const g=k=>{ const e=document.getElementById(k); return e?e.value.trim():'' }
+  const obj={ nome, nascita:g('stu-nascita'), tel:g('stu-tel'), email:g('stu-email'), indirizzo:g('stu-indirizzo'), citta:g('stu-citta'), cap:g('stu-cap'), genitore:g('stu-genitore'), tel_genitore:g('stu-tel-genitore'), livello:document.getElementById('stu-livello').value, classe:g('stu-classe'), istituto:g('stu-istituto'), materie:_stuMaterie, docenteId:document.getElementById('stu-docente').value, stato:document.getElementById('stu-stato').value, note:g('stu-note') }
+  const id=document.getElementById('stu-id').value
+  try{
+    if(id){ const r=await db.from('studenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
+    else { const r=await db.from('studenti').insert({data:obj}); if(r.error) throw r.error }
+    closeM('m-studente'); await caricaStudenti(); toast('✅ Studente salvato')
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+}
+async function caricaStudenti(){
+  try{ const r=await db.from('studenti').select('*').order('created_at'); studenti=(r.data||[]).map(x=>({_id:x.id,created:x.created_at,...x.data})) }catch(e){}
+  renderStudenti()
+}
+async function eliminaStudente(id){
+  const s=studenti.find(x=>x._id===id); if(!s) return
+  if(!confirm('Eliminare lo studente "'+(s.nome||'')+'"?')) return
+  try{ const r=await db.from('studenti').delete().eq('id',id); if(r.error) throw r.error; await caricaStudenti(); toast('Studente eliminato') }catch(e){ alert('Errore: '+(e.message||e)) }
+}
+function renderStudenti(){
+  _stuFillDocenti()
+  const box=document.getElementById('studenti-lista'); if(!box) return
+  const q=(document.getElementById('stu-search')?.value||'').trim().toLowerCase()
+  const fl=document.getElementById('stu-f-livello')?.value||''
+  const fd=document.getElementById('stu-f-docente')?.value||''
+  let list=studenti.slice()
+  if(fl) list=list.filter(s=>(s.livello||'')===fl)
+  if(fd) list=list.filter(s=>(s.docenteId||'')===fd)
+  if(q) list=list.filter(s=>((s.nome||'')+' '+(s.materie||[]).join(' ')+' '+(s.istituto||'')+' '+(s.livello||'')+' '+_nomeDocente(s.docenteId)).toLowerCase().includes(q))
+  if(!studenti.length){ box.innerHTML='<div class="empty" style="padding:3rem">Nessuno studente. Premi "+ Nuovo studente" per iniziare.</div>'; return }
+  if(!list.length){ box.innerHTML='<div class="empty" style="padding:2rem">Nessuno studente trovato con questi filtri.</div>'; return }
+  box.innerHTML=list.map(s=>{
+    const mat=(s.materie||[]).map(m=>'<span style="background:var(--surface2);border-radius:10px;padding:2px 8px;font-size:11px">'+escB(m)+'</span>').join(' ')
+    const dn=_nomeDocente(s.docenteId)
+    const col=s.stato==='Attivo'?'#2a9d5c':'#888'
+    const badge='<span style="background:'+col+';color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">'+escB(s.stato||'Attivo')+'</span>'
+    const scuola=[s.livello,s.classe,s.istituto].filter(Boolean).join(' · ')
+    return '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
+      '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(s.nome||'—')+' '+badge+'</div>'+
+      (scuola?'<div style="font-size:12px;color:var(--text2);margin:3px 0">🎓 '+escB(scuola)+'</div>':'')+
+      (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
+      (dn?'<div style="font-size:11px;color:var(--text2);margin-top:5px">👨\u200d🏫 Docente: '+escB(dn)+'</div>':'<div style="font-size:11px;color:#c0392b;margin-top:5px">Nessun docente assegnato</div>')+
+      '<div style="font-size:11px;color:var(--text3);margin-top:4px">'+escB(s.email||'')+(s.tel?(' · '+escB(s.tel)):'')+(s.genitore?(' · tutore: '+escB(s.genitore)):'')+'</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="apriStudente(\''+s._id+'\')">✏️</button><button class="btn btn-sm btn-r" onclick="eliminaStudente(\''+s._id+'\')">🗑</button></div>'+
+      '</div></div>'
+  }).join('')
+}
 
 // ── DOCENTI (Settore Insegnamento) ──────────────────────────
 let _docMaterie=[], _docCerti=[]
