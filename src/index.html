@@ -536,7 +536,6 @@ tbody tr:hover td{background:var(--surface2)}
 
 <div class="page" id="page-listino">
   <div class="pg-title">Listino prodotti</div>
-  <div style="margin-bottom:12px"><button class="btn btn-p" onclick="filterList('Telefonia & Internet')" style="font-size:13.5px;padding:9px 18px">📱 Mostra solo Telefonia &amp; Cellulari</button> <button class="btn" onclick="filterList('')" style="font-size:13px;padding:9px 14px">Tutti i prodotti</button></div>
   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center" id="listino-cats"></div>
   <div id="listino-subfilter" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center"></div>
   <div style="margin-bottom:1rem"><button class="btn btn-sm" onclick="toggleListinoVis()" id="btn-listino-vis">👁 Visibilità categorie nei portali</button></div>
@@ -2861,6 +2860,7 @@ function switchSezione(sez){
   else if(sez==='doc'){sp('docenti',null);document.querySelector('#nav-doc .nav-item').classList.add('active')}
   else{sp('dip-dash',null);document.querySelector('#nav-dip .nav-item').classList.add('active')}
   try{ if(document.getElementById('editor-doc-list')) renderEditorDocList() }catch(e){}
+  try{ if(document.getElementById('mappa-firma-doc')) renderMappaFirmaDoc() }catch(e){}
 }
 function toggleAreaMenu(ev){
   if(ev) ev.stopPropagation()
@@ -5352,16 +5352,27 @@ async function fillDocFirmaSel(){
   applicaDocPerTipo()
 }
 // Associazione Tipo contratto -> documento firmabile (con marcatori)
-const TIPI_CONTRATTO_FIRMA=["Contratto di Procacciamento d'Affari Autonomo","Rinnovo Contratto Procacciamento","Aggiornamento Contratto","Addendum Provvigioni","Bonus Porta Cliente","Contratto di Recesso"]
-function getFirmaDocMap(){ try{ return JSON.parse(impostazioni['firma_doc_map']||'{}') }catch(e){ return {} } }
-function getFirmaDocMapForf(){ try{ return JSON.parse(impostazioni['firma_doc_map_forf']||'{}') }catch(e){ return {} } }
-function getDocPerTipo(tipo){
-  const mO=getFirmaDocMap(), mF=getFirmaDocMapForf()
+const TIPI_CONTRATTO_FIRMA_PROC=["Contratto di Procacciamento d'Affari Autonomo","Rinnovo Contratto Procacciamento","Aggiornamento Contratto","Addendum Provvigioni","Bonus Porta Cliente","Contratto di Recesso"]
+const TIPI_CONTRATTO_FIRMA_DOC=["Contratto di Prestazione d'Opera Autonoma","Contratto di Prestazione di Servizi Didattici","Lettera di Incarico","Aggiornamento Contratto"]
+const TIPI_CONTRATTO_FIRMA_DIP=["Contratto di Lavoro Subordinato a Tempo Indeterminato","Contratto di Lavoro a Tempo Determinato","Contratto Part-time","Lettera di Assunzione"]
+function _tipiFirma(area){ return area==='doc'?TIPI_CONTRATTO_FIRMA_DOC:(area==='dip'?TIPI_CONTRATTO_FIRMA_DIP:TIPI_CONTRATTO_FIRMA_PROC) }
+function _areaFirmaLbl(area){ return area==='doc'?'Docenti':(area==='dip'?'Dipendenti':'Procacciatori') }
+// Le chiavi dei procacciatori restano quelle storiche (retro-compatibilità); docenti/dipendenti hanno chiavi proprie.
+function _mapKeyFor(area){ return (area==='doc'||area==='dip') ? ('firma_doc_map_'+area) : 'firma_doc_map' }
+function _mapKeyForfFor(area){ return (area==='doc'||area==='dip') ? ('firma_doc_map_forf_'+area) : 'firma_doc_map_forf' }
+const TIPI_CONTRATTO_FIRMA=TIPI_CONTRATTO_FIRMA_PROC // alias retro-compatibile
+function getFirmaDocMap(area){ try{ return JSON.parse(impostazioni[_mapKeyFor(area||'proc')]||'{}') }catch(e){ return {} } }
+function getFirmaDocMapForf(area){ try{ return JSON.parse(impostazioni[_mapKeyForfFor(area||'proc')]||'{}') }catch(e){ return {} } }
+function getDocPerTipo(tipo, area){
+  area=area||sezioneAttiva||'proc'
+  const mO=getFirmaDocMap(area), mF=getFirmaDocMapForf(area)
   if(_regimeAz()==='forfettario') return mF[tipo] || mO[tipo] || ''   // forfettario, con ripiego sull'ordinario
   return mO[tipo] || mF[tipo] || ''                                    // ordinario, con ripiego sul forfettario
 }
-function docFirmabiliOptionsHtml(selId){
-  const all=[...EDITOR_DOCS, ...editorDocsCustom].filter(d=>!impostazioni['dochidden_'+d.id])
+function docFirmabiliOptionsHtml(selId, area){
+  area=area||'proc'
+  // Solo i documenti della macro-area scelta (i built-in valgono come procacciatori)
+  const all=[...EDITOR_DOCS, ...editorDocsCustom].filter(d=>!impostazioni['dochidden_'+d.id]).filter(d=>((impostazioni['docarea_'+d.id]||'proc')===area))
   let html='<option value="">— nessuno (scelgo all\u0027invio) —</option>'
   all.forEach(d=>{ const hasPdf=d.dynamic||!!impostazioni['docpdf_'+d.id]; const nM=(editorMarkers[d.id]||[]).length; const label=impostazioni['docname_'+d.id]||d.label; const hint=(hasPdf&&nM>0)?'':(!hasPdf?' \u2014 (manca il PDF)':' \u2014 (aggiungi campi Firma e Data)'); html+='<option value="'+d.id+'"'+(selId===d.id?' selected':'')+'>'+label+hint+'</option>' })
   return html
@@ -5369,23 +5380,27 @@ function docFirmabiliOptionsHtml(selId){
 async function renderMappaFirmaDoc(){
   const el=document.getElementById('mappa-firma-doc'); if(!el) return
   try{ await caricaDocumentiCustom(); await loadEditorCoordinate() }catch(e){}
-  const map=getFirmaDocMap(), mapF=getFirmaDocMapForf()
+  const area=sezioneAttiva||'proc'
+  const tipi=_tipiFirma(area)
+  const map=getFirmaDocMap(area), mapF=getFirmaDocMapForf(area)
   const attivo=_regimeAz()==='forfettario'?'Forfettario':'Ordinario'
-  el.innerHTML='<div style="font-size:11.5px;color:var(--text2);margin-bottom:12px">Per ogni tipo puoi impostare due versioni del documento. L\u0027app usa in automatico la colonna del regime attivo (ora: <b>'+attivo+'</b>) e switcha da sola quando cambi regime. Se lasci vuota una colonna, usa l\u0027altra.</div>'+
-    TIPI_CONTRATTO_FIRMA.map((t,i)=>'<div style="margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--border)">'+
+  el.innerHTML='<div style="font-size:11.5px;color:var(--text2);margin-bottom:12px">Macro-area attiva: <b>'+_areaFirmaLbl(area)+'</b>. Qui compaiono solo i documenti di questa area: associali ai tipi di contratto '+_areaFirmaLbl(area).toLowerCase()+'. Due versioni per tipo: l\u0027app usa la colonna del regime attivo (ora: <b>'+attivo+'</b>) e switcha da sola quando cambi regime. Vuoto = usa l\u0027altra colonna.</div>'+
+    tipi.map((t,i)=>'<div style="margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--border)">'+
       '<div style="font-size:12.5px;font-weight:600;margin-bottom:6px">'+t+'</div>'+
       '<div class="fr">'+
-        '<div class="fg"><label style="font-size:10.5px;color:var(--text3)">Ordinario</label><select id="mfd-'+i+'" onchange="salvaMappaFirmaDoc()">'+docFirmabiliOptionsHtml(map[t]||'')+'</select></div>'+
-        '<div class="fg"><label style="font-size:10.5px;color:var(--text3)">Forfettario</label><select id="mfdf-'+i+'" onchange="salvaMappaFirmaDoc()">'+docFirmabiliOptionsHtml(mapF[t]||'')+'</select></div>'+
+        '<div class="fg"><label style="font-size:10.5px;color:var(--text3)">Ordinario</label><select id="mfd-'+i+'" onchange="salvaMappaFirmaDoc()">'+docFirmabiliOptionsHtml(map[t]||'', area)+'</select></div>'+
+        '<div class="fg"><label style="font-size:10.5px;color:var(--text3)">Forfettario</label><select id="mfdf-'+i+'" onchange="salvaMappaFirmaDoc()">'+docFirmabiliOptionsHtml(mapF[t]||'', area)+'</select></div>'+
       '</div></div>').join('')
 }
 async function salvaMappaFirmaDoc(){
+  const area=sezioneAttiva||'proc'
+  const tipi=_tipiFirma(area)
   const map={}, mapF={}
-  TIPI_CONTRATTO_FIRMA.forEach((t,i)=>{ const v=document.getElementById('mfd-'+i)?.value; if(v) map[t]=v; const vf=document.getElementById('mfdf-'+i)?.value; if(vf) mapF[t]=vf })
-  impostazioni['firma_doc_map']=JSON.stringify(map)
-  impostazioni['firma_doc_map_forf']=JSON.stringify(mapF)
+  tipi.forEach((t,i)=>{ const v=document.getElementById('mfd-'+i)?.value; if(v) map[t]=v; const vf=document.getElementById('mfdf-'+i)?.value; if(vf) mapF[t]=vf })
+  impostazioni[_mapKeyFor(area)]=JSON.stringify(map)
+  impostazioni[_mapKeyForfFor(area)]=JSON.stringify(mapF)
   await upsertImpostazioni()
-  toast('Associazioni salvate')
+  toast('Associazioni salvate ('+_areaFirmaLbl(area)+')')
 }
 function applicaDocPerTipo(){
   const tipo=document.getElementById('ct-tipo')?.value
@@ -5483,6 +5498,20 @@ async function inviaContratto(sezione){
     if(!_mk.some(m=>m.tipo==='data_firma')){
       if(!confirm('\u26a0\ufe0f Questo documento non ha il campo "Firma" posizionato: il destinatario potrebbe non avere dove firmare e la firma non comparir\u00e0 sul PDF.\n\nVuoi inviarlo lo stesso?')) return
     }
+  } else {
+    // Docenti/Dipendenti: il documento e scelto in automatico dalla mappa "Documento per tipo di contratto" dell'area
+    const docIdAuto=getDocPerTipo(tipo, sezione)
+    if(!docIdAuto){
+      alert('Per la macro-area '+_areaFirmaLbl(sezione)+' non hai associato nessun documento al tipo \u0022'+tipo+'\u0022.\n\nVai in Impostazioni \u2192 Documento per tipo di contratto (con la macro-area '+_areaFirmaLbl(sezione)+' attiva), scegli il documento giusto e salva, poi reinvia.')
+      return
+    }
+    try{ if(!editorMarkers[docIdAuto]) await loadEditorCoordinate() }catch(e){}
+    const _dA=[...EDITOR_DOCS, ...editorDocsCustom].find(x=>x.id===docIdAuto)
+    const _hasPdfA=(_dA&&_dA.dynamic)||!!impostazioni['docpdf_'+docIdAuto]
+    if(!_hasPdfA){ alert('Il documento associato a \u0022'+tipo+'\u0022 ('+_areaFirmaLbl(sezione)+') non ha il PDF caricato.\n\nCaricalo in Gestione campi documenti e riprova.'); return }
+    if(!(editorMarkers[docIdAuto]||[]).some(m=>m.tipo==='data_firma')){
+      if(!confirm('\u26a0\ufe0f Il documento associato non ha il campo "Firma" posizionato. Inviarlo lo stesso?')) return
+    }
   }
   // Salva come procacciatore se richiesto
   if(isProc){
@@ -5511,6 +5540,14 @@ async function inviaContratto(sezione){
           const pidx=document.getElementById('ct-proc')?.value
           if(pidx!=='' && pidx!=null && procs[parseInt(pidx)]) pComp=procs[parseInt(pidx)]
         }
+        const scelte=getCtScelte(docId)
+        docFirma=await preparaDocFirma(docId, token, pComp, scelte)
+      }
+    } else {
+      // Docenti/Dipendenti: documento scelto in automatico dalla mappa dell'area
+      const docId=getDocPerTipo(tipo, sezione)
+      if(docId){
+        const pComp={ nome, email, tel:'' }
         const scelte=getCtScelte(docId)
         docFirma=await preparaDocFirma(docId, token, pComp, scelte)
       }
@@ -9438,7 +9475,7 @@ function renderEditorDocList(){
   const allDocs = [...EDITOR_DOCS, ...editorDocsCustom]
     .filter(d => !impostazioni['dochidden_'+d.id])
     .filter(d => docArea(d)===areaCur)
-    .map(d => ({ id:d.id, dynamic:!!d.dynamic, label: impostazioni['docname_'+d.id]||d.label, pages: impostazioni['pages_'+d.id]||d.pages, hasPdf: d.dynamic || !!impostazioni['docpdf_'+d.id], nMarkers:(editorMarkers[d.id]||[]).length }))
+    .map(d => ({ id:d.id, dynamic:!!d.dynamic, label: impostazioni['docname_'+d.id]||d.label, pages: impostazioni['pages_'+d.id]||d.pages, hasPdf: d.dynamic || !!impostazioni['docpdf_'+d.id], nMarkers:(editorMarkers[d.id]||[]).length, area: docArea(d) }))
   if(!allDocs.length){ el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:10px 4px;line-height:1.5">Nessun documento per questa area.<br>Carica un PDF qui sotto: verrà salvato per <b>'+({proc:'Procacciatori',doc:'Docenti',dip:'Dipendenti'}[areaCur]||areaCur)+'</b>.</div>'; return }
   el.innerHTML = allDocs.map(d => `
     <div onclick="selectEditorDoc('${d.id}',${d.pages})"
@@ -9450,12 +9487,24 @@ function renderEditorDocList(){
         ${d.label}${d.dynamic?' ☁':(d.hasPdf?' 📄':'')}${d.nMarkers?`<span style="color:var(--accent);font-size:10px;margin-left:5px;white-space:nowrap">●${d.nMarkers}</span>`:''}
       </div>
       <div style="display:flex;align-items:center;gap:1px;justify-content:flex-end">
+        ${d.id.startsWith('CUSTOM_')?`<select onclick="event.stopPropagation()" onchange="event.stopPropagation();cambiaAreaDoc('${d.id}',this.value)" title="Sposta questo documento in un'altra area" style="font-size:10px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);padding:1px 3px;margin-right:auto">
+          <option value="proc"${d.area==='proc'?' selected':''}>Proc.</option>
+          <option value="doc"${d.area==='doc'?' selected':''}>Doc.</option>
+          <option value="dip"${d.area==='dip'?' selected':''}>Dip.</option>
+        </select>`:''}
         <button onclick="event.stopPropagation();rinominaDocId('${d.id}')" title="Rinomina documento" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1">✏️</button>
         <button onclick="event.stopPropagation();sostituisciPdfId('${d.id}')" title="${d.dynamic?'Sostituisci PDF':'Carica/Sostituisci il PDF'}" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1">🔄</button>
         <button onclick="event.stopPropagation();agganciaPdfEsistente('${d.id}')" title="Aggancia un PDF gi\u00e0 caricato a questa voce" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1">🔗</button>
         <button onclick="event.stopPropagation();eliminaDocId('${d.id}')" title="Elimina documento" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1">🗑</button>
       </div>
     </div>`).join('')
+}
+async function cambiaAreaDoc(id, area){
+  impostazioni['docarea_'+id]=area
+  try{ await upsertImpostazioni() }catch(e){ alert('Errore spostamento: '+((e&&e.message)||e)); return }
+  toast('Documento spostato in '+({proc:'Procacciatori',doc:'Docenti',dip:'Dipendenti'}[area]||area))
+  renderEditorDocList()
+  try{ renderMappaFirmaDoc() }catch(e){}
 }
 
 function selectEditorDoc(id, totalPages){
