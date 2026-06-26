@@ -1766,7 +1766,8 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="fr"><div class="fg"><label>Codice fiscale</label><input id="doc-cf" type="text" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase"></div><div class="fg"><label>Telefono</label><input id="doc-tel" type="tel" placeholder="+39 333 000000"></div></div>
     <div class="fr"><div class="fg"><label>Email personale</label><input id="doc-email" type="email" placeholder="mario@email.com"></div><div class="fg"><label>Email aziendale (login portale)</label><input id="doc-email-az" type="email" placeholder="nome.cognome@..."></div></div>
     <div class="fr"><div class="fg"><label>Indirizzo / Domicilio</label><input id="doc-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>CAP</label><input id="doc-cap" type="text" inputmode="numeric" maxlength="5" placeholder="00100" oninput="onCapInput('doc-cap','doc-citta','doc-prov')"></div></div>
-    <div class="fr"><div class="fg"><label>Città</label><input id="doc-citta" type="text" placeholder="Roma" list="dl-comuni" autocomplete="off" oninput="onCittaInput(this,'doc-prov','doc-cap')" onchange="onCittaChange('doc-citta','doc-prov','doc-cap')"></div><div class="fg"><label>Provincia</label><input id="doc-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
+    <div class="fr"><div class="fg"><label>Città</label><input id="doc-citta" type="text" placeholder="Roma" list="dl-comuni-doc" autocomplete="off" oninput="onCittaInput(this,'doc-prov','doc-cap')" onchange="onCittaChange('doc-citta','doc-prov','doc-cap')"></div><div class="fg"><label>Provincia</label><input id="doc-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
+    <datalist id="dl-comuni-doc"></datalist>
     <div class="msec">Dati fiscali e pagamento</div>
     <div class="fr"><div class="fg"><label>IBAN</label><input id="doc-iban" type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"></div><div class="fg"><label>Regime</label><select id="doc-regime"><option value="ritenuta">Prestazione occasionale</option><option value="piva">Partita IVA</option></select></div><div class="fg"><label>P.IVA (se presente)</label><input id="doc-piva" type="text" placeholder="01234567890"></div></div>
     <div class="fr"><div class="fg"><label>% Compenso docente <span style="font-size:10px;color:var(--text3)">(il resto all'azienda)</span></label><input id="doc-pct" type="number" min="0" max="100" step="1" placeholder="70" oninput="_docPctEcho()"></div><div class="fg"><label>Quota azienda</label><input id="doc-pct-az" type="text" disabled placeholder="30%"></div><div class="fg"><label>Stato</label><select id="doc-stato"><option>Attivo</option><option>In pausa</option><option>Terminato</option></select></div></div>
@@ -2020,7 +2021,8 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="fr"><div class="fg"><label>Email</label><input id="dp-email" type="email" placeholder="mario@email.com"></div><div class="fg"><label>Telefono</label><input id="dp-tel" type="tel" placeholder="+39 333 000000"></div></div>
     <div class="fr"><div class="fg"><label>Codice fiscale *</label><input id="dp-cf" type="text" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase"></div><div class="fg"><label>IBAN</label><input id="dp-iban" type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"></div></div>
     <div class="fr"><div class="fg"><label>Indirizzo / Domicilio</label><input id="dp-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>CAP</label><input id="dp-cap" type="text" inputmode="numeric" maxlength="5" placeholder="00100" oninput="onCapInput('dp-cap','dp-citta','dp-prov')"></div></div>
-    <div class="fr"><div class="fg"><label>Città</label><input id="dp-citta" type="text" placeholder="Roma" list="dl-comuni" autocomplete="off" oninput="onCittaInput(this,'dp-prov','dp-cap')" onchange="onCittaChange('dp-citta','dp-prov','dp-cap')"></div><div class="fg"><label>Provincia</label><input id="dp-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
+    <div class="fr"><div class="fg"><label>Città</label><input id="dp-citta" type="text" placeholder="Roma" list="dl-comuni-dip" autocomplete="off" oninput="onCittaInput(this,'dp-prov','dp-cap')" onchange="onCittaChange('dp-citta','dp-prov','dp-cap')"></div><div class="fg"><label>Provincia</label><input id="dp-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
+    <datalist id="dl-comuni-dip"></datalist>
     <div class="msec">Documento d'identità</div>
     <div class="fr"><div class="fg"><label>Tipo documento</label><select id="dp-doc-tipo"><option value="Carta d'Identità">Carta d'Identità</option><option value="Passaporto">Passaporto</option><option value="Permesso di Soggiorno">Permesso di Soggiorno</option><option value="Patente">Patente</option></select></div><div class="fg"><label>Numero documento</label><input id="dp-doc-num" type="text" placeholder="es. AB1234567"></div></div>
     <div class="fr"><div class="fg"><label>Rilasciato da</label><input id="dp-doc-ril" type="text" placeholder="Comune di Roma"></div><div class="fg"><label>Data rilascio</label><input id="dp-doc-rildata" type="date" onchange="calcolaScadenzaDocDip()"></div></div>
@@ -8091,7 +8093,13 @@ function _calWd1(d){ return ((d.getDay()+6)%7)+1 }
 function _calArr(t){ return t==='studenti'?(studenti||[]):t==='dipendenti'?(dipendenti||[]):(docenti||[]) }
 function renderCalendarioAdmin(){
   const tip=document.getElementById('cal-tipo')
-  if(tip && !tip._init){ tip.value=(sezioneAttiva==='dip')?'dipendenti':'docenti'; tip._init=1 }
+  if(tip){
+    // Su Docenti: Docente + Studente. Su Dipendenti: solo Dipendente.
+    tip.innerHTML=(sezioneAttiva==='dip')
+      ? '<option value="dipendenti">Dipendente</option>'
+      : '<option value="docenti">Docente</option><option value="studenti">Studente</option>'
+    tip.value=(sezioneAttiva==='dip')?'dipendenti':'docenti'
+  }
   calAdminFillPersone()
   const ps=document.getElementById('cal-persona'); if(ps) ps.value=''
   const ar=document.getElementById('cal-admin-area'); if(ar) ar.style.display='none'
@@ -10177,7 +10185,8 @@ async function caricaComuni(){
   }catch(e){ console.log('Comuni non disponibili (offline?):', e.message) }
 }
 function onCittaInput(el, provId, capId){
-  const dl=document.getElementById('dl-comuni')
+  const dlId=el.getAttribute('list')||'dl-comuni'
+  const dl=document.getElementById(dlId)
   const v=(el.value||'').toLowerCase().trim()
   if(dl && COMUNI.length){
     if(v.length<2){ dl.innerHTML='' }
