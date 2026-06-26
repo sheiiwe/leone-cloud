@@ -1762,10 +1762,11 @@ tbody tr:hover td{background:var(--surface2)}
     <h3 id="doc-modal-title">Nuovo docente</h3>
     <input type="hidden" id="doc-id">
     <div class="msec">Dati anagrafici</div>
-    <div class="fr"><div class="fg"><label>Cognome e nome *</label><input id="doc-nome" type="text" placeholder="Rossi Mario"></div><div class="fg"><label>Data di nascita</label><input id="doc-nascita" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Nome e cognome *</label><input id="doc-nome" type="text" placeholder="Mario Rossi"></div><div class="fg"><label>Data di nascita</label><input id="doc-nascita" type="date"></div></div>
     <div class="fr"><div class="fg"><label>Codice fiscale</label><input id="doc-cf" type="text" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase"></div><div class="fg"><label>Telefono</label><input id="doc-tel" type="tel" placeholder="+39 333 000000"></div></div>
     <div class="fr"><div class="fg"><label>Email personale</label><input id="doc-email" type="email" placeholder="mario@email.com"></div><div class="fg"><label>Email aziendale (login portale)</label><input id="doc-email-az" type="email" placeholder="nome.cognome@..."></div></div>
-    <div class="fr"><div class="fg"><label>Indirizzo</label><input id="doc-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>Città</label><input id="doc-citta" type="text" placeholder="Roma"></div><div class="fg"><label>CAP</label><input id="doc-cap" type="text" maxlength="5" placeholder="00100"></div></div>
+    <div class="fr"><div class="fg"><label>Indirizzo / Domicilio</label><input id="doc-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>CAP</label><input id="doc-cap" type="text" inputmode="numeric" maxlength="5" placeholder="00100" oninput="onCapInput('doc-cap','doc-citta','doc-prov')"></div></div>
+    <div class="fr"><div class="fg"><label>Città</label><input id="doc-citta" type="text" placeholder="Roma" list="dl-comuni" autocomplete="off" oninput="onCittaInput(this,'doc-prov','doc-cap')" onchange="onCittaChange('doc-citta','doc-prov','doc-cap')"></div><div class="fg"><label>Provincia</label><input id="doc-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
     <div class="msec">Dati fiscali e pagamento</div>
     <div class="fr"><div class="fg"><label>IBAN</label><input id="doc-iban" type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"></div><div class="fg"><label>Regime</label><select id="doc-regime"><option value="ritenuta">Prestazione occasionale</option><option value="piva">Partita IVA</option></select></div><div class="fg"><label>P.IVA (se presente)</label><input id="doc-piva" type="text" placeholder="01234567890"></div></div>
     <div class="fr"><div class="fg"><label>% Compenso docente <span style="font-size:10px;color:var(--text3)">(il resto all'azienda)</span></label><input id="doc-pct" type="number" min="0" max="100" step="1" placeholder="70" oninput="_docPctEcho()"></div><div class="fg"><label>Quota azienda</label><input id="doc-pct-az" type="text" disabled placeholder="30%"></div><div class="fg"><label>Stato</label><select id="doc-stato"><option>Attivo</option><option>In pausa</option><option>Terminato</option></select></div></div>
@@ -1810,7 +1811,7 @@ tbody tr:hover td{background:var(--surface2)}
     <h3 id="stu-modal-title">Nuovo studente</h3>
     <input type="hidden" id="stu-id">
     <div class="msec">Dati anagrafici</div>
-    <div class="fr"><div class="fg"><label>Cognome e nome *</label><input id="stu-nome" type="text" placeholder="Bianchi Giulia"></div><div class="fg"><label>Data di nascita</label><input id="stu-nascita" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Nome e cognome *</label><input id="stu-nome" type="text" placeholder="Bianchi Giulia"></div><div class="fg"><label>Data di nascita</label><input id="stu-nascita" type="date"></div></div>
     <div class="fr"><div class="fg"><label>Telefono</label><input id="stu-tel" type="tel" placeholder="+39 333 000000"></div><div class="fg"><label>Email</label><input id="stu-email" type="email" placeholder="giulia@email.com"></div></div>
     <div class="fr"><div class="fg"><label>Indirizzo</label><input id="stu-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>Città</label><input id="stu-citta" type="text" placeholder="Roma"></div><div class="fg"><label>CAP</label><input id="stu-cap" type="text" maxlength="5" placeholder="00100"></div></div>
     <div class="msec" id="stu-genitore-msec">Genitore / Tutore <span style="font-weight:400;color:var(--text2)">(obbligatorio per minorenni)</span></div>
@@ -1844,14 +1845,14 @@ tbody tr:hover td{background:var(--surface2)}
       </div>
     </div>
     <div class="msec">Dati anagrafici</div>
-    <div class="fr"><div class="fg"><label>Cognome e nome *</label><input id="pr-nome" type="text" placeholder="Rossi Mario"></div><div class="fg"><label>Data di nascita</label><input id="pr-nascita" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Nome e cognome *</label><input id="pr-nome" type="text" placeholder="Mario Rossi"></div><div class="fg"><label>Data di nascita</label><input id="pr-nascita" type="date"></div></div>
     <div class="fr"><div class="fg"><label>Luogo di nascita</label><input id="pr-luogonascita" type="text" placeholder="Comune di nascita" list="dl-comuni" autocomplete="off" oninput="onCittaInput(this)"></div><div class="fg"><label>Codice fiscale</label><div style="display:flex;gap:6px"><input id="pr-cf2" type="text" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase;flex:1" oninput="{const e=document.getElementById('pr-cf'); if(e)e.value=this.value}"><button type="button" class="btn btn-sm" onclick="apriCalcoloCF()">Calcola</button></div></div></div>
     <div class="fr"><div class="fg"><label>Email personale</label><input id="pr-email" type="email" placeholder="mario@email.com"></div><div class="fg"><label>Email aziendale (per il login)</label><input id="pr-email-az" type="email" placeholder="nome.cognome@leoneconsultingitalia.it"></div></div>
     <div class="fr"><div class="fg"><label>Password casella Aruba <span style="font-size:10px;color:var(--text3)">(per la webmail)</span></label><input id="pr-email-az-pwd" type="text" placeholder="password della casella di posta"></div></div>
     <div style="margin:-6px 0 10px"><button type="button" class="btn btn-g btn-sm" onclick="inviaInvitoPortale()" title="Crea l'accesso con l'email aziendale e invia il link di attivazione alla email personale">📨 Invia invito al portale</button> <button type="button" class="btn btn-sm" onclick="generaCredenzialiPortale()" title="Genera password e crea un PDF con le credenziali da consegnare">🔑 Genera credenziali (PDF)</button><div style="font-size:11px;color:var(--text2);margin-top:5px">Invito: link di attivazione alla personale · Credenziali: PDF con email e password pronto da consegnare</div><div style="margin-top:7px"><label class="btn btn-sm" style="cursor:pointer">📤 Carica documento nel portale<input type="file" accept="application/pdf" style="display:none" onchange="caricaDocPortale(this)"></label> <span id="pr-doc-portale-stato" style="font-size:11px;color:var(--text2)"></span><div style="font-size:11px;color:var(--text2);margin-top:4px">Il procacciatore lo vedrà nella sezione "Documenti" del portale. I contratti firmati ci finiscono in automatico.</div></div></div>
     <div class="fr"><div class="fg"><label>Telefono</label><input id="pr-tel" type="tel" placeholder="+39 333 000000"></div></div>
     <div class="fr"><div class="fg"><label>Indirizzo / Domicilio</label><input id="pr-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>CAP</label><input id="pr-cap" type="text" inputmode="numeric" maxlength="5" placeholder="00100" oninput="onCapInput('pr-cap','pr-citta','pr-prov')"></div></div>
-    <div class="fr"><div class="fg"><label>Città</label><input id="pr-citta" type="text" placeholder="Roma" list="dl-comuni" autocomplete="off" oninput="onCittaInput(this)" onchange="onCittaChange('pr-citta','pr-prov','pr-cap')"></div><div class="fg"><label>Provincia</label><input id="pr-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
+    <div class="fr"><div class="fg"><label>Città</label><input id="pr-citta" type="text" placeholder="Roma" list="dl-comuni" autocomplete="off" oninput="onCittaInput(this,'pr-prov','pr-cap')" onchange="onCittaChange('pr-citta','pr-prov','pr-cap')"></div><div class="fg"><label>Provincia</label><input id="pr-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
     <datalist id="dl-comuni"></datalist>
     <div class="fr"><div class="fg"><label>IBAN</label><input id="pr-iban" type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"></div><div class="fg"><label>BIC / SWIFT (se necessario)</label><input id="pr-bic" type="text" placeholder="es. UNCRITM1XXX"></div><div class="fg"><label>Istituto bancario</label><input id="pr-banca" type="text" placeholder="es. Intesa Sanpaolo"></div><div class="fg"><label>Tipo di conto</label><select id="pr-tipo-conto"><option value="bancario">Conto corrente bancario</option><option value="postale">Conto corrente postale (Poste Italiane)</option><option value="estero">Conto estero</option></select></div><div class="fg"><label>Codice ATECO (solo se P.IVA)</label><input id="pr-ateco" type="text" placeholder="es. 46.18.91"></div></div>
     <div class="msec">Documento d'identità</div>
@@ -2015,10 +2016,11 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="modal">
     <h3 id="dip-modal-title">Nuovo dipendente</h3>
     <div class="msec">Dati anagrafici</div>
-    <div class="fr"><div class="fg"><label>Cognome e nome *</label><input id="dp-nome" type="text" placeholder="Rossi Mario"></div><div class="fg"><label>Data di nascita</label><input id="dp-nascita" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Nome e cognome *</label><input id="dp-nome" type="text" placeholder="Mario Rossi"></div><div class="fg"><label>Data di nascita</label><input id="dp-nascita" type="date"></div></div>
     <div class="fr"><div class="fg"><label>Email</label><input id="dp-email" type="email" placeholder="mario@email.com"></div><div class="fg"><label>Telefono</label><input id="dp-tel" type="tel" placeholder="+39 333 000000"></div></div>
     <div class="fr"><div class="fg"><label>Codice fiscale *</label><input id="dp-cf" type="text" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase"></div><div class="fg"><label>IBAN</label><input id="dp-iban" type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"></div></div>
-    <div class="fr"><div class="fg"><label>Indirizzo / Domicilio</label><input id="dp-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>Città / CAP / Provincia</label><input id="dp-citta" type="text" placeholder="Roma 00100 RM"></div></div>
+    <div class="fr"><div class="fg"><label>Indirizzo / Domicilio</label><input id="dp-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>CAP</label><input id="dp-cap" type="text" inputmode="numeric" maxlength="5" placeholder="00100" oninput="onCapInput('dp-cap','dp-citta','dp-prov')"></div></div>
+    <div class="fr"><div class="fg"><label>Città</label><input id="dp-citta" type="text" placeholder="Roma" list="dl-comuni" autocomplete="off" oninput="onCittaInput(this,'dp-prov','dp-cap')" onchange="onCittaChange('dp-citta','dp-prov','dp-cap')"></div><div class="fg"><label>Provincia</label><input id="dp-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
     <div class="msec">Documento d'identità</div>
     <div class="fr"><div class="fg"><label>Tipo documento</label><select id="dp-doc-tipo"><option value="Carta d'Identità">Carta d'Identità</option><option value="Passaporto">Passaporto</option><option value="Permesso di Soggiorno">Permesso di Soggiorno</option><option value="Patente">Patente</option></select></div><div class="fg"><label>Numero documento</label><input id="dp-doc-num" type="text" placeholder="es. AB1234567"></div></div>
     <div class="fr"><div class="fg"><label>Rilasciato da</label><input id="dp-doc-ril" type="text" placeholder="Comune di Roma"></div><div class="fg"><label>Data rilascio</label><input id="dp-doc-rildata" type="date" onchange="calcolaScadenzaDocDip()"></div></div>
@@ -3196,7 +3198,7 @@ function apriDocente(id){
   const set=(k,v)=>{ const e=document.getElementById(k); if(e) e.value=v||'' }
   document.getElementById('doc-id').value=d?d._id:''
   set('doc-nome',d&&d.nome); set('doc-nascita',d&&d.nascita); set('doc-cf',d&&d.cf); set('doc-tel',d&&d.tel)
-  set('doc-email',d&&d.email); set('doc-email-az',d&&d.email_aziendale); set('doc-indirizzo',d&&d.indirizzo); set('doc-citta',d&&d.citta); set('doc-cap',d&&d.cap)
+  set('doc-email',d&&d.email); set('doc-email-az',d&&d.email_aziendale); set('doc-indirizzo',d&&d.indirizzo); set('doc-citta',d&&d.citta); set('doc-cap',d&&d.cap); set('doc-prov',d&&d.prov)
   set('doc-iban',d&&d.iban); set('doc-piva',d&&d.piva); set('doc-note',d&&d.note)
   document.getElementById('doc-regime').value=(d&&d.regime)||'ritenuta'
   document.getElementById('doc-qualifica').value=(d&&d.qualifica)||'procacciatore'
@@ -3215,7 +3217,7 @@ async function salvaDocente(){
   const livelli=[...document.querySelectorAll('.doc-liv')].filter(c=>c.checked).map(c=>c.value)
   const g=k=>{ const e=document.getElementById(k); return e?e.value.trim():'' }
   const pct=parseFloat(document.getElementById('doc-pct').value)
-  const obj={ nome, nascita:g('doc-nascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), qualifica:document.getElementById('doc-qualifica').value, pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note') }
+  const obj={ nome, nascita:g('doc-nascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), prov:(g('doc-prov')||'').toUpperCase(), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), qualifica:document.getElementById('doc-qualifica').value, pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note') }
   const id=document.getElementById('doc-id').value
   try{
     if(id){ const r=await db.from('docenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
@@ -3251,9 +3253,9 @@ function renderDocenti(){
     const liv=(d.livelli||[]).join(', ')
     const az=(d.pctDocente!=null&&isFinite(d.pctDocente))?(100-d.pctDocente):null
     const col=d.stato==='Attivo'?'#2a9d5c':(d.stato==='In pausa'?'#888':'#c0392b')
-    const badge='<span style="background:'+col+';color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">'+escB(d.stato||'Attivo')+'</span>'
+    const badge='<span onclick="apriPopupStatoDoc(\''+d._id+'\',event)" title="Cambia stato" style="cursor:pointer;background:'+col+';color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">'+escB(d.stato||'Attivo')+'</span>'
     const ql=(d.qualifica==='assunto')?'<span style="background:#3a5a8c;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">Assunto</span>':'<span style="background:#7a5c2e;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">Procacciatore</span>'
-    return '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
+    return '<div class="card" style="margin-bottom:10px;cursor:pointer" ondblclick="apriDocente(\''+d._id+'\')"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
       '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(d.nome||'—')+' '+badge+' '+ql+'</div>'+
       '<div style="font-size:12px;color:var(--text2);margin:3px 0">'+(liv?('📚 '+escB(liv)):'')+(d.pctDocente!=null?('  ·  💶 docente '+d.pctDocente+'% / azienda '+az+'%'):'')+'</div>'+
       (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
@@ -4335,6 +4337,24 @@ function apriProfiloDaDash(i){
   sp('proc', navEl)
   setTimeout(()=>apriAnagrafica(i,'proc'), 300)
 }
+
+// ── STATO da lista per Docenti / Dipendenti ───────────────────
+function _popupStato(stati, statoCur, onPick, event){
+  document.querySelectorAll('.popup-stato').forEach(p=>p.remove())
+  const popup=document.createElement('div'); popup.className='popup-stato'
+  popup.style.cssText='position:fixed;background:var(--bg);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:9999;padding:6px;min-width:160px'
+  const rect=event.target.getBoundingClientRect(); popup.style.top=(rect.bottom+4)+'px'; popup.style.left=rect.left+'px'
+  stati.forEach(s=>{ const btn=document.createElement('button'); btn.textContent=s.label
+    btn.style.cssText='display:block;width:100%;text-align:left;padding:9px 14px;border:none;background:'+(statoCur===s.val?'var(--surface2)':'transparent')+';cursor:pointer;border-radius:6px;font-size:13px;font-family:inherit;color:var(--text)'
+    btn.onmouseover=()=>{ btn.style.background='var(--surface2)' }; btn.onmouseout=()=>{ btn.style.background=statoCur===s.val?'var(--surface2)':'transparent' }
+    btn.onclick=()=>{ onPick(s.val); popup.remove() }; popup.appendChild(btn) })
+  document.body.appendChild(popup)
+  setTimeout(()=>document.addEventListener('click',()=>popup.remove(),{once:true}),10)
+}
+function apriPopupStatoDoc(id,event){ event.stopPropagation(); const d=docenti.find(x=>x._id===id); if(!d)return; _popupStato([{val:'Attivo',label:'✅ Attivo'},{val:'In pausa',label:'⏸ In pausa'},{val:'Terminato',label:'🔴 Terminato'}], d.stato||'Attivo', v=>cambiaStatoDoc(id,v), event) }
+async function cambiaStatoDoc(id,stato){ const d=docenti.find(x=>x._id===id); if(!d||!stato)return; const {_id,created,...data}=d; data.stato=stato; try{ const r=await db.from('docenti').update({data}).eq('id',id); if(r.error)throw r.error; d.stato=stato }catch(e){ alert('Errore: '+(e.message||e)); return } toast('Stato aggiornato'); renderDocenti() }
+function apriPopupStatoDip(i,event){ event.stopPropagation(); const d=dipendenti[i]; if(!d)return; _popupStato([{val:'Attivo',label:'✅ Attivo'},{val:'Inattivo',label:'⏸ Inattivo'},{val:'In prova',label:'🟡 In prova'}], d.stato||'Attivo', v=>cambiaStatoDip(i,v), event) }
+async function cambiaStatoDip(i,stato){ const d=dipendenti[i]; if(!d||!stato)return; const {_id,created,...data}=d; data.stato=stato; try{ const r=await db.from('dipendenti').update({data}).eq('id',d._id); if(r.error)throw r.error; d.stato=stato }catch(e){ alert('Errore: '+(e.message||e)); return } toast('Stato aggiornato'); renderDipendenti() }
 
 // ── SCADENZA CONTRATTO ────────────────────────────────────────
 function controllaScadenza(dataFine){
@@ -6159,7 +6179,7 @@ function calcolaStipendio(){
   document.getElementById('calc-costo-az').textContent=fmtE(costoAz)
 }
 function resetDipForm(){
-  ['dp-nome','dp-email','dp-tel','dp-cf','dp-iban','dp-ral','dp-ore','dp-paga-ora','dp-indirizzo','dp-citta','dp-doc-num','dp-doc-ril'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
+  ['dp-nome','dp-email','dp-tel','dp-cf','dp-iban','dp-ral','dp-ore','dp-paga-ora','dp-indirizzo','dp-citta','dp-cap','dp-prov','dp-doc-num','dp-doc-ril'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
   ['dp-nascita','dp-doc-rildata','dp-doc-scad','dp-fine'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
   if(document.getElementById('dp-doc-tipo')) document.getElementById('dp-doc-tipo').value="Carta d'Identità"
   if(document.getElementById('dp-durata')) document.getElementById('dp-durata').value='1'
@@ -6199,7 +6219,7 @@ async function saveDip(){
   fine:document.getElementById('dp-fine')?.value||'',
   nascita:document.getElementById('dp-nascita')?.value||'',
   indirizzo:document.getElementById('dp-indirizzo')?.value||'',
-  citta:document.getElementById('dp-citta')?.value||'',
+  citta:document.getElementById('dp-citta')?.value||'', cap:document.getElementById('dp-cap')?.value||'', prov:(document.getElementById('dp-prov')?.value||'').toUpperCase(),
   doc_tipo:document.getElementById('dp-doc-tipo')?.value||'',
   doc_num:document.getElementById('dp-doc-num')?.value||'',
   doc_identita:(document.getElementById('dp-doc-tipo')?.value||'')+' '+(document.getElementById('dp-doc-num')?.value||''),
@@ -6243,7 +6263,13 @@ function editDip(i){
   if(document.getElementById('dp-fine')) document.getElementById('dp-fine').value=d.fine||''
   if(document.getElementById('dp-nascita')) document.getElementById('dp-nascita').value=d.nascita||''
   if(document.getElementById('dp-indirizzo')) document.getElementById('dp-indirizzo').value=d.indirizzo||''
-  if(document.getElementById('dp-citta')) document.getElementById('dp-citta').value=d.citta||''
+  if(document.getElementById('dp-citta')){
+    let _ci=d.citta||'', _ca=d.cap||'', _pr=d.prov||''
+    if((!_ca||!_pr) && /\d{5}/.test(_ci)){ const r=parseLuogo(_ci); _ci=r.citta||_ci; _ca=_ca||r.cap; _pr=_pr||r.prov }
+    document.getElementById('dp-citta').value=_ci
+    if(document.getElementById('dp-cap')) document.getElementById('dp-cap').value=_ca
+    if(document.getElementById('dp-prov')) document.getElementById('dp-prov').value=_pr
+  }
   if(document.getElementById('dp-doc-tipo')) document.getElementById('dp-doc-tipo').value=d.doc_tipo||"Carta d'Identità"
   if(document.getElementById('dp-doc-num')) document.getElementById('dp-doc-num').value=d.doc_num||''
   if(document.getElementById('dp-doc-ril')) document.getElementById('dp-doc-ril').value=d.doc_rilasciato||''
@@ -6266,7 +6292,7 @@ function renderDipendenti(){
   tb.innerHTML=dipendenti.map((d,i)=>{
     const tipoLabel={fulltime:'Full-time',parttime:'Part-time',ore:'A ore'}[d.tipo]||d.tipo
     const ralLabel=d.tipo==='ore'?`€${d.pagaOra||0}/ora`:`RAL €${(d.ral||0).toLocaleString('it-IT')}`
-    return`<tr style="cursor:pointer" ondblclick="apriAnagrafica(${i},'dip')"><td><div class="ar"><div class="av ${avc(i)}">${ini(d.nome)}</div><div><div style="font-weight:600">${d.nome}</div>${d.email?`<div style="font-size:11px;color:var(--text2)">${d.email}</div>`:''}</div></div></td><td><span class="badge ${d.tipo==='fulltime'?'bg':d.tipo==='parttime'?'bb':'ba'}">${tipoLabel}</span></td><td style="color:var(--text2)">${d.ruolo||'—'}</td><td style="font-weight:600">${ralLabel}</td><td style="font-size:11px;color:var(--text2)">${d.ccnl||'—'}</td><td><span class="badge bgr">Dipendente</span></td><td style="color:var(--text2)">${d.inizio||'—'}</td><td>${statoBadge(d.stato)}</td><td class="acts"><button class="btn btn-sm" onclick="editDip(${i})" title="Modifica">✎</button><button class="btn btn-sm" onclick="apriAnagrafica(${i},'dip')" title="Archivio documenti">📁</button></td></tr>`
+    return`<tr style="cursor:pointer" ondblclick="editDip(${i})"><td><div class="ar"><div class="av ${avc(i)}">${ini(d.nome)}</div><div><div style="font-weight:600">${d.nome}</div>${d.email?`<div style="font-size:11px;color:var(--text2)">${d.email}</div>`:''}</div></div></td><td><span class="badge ${d.tipo==='fulltime'?'bg':d.tipo==='parttime'?'bb':'ba'}">${tipoLabel}</span></td><td style="color:var(--text2)">${d.ruolo||'—'}</td><td style="font-weight:600">${ralLabel}</td><td style="font-size:11px;color:var(--text2)">${d.ccnl||'—'}</td><td><span class="badge bgr">Dipendente</span></td><td style="color:var(--text2)">${d.inizio||'—'}</td><td><span onclick="apriPopupStatoDip(${i},event)" style="cursor:pointer" title="Cambia stato">${statoBadge(d.stato)}</span></td><td class="acts"><button class="btn btn-sm" onclick="editDip(${i})" title="Modifica">✎</button><button class="btn btn-sm" onclick="apriAnagrafica(${i},'dip')" title="Archivio documenti">📁</button></td></tr>`
   }).join('')
 }
 
@@ -10139,30 +10165,29 @@ function buildComuniMaps(){
 }
 async function caricaComuni(){
   try{
-    const cached=localStorage.getItem('comuni_v2')
+    const cached=localStorage.getItem('comuni_v3')
     if(cached){ COMUNI=JSON.parse(cached); buildComuniMaps(); return }
     const res=await fetch('https://cdn.jsdelivr.net/gh/matteocontrini/comuni-json@master/comuni.json')
     if(!res.ok) throw new Error('HTTP '+res.status)
     const raw=await res.json()
     COMUNI=raw.map(c=>({n:c.nome, s:c.sigla, caps:c.cap||[], cc:c.codiceCatastale||''}))
     buildComuniMaps()
-    try{ localStorage.setItem('comuni_v2', JSON.stringify(COMUNI)) }catch(e){}
+    try{ localStorage.setItem('comuni_v3', JSON.stringify(COMUNI)) }catch(e){}
     console.log('✅ Comuni caricati:', COMUNI.length)
   }catch(e){ console.log('Comuni non disponibili (offline?):', e.message) }
 }
-function onCittaInput(el){
+function onCittaInput(el, provId, capId){
   const dl=document.getElementById('dl-comuni')
   const v=(el.value||'').toLowerCase().trim()
   if(dl && COMUNI.length){
     if(v.length<2){ dl.innerHTML='' }
     else { const m=COMUNI.filter(c=>c.n.toLowerCase().startsWith(v)).slice(0,40); dl.innerHTML=m.map(c=>`<option value="${c.n.replace(/"/g,'&quot;')}">${c.s}</option>`).join('') }
   }
-  if(el.id==='pr-citta'){
-    const c=NAME2[v]
-    if(c){
-      const p=document.getElementById('pr-prov'); if(p)p.value=c.s
-      if(c.caps && c.caps.length===1){ const cap=document.getElementById('pr-cap'); if(cap)cap.value=c.caps[0] }
-    }
+  if(!provId && el.id==='pr-citta'){ provId='pr-prov'; capId='pr-cap' } // compat
+  const c=NAME2[v]
+  if(c){
+    if(provId){ const p=document.getElementById(provId); if(p)p.value=c.s }
+    if(capId && c.caps && c.caps.length===1){ const cap=document.getElementById(capId); if(cap && !cap.value)cap.value=c.caps[0] }
   }
 }
 function onCittaChange(cittaId,provId,capId){
@@ -10207,8 +10232,9 @@ function apriCalcoloCF(){
   if(regime==='piva'){ alert('In regime P.IVA questo campo contiene la Partita IVA, non il codice fiscale.'); return }
   const full=(document.getElementById('pr-nome').value||'').trim()
   const parti=full.toUpperCase().replace(/[^A-ZÀ-Ù ]/g,' ').split(/\s+/).filter(Boolean)
-  document.getElementById('cf-cognome').value = parti.length>1?parti.slice(0,-1).join(' '):''
-  document.getElementById('cf-nome').value = parti.length>1?parti[parti.length-1]:full.toUpperCase()
+  // Ordine campo: "Nome Cognome" -> prima parola = nome, resto = cognome
+  document.getElementById('cf-nome').value = parti.length>1?parti[0]:full.toUpperCase()
+  document.getElementById('cf-cognome').value = parti.length>1?parti.slice(1).join(' '):''
   document.getElementById('cf-sesso').value=''
   const nascita=document.getElementById('pr-nascita')?.value
   const luogo=(document.getElementById('pr-luogonascita')?.value||'').trim()
