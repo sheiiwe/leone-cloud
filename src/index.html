@@ -1381,6 +1381,7 @@ tbody tr:hover td{background:var(--surface2)}
             <button class="btn btn-sm" style="background:#7d6608;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarkerRegime()">☑ Regime</button>
             <button class="btn btn-sm" style="background:#4a235a;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarkerPrivacy()">☑ Privacy</button>
             <button class="btn btn-sm" style="background:#1f6f8b;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarkerConsensiDoc()" title="Presa visione/nomina responsabile e consenso marketing (per i contratti docenti)">☑ Consensi docente</button>
+            <button class="btn btn-sm" style="background:#117a8b;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarkerDidattica()" title="Campi per la Lettera di incarico didattica: tipologia, modalità, studente, ore, quota %, compenso">☑ Lettera incarico (didattica)</button>
             <button class="btn btn-sm" style="background:#6e2c00;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarkerDecorrenza()">☑ Decorrenza</button>
             <button class="btn btn-sm" style="background:#7d3c98;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarkerDurata()">☑ Durata auth</button>
             <button class="btn btn-sm" style="background:#922b21;color:#fff;font-size:11px;padding:3px 7px" onclick="addMarkerRecesso()">☑ Recesso</button>
@@ -2140,9 +2141,10 @@ tbody tr:hover td{background:var(--surface2)}
 <div class="modal-overlay" id="m-invia-contratto-doc">
   <div class="modal">
     <h3>✉ Invia contratto docente per firma</h3>
-    <div class="fr"><div class="fg"><label>Docente *</label><select id="ctdoc-doc" onchange="onCtDocenteSel()"><option value="">-- Seleziona --</option></select></div><div class="fg"><label>Tipo contratto</label><select id="ctdoc-tipo"><option value="Contratto di Prestazione d&#39;Opera Autonoma">Prestazione d&#39;Opera Autonoma</option><option value="Contratto di Prestazione di Servizi Didattici">Prestazione di Servizi Didattici</option><option value="Lettera di Incarico">Lettera di Incarico</option><option value="Aggiornamento Contratto">Aggiornamento Contratto</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Docente *</label><select id="ctdoc-doc" onchange="onCtDocenteSel()"><option value="">-- Seleziona --</option></select></div><div class="fg"><label>Tipo contratto</label><select id="ctdoc-tipo" onchange="renderCtScelteDoc()"><option value="Contratto di Prestazione d&#39;Opera Autonoma">Prestazione d&#39;Opera Autonoma</option><option value="Contratto di Prestazione di Servizi Didattici">Prestazione di Servizi Didattici</option><option value="Lettera di Incarico">Lettera di Incarico</option><option value="Aggiornamento Contratto">Aggiornamento Contratto</option></select></div></div>
     <div class="fr"><div class="fg"><label>Email destinatario *</label><input id="ctdoc-email" type="email" placeholder="email@esempio.it"></div><div class="fg"><label>Nome destinatario</label><input id="ctdoc-nome" type="text" placeholder="Mario Rossi"></div></div>
     <div class="fr"><div class="fg"><label>Invia tramite</label><select id="ctdoc-via"><option value="email">📧 Email — amministrazione@leoneconsultingitalia.it</option><option value="pec">🔒 PEC — amministratore@pec.leoneconsultingitalia.it</option></select></div></div>
+    <div id="ctdoc-scelte-box" style="display:none;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--rsm);padding:.75rem 1rem;margin-bottom:10px"></div>
     <div class="mact"><button class="btn" onclick="closeM('m-invia-contratto-doc')">Annulla</button><button class="btn btn-p" id="btn-invia-ctdoc" onclick="inviaContratto('doc')">✉ Invia contratto</button></div>
   </div>
 </div>
@@ -2979,7 +2981,7 @@ function openM(id){
     fillDocFirmaSel()
   }
   if(id==='m-invia-contratto-dip'){fillDipSel('ctd-dip')}
-  if(id==='m-invia-contratto-doc'){fillDocenteSel('ctdoc-doc')}
+  if(id==='m-invia-contratto-doc'){fillDocenteSel('ctdoc-doc'); renderCtScelteDoc()}
   document.getElementById(id).classList.add('open')
   {const _m=document.querySelector('#'+id+' .modal'); if(_m)_m.scrollTop=0}
 }
@@ -5356,6 +5358,7 @@ function onCtDocenteSel(){
   const d=(docenti||[])[parseInt(i)]; if(!d) return
   const em=document.getElementById('ctdoc-email'); if(em) em.value=(d.email||d.email_aziendale||'')
   const nm=document.getElementById('ctdoc-nome'); if(nm) nm.value=(d.nome||'')
+  renderCtScelteDoc()
 }
 
 async function fillDocFirmaSel(){
@@ -5465,6 +5468,32 @@ function getCtScelte(docId){
   tipi.forEach(t=>{ const el=document.getElementById('ctsc-'+t); if(!el) return; scelte[t]= CAMPI_SCELTA[t].tipo==='check' ? !!el.checked : (el.value||'') })
   return scelte
 }
+// Box scelte per il modale CONTRATTO DOCENTE (documento auto-selezionato dalla mappa dell'area)
+async function renderCtScelteDoc(){
+  const box=document.getElementById('ctdoc-scelte-box'); if(!box) return
+  const tipo=document.getElementById('ctdoc-tipo')?.value||''
+  const docId=getDocPerTipo(tipo,'doc')
+  if(!docId){ box.style.display='none'; box.innerHTML=''; return }
+  try{ if(!editorMarkers[docId]) await loadEditorCoordinate() }catch(e){}
+  const tipi=[...new Set((editorMarkers[docId]||[]).map(m=>m.tipo))].filter(t=>CAMPI_SCELTA[t] && !CAMPI_SCELTA[t].pair)
+  if(!tipi.length){ box.style.display='none'; box.innerHTML=''; return }
+  let pctDoc=''
+  try{ const i=document.getElementById('ctdoc-doc')?.value; const dd=(i!==''&&i!=null)?(docenti||[])[parseInt(i)]:null; if(dd && dd.pct!=null && dd.pct!=='') pctDoc=String(dd.pct) }catch(e){}
+  box.style.display='block'
+  box.innerHTML='<div style="font-size:12px;font-weight:700;margin-bottom:3px">Dati del contratto</div>'+
+    '<div style="font-size:10.5px;color:var(--text3);margin-bottom:10px">Spunta le voci giuste e compila i campi: verranno stampati nel contratto inviato.</div>'+
+    tipi.map(t=>{ const d=CAMPI_SCELTA[t]
+      if(d.tipo==='check') return '<label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:9px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="ctdocsc-'+t+'" style="width:15px;height:15px;margin-top:1px;flex-shrink:0">'+d.label+'</label>'
+      const pre=(t==='quota_doc_pct'&&pctDoc)?(' value="'+pctDoc+'"'):''
+      return '<div style="margin-bottom:10px"><label style="font-size:11.5px;color:var(--text2);display:block;margin-bottom:3px">'+d.label+'</label><input type="text" id="ctdocsc-'+t+'"'+pre+' placeholder="(vuoto = N/A)" style="width:100%;box-sizing:border-box;background:var(--bg);color:var(--text);border:0.5px solid var(--border2);border-radius:6px;padding:7px;font-size:12.5px"></div>'
+    }).join('')
+}
+function getCtScelteDoc(docId){
+  const scelte={}
+  const tipi=[...new Set((editorMarkers[docId]||[]).map(m=>m.tipo).filter(t=>CAMPI_SCELTA[t] && !CAMPI_SCELTA[t].pair))]
+  tipi.forEach(t=>{ const el=document.getElementById('ctdocsc-'+t); if(!el) return; scelte[t]= CAMPI_SCELTA[t].tipo==='check' ? !!el.checked : (el.value||'') })
+  return scelte
+}
 
 // Congela il documento scelto per la firma: copia il PDF nel bucket pubblico
 // "contratti/firme/<token>.pdf" e restituisce uno snapshot dei campi (coords).
@@ -5572,7 +5601,7 @@ async function inviaContratto(sezione){
       const docId=getDocPerTipo(tipo, sezione)
       if(docId){
         const pComp={ nome, email, tel:'' }
-        const scelte=getCtScelte(docId)
+        const scelte = sezione==='doc' ? getCtScelteDoc(docId) : getCtScelte(docId)
         docFirma=await preparaDocFirma(docId, token, pComp, scelte)
       }
     }
@@ -8793,10 +8822,22 @@ const CAMPI_SCELTA = {
   dur_mesi_x:         { tipo:'check', label:"X — Per un periodo di mesi", pair:'dur_mesi' },
   dur_finoal_x:       { tipo:'check', label:"X — Fino al", pair:'dur_finoal' },
   rec_altro_x:        { tipo:'check', label:"X — Altro (recesso)", pair:'rec_altro' },
+  did_individuali:    { tipo:'check', label:"Tipologia: Lezioni individuali" },
+  did_ripetizioni:    { tipo:'check', label:"Tipologia: Ripetizioni" },
+  did_online:         { tipo:'check', label:"Tipologia: Lezioni online" },
+  did_corso:          { tipo:'check', label:"Tipologia: Corso di formazione" },
+  mod_presenza:       { tipo:'check', label:"Modalità: In presenza" },
+  mod_online:         { tipo:'check', label:"Modalità: Online (piattaforma del committente)" },
+  studente:           { tipo:'text',  label:"Studente" },
+  num_ore:            { tipo:'text',  label:"Numero ore previsto" },
+  quota_doc_pct:      { tipo:'text',  label:"Quota docente (%)" },
+  compenso_lezione:   { tipo:'text',  label:"Compenso per lezione (€)" },
 }
 // X compagne: registrazione colore (etichetta con ☑ così nell'editor diventano la casellina ✕) + mappa testo→X
 ;['auth_specifiche_x','dec_dal_x','dur_mesi_x','dur_finoal_x','rec_altro_x'].forEach(k=>{ if(typeof MARKER_COLORS!=='undefined') MARKER_COLORS[k]={ color:'#0e6655', label:'\u2611 '+CAMPI_SCELTA[k].label } })
 const PAIR_X = { auth_specifiche:'auth_specifiche_x', dec_dal:'dec_dal_x', dur_mesi:'dur_mesi_x', dur_finoal:'dur_finoal_x', rec_altro:'rec_altro_x' }
+// Campi Lettera di incarico didattica (docenti): registrazione nei colori dell'editor
+;['did_individuali','did_ripetizioni','did_online','did_corso','mod_presenza','mod_online','studente','num_ore','quota_doc_pct','compenso_lezione'].forEach(k=>{ if(typeof MARKER_COLORS!=='undefined' && !MARKER_COLORS[k]) MARKER_COLORS[k]={ color:'#1f6f8b', label:(CAMPI_SCELTA[k].tipo==='check'?'\u2611 ':'+ ')+CAMPI_SCELTA[k].label } })
 
 let editorDocId = null
 let editorPage = 1
@@ -8891,8 +8932,7 @@ async function caricaDocumentiCustom(){
   try {
     const { data, error } = await db.storage.from('documenti').list('', { limit: 100 })
     if(error) { console.error('Storage list error:', error); return }
-    if(!data) return
-    editorDocsCustom = data
+    const lista = (data||[])
       .filter(f => f.name.endsWith('.pdf'))
       .filter(f => !_builtinPdfSet().has(f.name))
       .map(f => {
@@ -8902,6 +8942,20 @@ async function caricaDocumentiCustom(){
         const pages = impostazioni['pages_'+id] || impostazioni['pages_'+key] || 1
         return { id, label, pages, storageFile: f.name, dynamic: true }
       })
+    // Lo Storage di Supabase e' a consistenza eventuale: un documento appena caricato puo'
+    // non comparire ancora nella list(). Lo recupero dai metadati salvati in impostazioni
+    // (docname_CUSTOM_*) cosi' e' disponibile SUBITO in "Documento per tipo di contratto",
+    // su tutte le aree, senza riavviare l'app. Salto i documenti eliminati.
+    const presenti = new Set(lista.map(d=>d.id))
+    Object.keys(impostazioni||{}).forEach(k=>{
+      if(k.indexOf('docname_CUSTOM_')!==0) return
+      const id = k.slice('docname_'.length)
+      if(presenti.has(id)) return
+      if(impostazioni['dochidden_'+id] || impostazioni['docdeleted_'+id] || impostazioni['docpurged_'+id]) return
+      lista.push({ id, label: impostazioni[k] || id, pages: impostazioni['pages_'+id] || 1, storageFile: impostazioni['docfile_'+id] || '', dynamic: true })
+      presenti.add(id)
+    })
+    editorDocsCustom = lista
     renderEditorDocList()
   } catch(e){ console.error('caricaDocumentiCustom:', e) }
 }
@@ -9059,6 +9113,7 @@ async function onDocumentoCaricato(input){
       impostazioni['pages_' + id] = numPages
       impostazioni['docname_' + id] = docLabel
       impostazioni['docarea_' + id] = docArea
+      impostazioni['docfile_' + id] = storageName
       // se questo documento era stato cancellato/nascosto, ricaricandolo torna visibile
       delete impostazioni['dochidden_' + id]
       delete impostazioni['docpurged_' + id]
@@ -9690,6 +9745,18 @@ function addMarkerConsensiDoc(){ _pickerCheckbox('Consensi docente', [
   { tipo:'chk_presa_visione',      label:'Presa visione informativa + nomina Responsabile del trattamento (art. 28 GDPR)' },
   { tipo:'consenso_marketing_si',  label:'Marketing — Acconsento (casella SÌ)' },
   { tipo:'consenso_marketing_no',  label:'Marketing — Non acconsento (casella NO)' },
+]) }
+function addMarkerDidattica(){ _pickerCheckbox('Lettera incarico didattica', [
+  { tipo:'did_individuali',  label:'Tipologia — Lezioni individuali (X)' },
+  { tipo:'did_ripetizioni',  label:'Tipologia — Ripetizioni (X)' },
+  { tipo:'did_online',       label:'Tipologia — Lezioni online (X)' },
+  { tipo:'did_corso',        label:'Tipologia — Corso di formazione (X)' },
+  { tipo:'mod_presenza',     label:'Modalità — In presenza (X)' },
+  { tipo:'mod_online',       label:'Modalità — Online, piattaforma committente (X)' },
+  { tipo:'studente',         label:'Campo — Studente' },
+  { tipo:'num_ore',          label:'Campo — Numero ore previsto' },
+  { tipo:'quota_doc_pct',    label:'Campo — Quota docente (%)' },
+  { tipo:'compenso_lezione', label:'Campo — Compenso per lezione (€)' },
 ]) }
 
 // ===== Campi personalizzati editor PDF =====
