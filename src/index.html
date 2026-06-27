@@ -1805,6 +1805,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="fr"><div class="fg"><label>Nome e cognome *</label><input id="doc-nome" type="text" placeholder="Mario Rossi"></div><div class="fg"><label>Data di nascita</label><input id="doc-nascita" type="date"></div></div>
     <div class="fr"><div class="fg"><label>Codice fiscale</label><input id="doc-cf" type="text" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase"></div><div class="fg"><label>Telefono</label><input id="doc-tel" type="tel" placeholder="+39 333 000000"></div></div>
     <div class="fr"><div class="fg"><label>Email personale</label><input id="doc-email" type="email" placeholder="mario@email.com"></div><div class="fg"><label>Email aziendale (login portale)</label><input id="doc-email-az" type="email" placeholder="nome.cognome@..."></div></div>
+    <div style="margin:-2px 0 10px"><button type="button" class="btn btn-g btn-sm" onclick="inviaInvitoPortaleArea('docente')" title="Crea l'accesso con l'email aziendale e invia il link di attivazione alla email personale">📨 Invia invito al portale</button> <button type="button" class="btn btn-sm" onclick="generaCredenzialiPortaleArea('docente')" title="Genera password e crea un PDF con le credenziali">🔑 Genera credenziali (PDF)</button><div style="font-size:11px;color:var(--text2);margin-top:5px">Invito: link di attivazione alla personale · Credenziali: PDF con email e password da consegnare</div></div>
     <div class="fr"><div class="fg"><label>Indirizzo / Domicilio</label><input id="doc-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>CAP</label><input id="doc-cap" type="text" inputmode="numeric" maxlength="5" placeholder="00100" oninput="onCapInput('doc-cap','doc-citta','doc-prov')"></div></div>
     <div class="fr"><div class="fg"><label>Città</label><input id="doc-citta" type="text" placeholder="Roma" list="dl-comuni-doc" autocomplete="off" oninput="onCittaInput(this,'doc-prov','doc-cap')" onchange="onCittaChange('doc-citta','doc-prov','doc-cap')"></div><div class="fg"><label>Provincia</label><input id="doc-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
     <datalist id="dl-comuni-doc"></datalist>
@@ -1855,6 +1856,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="msec">Dati anagrafici</div>
     <div class="fr"><div class="fg"><label>Nome e cognome *</label><input id="stu-nome" type="text" placeholder="Bianchi Giulia"></div><div class="fg"><label>Data di nascita</label><input id="stu-nascita" type="date"></div></div>
     <div class="fr"><div class="fg"><label>Telefono</label><input id="stu-tel" type="tel" placeholder="+39 333 000000"></div><div class="fg"><label>Email</label><input id="stu-email" type="email" placeholder="giulia@email.com"></div></div>
+    <div style="margin:-2px 0 10px"><button type="button" class="btn btn-g btn-sm" onclick="inviaInvitoPortaleArea('studente')" title="Invia il link di accesso al portale studenti (email personale dello studente)">📨 Invia invito al portale</button> <button type="button" class="btn btn-sm" onclick="generaCredenzialiPortaleArea('studente')" title="Genera password e crea un PDF con le credenziali">🔑 Genera credenziali (PDF)</button><div style="font-size:11px;color:var(--text2);margin-top:5px">Login con l'email personale dello studente · PDF con email e password da consegnare</div></div>
     <div class="fr"><div class="fg"><label>Indirizzo</label><input id="stu-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>Città</label><input id="stu-citta" type="text" placeholder="Roma"></div><div class="fg"><label>CAP</label><input id="stu-cap" type="text" maxlength="5" placeholder="00100"></div></div>
     <div class="msec" id="stu-genitore-msec">Genitore / Tutore <span style="font-weight:400;color:var(--text2)">(obbligatorio per minorenni)</span></div>
     <div class="fr"><div class="fg"><label>Nome e cognome genitore/tutore</label><input id="stu-genitore" type="text" placeholder="Bianchi Marco"></div><div class="fg"><label>Codice fiscale genitore</label><input id="stu-genitore-cf" type="text" placeholder="BNCMRC75A01H501U" style="text-transform:uppercase"></div></div>
@@ -2452,6 +2454,73 @@ async function generaPdfCredenziali(nome, email, password){
   L('Per la tua sicurezza ti consigliamo di cambiare la password al primo accesso',9.5,font,grey)
   L('(dalla pagina di login, voce "Password dimenticata?").',9.5,font,grey)
   page.drawText('Leone Consulting di Leonardo Angelucci · Via Pia 42, 00049 Velletri (RM) · P.IVA 18231181001',{x:40,y:40,size:8,font,color:grey})
+  const bytes=await pdf.save()
+  const fileName='Credenziali_'+((nome||'portale').replace(/[^a-zA-Z0-9]+/g,'_'))+'.pdf'
+  if(window.electronAPI?.apriFileTmp){ await window.electronAPI.apriFileTmp(Array.from(new Uint8Array(bytes)), fileName) }
+  else { const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})); window.open(url,'_blank') }
+}
+// ── CREDENZIALI PORTALE — generalizzato per area (docente/studente/dipendente) ──
+const _PORTALE_CFG = {
+  docente:    { nome:'doc-nome', login:'doc-email-az', pers:'doc-email', pNome:'Portale Docenti',    pUrl:'docenti.leoneconsultingitalia.it' },
+  studente:   { nome:'stu-nome', login:'stu-email',    pers:'stu-email', pNome:'Portale Studenti',   pUrl:'studenti.leoneconsultingitalia.it' },
+  dipendente: { nome:'dp-nome',  login:'dp-email',     pers:'dp-email',  pNome:'Portale Dipendenti', pUrl:'dipendenti.leoneconsultingitalia.it' }
+}
+async function inviaInvitoPortaleArea(area){
+  const cfg=_PORTALE_CFG[area]; if(!cfg) return
+  const login=(document.getElementById(cfg.login)?.value||'').trim().toLowerCase()
+  const pers=(document.getElementById(cfg.pers)?.value||'').trim().toLowerCase()
+  const nome=(document.getElementById(cfg.nome)?.value||'').trim()
+  if(!login||!login.includes('@')) return alert('Inserisci l\u0027email di accesso (login portale).')
+  const dest=(pers&&pers.includes('@'))?pers:login
+  if(!confirm('Invio l\u0027invito al '+cfg.pNome+'?\n\nAccount (login): '+login+'\nLink di attivazione a: '+dest)) return
+  toast('Invio invito...')
+  try{
+    const { data, error } = await db.functions.invoke('invita-portale', { body:{ area, emailAccesso:login, emailPersonale:dest, nome } })
+    if(error) throw error
+    if(data && data.ok===false) throw new Error(data.error||'errore')
+    toast('\u2705 Invito inviato a '+dest)
+  }catch(e){ alert('Errore invio invito: '+(e.message||e)) }
+}
+async function generaCredenzialiPortaleArea(area){
+  const cfg=_PORTALE_CFG[area]; if(!cfg) return
+  const login=(document.getElementById(cfg.login)?.value||'').trim().toLowerCase()
+  const nome=(document.getElementById(cfg.nome)?.value||'').trim()
+  if(!login||!login.includes('@')) return alert('Inserisci l\u0027email di accesso: sar\u00e0 il login del portale.')
+  if(!confirm('Genero le credenziali del '+cfg.pNome+' per:\n'+login+'\n\nVerr\u00e0 creato/aggiornato l\u0027account (gi\u00e0 attivo) e un PDF con email e password.')) return
+  const password=genPassword(12)
+  toast('Creazione account...')
+  try{
+    const { data, error } = await db.functions.invoke('invita-portale', { body:{ area, modo:'credenziali', emailAccesso:login, nome, password } })
+    if(error) throw error
+    if(data && data.ok===false) throw new Error(data.error||'errore')
+    await generaPdfCredenzialiArea(nome, login, password, cfg.pNome, cfg.pUrl)
+    toast('\u2705 Credenziali generate')
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+}
+async function generaPdfCredenzialiArea(nome, email, password, pNome, pUrl){
+  const { PDFDocument, StandardFonts, rgb } = PDFLib
+  const pdf=await PDFDocument.create()
+  const page=pdf.addPage([595,842])
+  const font=await pdf.embedFont(StandardFonts.Helvetica)
+  const bold=await pdf.embedFont(StandardFonts.HelveticaBold)
+  const red=rgb(0.949,0.125,0.082), dark=rgb(0.1,0.1,0.095), grey=rgb(0.45,0.45,0.45)
+  page.drawRectangle({x:0,y:792,width:595,height:50,color:red})
+  page.drawText('Leone Consulting',{x:40,y:810,size:18,font:bold,color:rgb(1,1,1)})
+  page.drawText('Attivazione credenziali \u2014 '+pNome,{x:40,y:758,size:14,font:bold,color:dark})
+  let y=722
+  const L=(t,s=11,f=font,c=dark)=>{ page.drawText(t,{x:40,y,size:s,font:f,color:c}); y-=s+8 }
+  L('Gentile '+(nome||'')+',',12)
+  L('di seguito le credenziali per accedere al '+pNome+' di Leone Consulting.',10.5); y-=8
+  page.drawRectangle({x:40,y:y-92,width:515,height:96,color:rgb(0.985,0.955,0.95),borderColor:red,borderWidth:1})
+  let by=y-16
+  const KV=(k,v,vb)=>{ page.drawText(k,{x:54,y:by,size:11,font:bold,color:dark}); page.drawText(v,{x:200,y:by,size:11,font:vb?bold:font,color:dark}); by-=26 }
+  KV('Indirizzo portale:', pUrl)
+  KV('Email (login):', email)
+  KV('Password:', password, true)
+  y-=112
+  L('Per la tua sicurezza ti consigliamo di cambiare la password al primo accesso',9.5,font,grey)
+  L('(dalla pagina di login, voce \u0022Password dimenticata?\u0022).',9.5,font,grey)
+  page.drawText('Leone Consulting di Leonardo Angelucci \u00b7 Via Pia 42, 00049 Velletri (RM) \u00b7 P.IVA 18231181001',{x:40,y:40,size:8,font,color:grey})
   const bytes=await pdf.save()
   const fileName='Credenziali_'+((nome||'portale').replace(/[^a-zA-Z0-9]+/g,'_'))+'.pdf'
   if(window.electronAPI?.apriFileTmp){ await window.electronAPI.apriFileTmp(Array.from(new Uint8Array(bytes)), fileName) }
