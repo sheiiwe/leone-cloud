@@ -2701,7 +2701,7 @@ async function avviaPollingAccessi(){
   const firstRun = localStorage.getItem('accessi_notificati') === null
   let notifSet = new Set()
   try{ notifSet = new Set(JSON.parse(localStorage.getItem('accessi_notificati')||'[]')) }catch(e){ notifSet = new Set() }
-  const _areaLbl = (a)=>({procacciatore:'Procacciatore',docente:'Docente',dipendente:'Dipendente'}[(a&&a.area)||'procacciatore']||'Portale')
+  const _areaLbl = (a)=>({procacciatore:'Procacciatore',docente:'Docente',dipendente:'Dipendente',studente:'Studente'}[(a&&a.area)||'procacciatore']||'Portale')
   async function ciclo(primo){
     let rows=[]
     try{ const r=await db.from('portale_accessi').select('*'); rows=(r.data||[]).filter(a=>a.approvato!==true) }
