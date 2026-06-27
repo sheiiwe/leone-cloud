@@ -177,13 +177,13 @@ tbody tr:hover td{background:var(--surface2)}
   <div id="sync-dot"></div>
   <span id="sync-msg">Connessione...</span>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
-    <div id="bell-wrap" style="position:relative;cursor:pointer;padding:4px 6px;border-radius:6px;transition:background .15s" onclick="apriNotifiche()" title="Notifiche firme">
+    <div id="bell-wrap" style="position:relative;cursor:pointer;padding:4px 6px;border-radius:6px;transition:background .15s" onclick="apriNotifiche()" title="Notifiche">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;color:var(--text2)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <span id="bell-badge" style="display:none;position:absolute;top:-2px;right:-2px;background:#A32D2D;color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;align-items:center;justify-content:center;padding:0 3px;line-height:1">0</span>
     </div>
     <div id="notif-panel" style="display:none;position:fixed;top:40px;right:12px;width:320px;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:300;overflow:hidden">
       <div style="padding:10px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-        <strong style="font-size:13px">🔔 Notifiche firme</strong>
+        <strong style="font-size:13px">🔔 Notifiche</strong>
         <span style="font-size:11px;color:var(--text3);cursor:pointer" onclick="segnaLette()">Segna tutte come lette</span>
       </div>
       <div id="notif-list" style="max-height:320px;overflow-y:auto"></div>
