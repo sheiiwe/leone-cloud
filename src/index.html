@@ -160,6 +160,40 @@ tbody tr:hover td{background:var(--surface2)}
     <img id="splash-logo-img" src="../assets/splash-logo.png" style="width:130%;height:130%;margin:-15% 0 0 -15%;object-fit:cover;">
   </div>
 </div>
+<!-- AREA CHOOSER (dopo splash) -->
+<style>
+  #area-chooser .ac-card{width:210px;background:#262624;border:1px solid #36352f;border-top:4px solid var(--c);border-radius:14px;padding:22px 18px;cursor:pointer;transition:transform .15s ease,box-shadow .2s ease,border-color .2s}
+  #area-chooser .ac-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.45);border-color:var(--c)}
+  #area-chooser .ac-ico{width:54px;height:54px;border-radius:12px;background:var(--c);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+  #area-chooser .ac-ico svg{width:28px;height:28px;stroke:#fff;fill:none}
+  #area-chooser .ac-name{color:#fff;font-size:18px;font-weight:700}
+  #area-chooser .ac-desc{color:#9e9e98;font-size:12.5px;margin-top:6px;line-height:1.35}
+</style>
+<div id="area-chooser" style="position:fixed;inset:0;z-index:99998;background:#1c1c1a;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .5s ease">
+  <div style="text-align:center;max-width:760px;width:92%;padding:24px">
+    <img src="../assets/splash-logo.png" style="width:84px;height:84px;border-radius:50%;object-fit:cover;margin-bottom:14px" onerror="this.style.display=&#39;none&#39;">
+    <div style="color:#fff;font-size:24px;font-weight:700;letter-spacing:.2px">Come vuoi iniziare oggi?</div>
+    <div style="color:#9e9e98;font-size:14px;margin-top:6px">Scegli l&#39;area di lavoro</div>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:28px">
+      <div onclick="scegliArea('proc')" class="ac-card" style="--c:#185FA5">
+        <div class="ac-ico"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="ac-name">Procacciatori</div>
+        <div class="ac-desc">Vendite, lead, provvigioni e contratti</div>
+      </div>
+      <div onclick="scegliArea('doc')" class="ac-card" style="--c:#C0392B">
+        <div class="ac-ico"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/></svg></div>
+        <div class="ac-name">Docenti</div>
+        <div class="ac-desc">Ripetizioni, lezioni e studenti</div>
+      </div>
+      <div onclick="scegliArea('dip')" class="ac-card" style="--c:#117A65">
+        <div class="ac-ico"><svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M6.5 16c0-1.6 1.1-2.5 2.5-2.5s2.5.9 2.5 2.5"/><line x1="14.5" y1="9.5" x2="18" y2="9.5"/><line x1="14.5" y1="13" x2="18" y2="13"/></svg></div>
+        <div class="ac-name">Dipendenti</div>
+        <div class="ac-desc">Personale, buste paga e comunicazioni</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   requestAnimationFrame(()=>{
     setTimeout(()=>{
@@ -170,6 +204,8 @@ tbody tr:hover td{background:var(--surface2)}
   setTimeout(()=>{
     const o = document.getElementById('splash-overlay')
     if(o){ o.style.opacity='0'; o.style.pointerEvents='none'; setTimeout(()=>o.remove(),650) }
+    const ac = document.getElementById('area-chooser')
+    if(ac){ ac.style.display='flex'; requestAnimationFrame(()=>{ ac.style.opacity='1' }) }
   }, 1800)
 </script>
 
@@ -3187,6 +3223,11 @@ document.addEventListener('click', e => {
 
 // ── SWITCH SEZIONE ────────────────────────────────────────────
 let sezioneAttiva='proc'
+function scegliArea(sez){
+  try{ switchSezione(sez) }catch(e){}
+  const ac=document.getElementById('area-chooser')
+  if(ac){ ac.style.opacity='0'; ac.style.pointerEvents='none'; setTimeout(()=>{ ac.style.display='none' },450) }
+}
 function switchSezione(sez){
   sezioneAttiva=sez
   const labels={proc:'Procacciatori',doc:'Docenti',dip:'Dipendenti'}
