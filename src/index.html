@@ -1906,7 +1906,11 @@ tbody tr:hover td{background:var(--surface2)}
       <div style="display:flex;gap:6px"><input id="stu-materia-in" type="text" placeholder="es. Inglese" list="dl-materie" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();_stuAddMateria()}"><button type="button" class="btn btn-sm" onclick="_stuAddMateria()">+ Aggiungi</button></div>
       <div id="stu-materie-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
     </div>
-    <div class="fr"><div class="fg"><label>Docente assegnato</label><select id="stu-docente"><option value="">— Nessuno —</option></select></div><div class="fg"><label>Stato</label><select id="stu-stato"><option>Attivo</option><option>Inattivo</option></select></div></div>
+    <div class="fg"><label>Docenti assegnati <span style="font-size:10px;color:var(--text3)">(uno per materia)</span></label>
+      <div id="stu-docenti-list"></div>
+      <button type="button" class="btn btn-sm" style="margin-top:6px" onclick="_stuAddDocente()">+ Aggiungi docente</button>
+    </div>
+    <div class="fr"><div class="fg"><label>Stato</label><select id="stu-stato"><option>Attivo</option><option>Inattivo</option></select></div><div class="fg"></div></div>
     <div class="fg"><label>Note</label><textarea id="stu-note" rows="2" placeholder="Note interne"></textarea></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeM('m-studente')">Annulla</button><button class="btn btn-p" onclick="salvaStudente()">Salva studente</button></div>
   </div>
@@ -3447,6 +3451,7 @@ function renderProvvDoc(){
 
 // ── STUDENTI (Settore Insegnamento) ─────────────────────────
 let _stuMaterie=[]
+let _stuDocenti=[]
 let _stuGenitoreDoc=null
 function _stuMinore(){ const l=document.getElementById('stu-livello'); return l && (l.value==='Elementari'||l.value==='Medie') }
 function _stuCheckMinore(){
@@ -3477,8 +3482,25 @@ function _stuFillDocenti(){
   const f=document.getElementById('stu-f-docente'); if(f){ const c=f.value; f.innerHTML='<option value="">Tutti i docenti</option>'+docenti.map(d=>'<option value="'+d._id+'">'+escB(d.nome||'')+'</option>').join(''); f.value=c }
 }
 function _nomeDocente(id){ const d=docenti.find(x=>x._id===id); return d?d.nome:'' }
+function _docentiDiStudente(s){ let a=(s&&Array.isArray(s.docenti)&&s.docenti.length)?s.docenti:((s&&s.docenteId)?[{docenteId:s.docenteId,materia:''}]:[]); return a.filter(d=>d&&d.docenteId) }
+function _nomiDocenti(s){ return _docentiDiStudente(s).map(d=>{ const n=_nomeDocente(d.docenteId); if(!n) return ''; return n+(d.materia?(' \u2013 '+d.materia):'') }).filter(Boolean).join(', ') }
+function _docentiOptions(sel){ return '<option value="">\u2014 Scegli docente \u2014</option>'+docenti.filter(d=>d.stato!=='Terminato').map(d=>'<option value="'+d._id+'"'+(String(sel||'')===String(d._id)?' selected':'')+'>'+escB(d.nome||'')+'</option>').join('') }
+function _stuRenderDocenti(){
+  const box=document.getElementById('stu-docenti-list'); if(!box) return
+  if(!_stuDocenti.length){ box.innerHTML='<div style="font-size:12px;color:var(--text3);padding:4px 0">Nessun docente. Premi \u0022+ Aggiungi docente\u0022.</div>'; return }
+  box.innerHTML=_stuDocenti.map((d,i)=>'<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">'+
+    '<select onchange="_stuSetDocente('+i+',this.value)" style="flex:2">'+_docentiOptions(d.docenteId)+'</select>'+
+    '<input type="text" placeholder="Materia (es. Matematica)" value="'+escB(d.materia||'')+'" oninput="_stuSetMateria('+i+',this.value)" style="flex:2">'+
+    '<button type="button" class="btn btn-sm btn-r" onclick="_stuDelDocente('+i+')" title="Rimuovi">\u2715</button>'+
+    '</div>').join('')
+}
+function _stuSetDocente(i,v){ if(_stuDocenti[i]) _stuDocenti[i].docenteId=v }
+function _stuSetMateria(i,v){ if(_stuDocenti[i]) _stuDocenti[i].materia=v }
+function _stuAddDocente(){ _stuDocenti.push({docenteId:'',materia:''}); _stuRenderDocenti() }
+function _stuDelDocente(i){ _stuDocenti.splice(i,1); _stuRenderDocenti() }
 function apriStudente(id){
   _stuMaterie=[]
+  _stuDocenti=[]
   try{ if(typeof _docFillMaterieSugg==='function') _docFillMaterieSugg() }catch(e){}
   _stuFillDocenti()
   const s=id?studenti.find(x=>x._id===id):null
@@ -3496,7 +3518,8 @@ function apriStudente(id){
   set('stu-classe',s&&s.classe); set('stu-istituto',s&&s.istituto); set('stu-note',s&&s.note)
   document.getElementById('stu-livello').value=(s&&s.livello)||''
   document.getElementById('stu-stato').value=(s&&s.stato)||'Attivo'
-  document.getElementById('stu-docente').value=(s&&s.docenteId)||''
+  _stuDocenti=(s&&Array.isArray(s.docenti)&&s.docenti.length)?s.docenti.map(d=>({docenteId:d.docenteId||'',materia:d.materia||''})):((s&&s.docenteId)?[{docenteId:s.docenteId,materia:''}]:[])
+  _stuRenderDocenti()
   _stuMaterie=(s&&Array.isArray(s.materie))?[...s.materie]:[]
   _stuRenderChips()
   _stuCheckMinore()
@@ -3506,7 +3529,7 @@ async function salvaStudente(){
   const nome=(document.getElementById('stu-nome').value||'').trim()
   if(!nome) return alert('Inserisci cognome e nome.')
   const g=k=>{ const e=document.getElementById(k); return e?e.value.trim():'' }
-  const obj={ nome, nascita:g('stu-nascita'), tel:g('stu-tel'), email:g('stu-email'), indirizzo:g('stu-indirizzo'), citta:g('stu-citta'), cap:g('stu-cap'), genitore:g('stu-genitore'), genitore_cf:g('stu-genitore-cf').toUpperCase(), genitore_email:g('stu-genitore-email'), tel_genitore:g('stu-tel-genitore'), genitore_doctipo:document.getElementById('stu-genitore-doctipo').value, genitore_docnum:g('stu-genitore-docnum'), autorizzazione:document.getElementById('stu-autorizz').checked, genitore_doc:_stuGenitoreDoc||null, livello:document.getElementById('stu-livello').value, classe:g('stu-classe'), istituto:g('stu-istituto'), materie:_stuMaterie, docenteId:document.getElementById('stu-docente').value, stato:document.getElementById('stu-stato').value, note:g('stu-note') }
+  const obj={ nome, nascita:g('stu-nascita'), tel:g('stu-tel'), email:g('stu-email'), indirizzo:g('stu-indirizzo'), citta:g('stu-citta'), cap:g('stu-cap'), genitore:g('stu-genitore'), genitore_cf:g('stu-genitore-cf').toUpperCase(), genitore_email:g('stu-genitore-email'), tel_genitore:g('stu-tel-genitore'), genitore_doctipo:document.getElementById('stu-genitore-doctipo').value, genitore_docnum:g('stu-genitore-docnum'), autorizzazione:document.getElementById('stu-autorizz').checked, genitore_doc:_stuGenitoreDoc||null, livello:document.getElementById('stu-livello').value, classe:g('stu-classe'), istituto:g('stu-istituto'), materie:_stuMaterie, docenti:_stuDocenti.filter(d=>d&&d.docenteId), docenteId:((_stuDocenti.find(d=>d&&d.docenteId)||{}).docenteId)||'', stato:document.getElementById('stu-stato').value, note:g('stu-note') }
   const id=document.getElementById('stu-id').value
   try{
     if(id){ const r=await db.from('studenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
@@ -3531,13 +3554,13 @@ function renderStudenti(){
   const fd=document.getElementById('stu-f-docente')?.value||''
   let list=studenti.slice()
   if(fl) list=list.filter(s=>(s.livello||'')===fl)
-  if(fd) list=list.filter(s=>(s.docenteId||'')===fd)
-  if(q) list=list.filter(s=>((s.nome||'')+' '+(s.materie||[]).join(' ')+' '+(s.istituto||'')+' '+(s.livello||'')+' '+_nomeDocente(s.docenteId)).toLowerCase().includes(q))
+  if(fd) list=list.filter(s=>_docentiDiStudente(s).some(d=>String(d.docenteId)===String(fd)))
+  if(q) list=list.filter(s=>((s.nome||'')+' '+(s.materie||[]).join(' ')+' '+(s.istituto||'')+' '+(s.livello||'')+' '+_nomiDocenti(s)).toLowerCase().includes(q))
   if(!studenti.length){ box.innerHTML='<div class="empty" style="padding:3rem">Nessuno studente. Premi "+ Nuovo studente" per iniziare.</div>'; return }
   if(!list.length){ box.innerHTML='<div class="empty" style="padding:2rem">Nessuno studente trovato con questi filtri.</div>'; return }
   box.innerHTML=list.map(s=>{
     const mat=(s.materie||[]).map(m=>'<span style="background:var(--surface2);border-radius:10px;padding:2px 8px;font-size:11px">'+escB(m)+'</span>').join(' ')
-    const dn=_nomeDocente(s.docenteId)
+    const dn=_nomiDocenti(s)
     const col=s.stato==='Attivo'?'#2a9d5c':'#888'
     const badge='<span style="background:'+col+';color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">'+escB(s.stato||'Attivo')+'</span>'
     const scuola=[s.livello,s.classe,s.istituto].filter(Boolean).join(' · ')
@@ -3548,7 +3571,7 @@ function renderStudenti(){
       '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(s.nome||'—')+' '+badge+'</div>'+
       (scuola?'<div style="font-size:12px;color:var(--text2);margin:3px 0">🎓 '+escB(scuola)+'</div>':'')+
       (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
-      (dn?'<div style="font-size:11px;color:var(--text2);margin-top:5px">👨\u200d🏫 Docente: '+escB(dn)+'</div>':'<div style="font-size:11px;color:#c0392b;margin-top:5px">Nessun docente assegnato</div>')+
+      (dn?'<div style="font-size:11px;color:var(--text2);margin-top:5px">👨\u200d🏫 Docenti: '+escB(dn)+'</div>':'<div style="font-size:11px;color:#c0392b;margin-top:5px">Nessun docente assegnato</div>')+
       warnAut+
       '<div style="font-size:11px;color:var(--text3);margin-top:4px">'+escB(s.email||'')+(s.tel?(' · '+escB(s.tel)):'')+(s.genitore?(' · tutore: '+escB(s.genitore)):'')+docG+'</div>'+
       '</div>'+
