@@ -291,6 +291,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('prodottipag',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Prodotti &amp; pagamenti
     </div>
+    <div class="nav-item" onclick="sp('incassi',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Incassi<span id="nav-dot-incassi" style="display:none;width:9px;height:9px;border-radius:50%;background:#117A65;margin-left:auto;box-shadow:0 0 0 2px rgba(17,122,101,.25)"></span>
+    </div>
     <div class="nav-sec">Notifiche</div>
     <div class="nav-item" onclick="sp('avvisi',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Avvisi<span id="nav-dot-avvisi" style="display:none;width:9px;height:9px;border-radius:50%;background:#e63946;margin-left:auto;box-shadow:0 0 0 2px rgba(230,57,70,.25)"></span>
@@ -617,6 +620,41 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="tbl-wrap"><table>
       <thead><tr><th>Prodotto</th><th>Prezzo</th><th>Provvigione</th><th>Aree</th><th>Stato</th><th></th></tr></thead>
       <tbody id="tbl-prodpag"><tr><td colspan="6" style="color:var(--text2);padding:14px">Caricamento...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- INCASSI -->
+<div class="page" id="page-incassi">
+  <div class="pg-title">Incassi</div>
+  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Tutti i pagamenti SumUp generati dai portali. Si aggiorna in tempo reale: appena un cliente paga, la riga diventa verde.</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+    <div class="card" style="flex:1;min-width:150px;padding:14px"><div style="font-size:12px;color:var(--text2)">Incassato (pagati)</div><div id="inc-tot-incassato" style="font-size:22px;font-weight:700;color:#117A65">&euro; 0,00</div></div>
+    <div class="card" style="flex:1;min-width:110px;padding:14px"><div style="font-size:12px;color:var(--text2)">N. pagamenti</div><div id="inc-tot-pagati" style="font-size:22px;font-weight:700">0</div></div>
+    <div class="card" style="flex:1;min-width:150px;padding:14px"><div style="font-size:12px;color:var(--text2)">Provvigioni venditori</div><div id="inc-tot-provv" style="font-size:22px;font-weight:700">&euro; 0,00</div></div>
+    <div class="card" style="flex:1;min-width:110px;padding:14px"><div style="font-size:12px;color:var(--text2)">In attesa</div><div id="inc-tot-attesa" style="font-size:22px;font-weight:700;color:#b7791f">0</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><h3>Registro incassi</h3><button class="btn" onclick="caricaIncassi()">↻ Aggiorna</button></div>
+    <div class="search-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <input type="text" id="inc-search" placeholder="🔍 Cerca (prodotto, venditore, cliente...)" oninput="renderIncassi()" style="flex:1;min-width:200px;padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+      <select id="inc-f-stato" onchange="renderIncassi()" style="padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+        <option value="">Tutti gli stati</option>
+        <option value="paid">Pagati</option>
+        <option value="pending">In attesa</option>
+        <option value="failed">Falliti</option>
+      </select>
+      <select id="inc-f-area" onchange="renderIncassi()" style="padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+        <option value="">Tutte le aree</option>
+        <option value="proc">Procacciatori</option>
+        <option value="doc">Docenti</option>
+        <option value="dip">Dipendenti</option>
+        <option value="studenti">Studenti</option>
+      </select>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Data</th><th>Prodotto</th><th>Importo</th><th>Venditore</th><th>Cliente</th><th>Area</th><th>Stato</th></tr></thead>
+      <tbody id="tbl-incassi"><tr><td colspan="7" style="color:var(--text2);padding:14px">Caricamento...</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -1172,7 +1210,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="pg-title" style="margin-bottom:0">⚙️ Impostazioni</div>
     <div style="display:flex;align-items:center;gap:8px">
       <button onclick="logout()" style="font-size:11px;color:var(--text2);background:var(--surface2);border:0.5px solid var(--border);cursor:pointer;padding:5px 10px;border-radius:6px">🚪 Esci</button>
-      <span id="app-version" style="font-size:11px;color:var(--text3)">v1.1.9</span>
+      <span id="app-version" style="font-size:11px;color:var(--text3)">v1.9.191</span>
       <button onclick="controllaAggiornamenti()" style="font-size:11px;color:var(--text2);background:var(--surface2);border:0.5px solid var(--border);cursor:pointer;padding:5px 10px;border-radius:6px">🔄 Controlla aggiornamenti</button>
       <button onclick="window.electronAPI?.openDevTools?.()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px" title="Apri console sviluppatori">🛠</button>
     </div>
@@ -3307,7 +3345,8 @@ function sp(id,el){
   if(el)el.classList.add('active')
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
-  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
+  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:caricaIncassi,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -3329,6 +3368,19 @@ function avviaRealtime(){
     caricaProposte()
     caricaCestino()
     caricaOfferte()
+  })
+  _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:'pagamenti'}, (payload)=>{
+    try{
+      const isPaid=payload&&payload.new&&payload.new.stato==='paid'
+      const wasPaid=payload&&payload.old&&payload.old.stato==='paid'
+      if(isPaid&&!wasPaid){
+        try{ suonaNotifica() }catch(e){}
+        const r=payload.new||{}
+        try{ pushNotifica({icon:'\ud83d\udcb0', titolo:'Nuovo incasso', sottotitolo:(r.prodotto_nome||'')+' \u00b7 '+_eur(r.importo_pagato)+(r.venditore_nome?(' \u00b7 '+r.venditore_nome):''), target:'incassi'}) }catch(e){}
+        const _ai=document.querySelector('.page.active'); if(!_ai||_ai.id!=='page-incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='inline-block' }
+      }
+    }catch(e){}
+    if(typeof caricaIncassi==='function') caricaIncassi()
   })
   _rtChannel.subscribe()
 }
@@ -3488,6 +3540,61 @@ async function eliminaProdPag(id){
   if(!confirm('Eliminare questo prodotto dal catalogo?')) return
   try{ const r=await db.from('prodotti_pagamento').delete().eq('id',id); if(r.error) throw r.error; toast('Prodotto eliminato'); caricaProdottiPag() }
   catch(e){ console.error('eliminaProdPag',e); toast('Errore eliminazione: '+(e.message||e)) }
+}
+
+// ── INCASSI (pagamenti SumUp) ───────────────────────────────
+let _incassiCache=[]
+async function caricaIncassi(){
+  try{
+    const {data,error}=await db.from('pagamenti').select('*').order('created_at',{ascending:false}).limit(2000)
+    if(error) throw error
+    _incassiCache=data||[]
+  }catch(e){ console.error('caricaIncassi',e); _incassiCache=[]; toast('Errore caricamento incassi') }
+  renderIncassi()
+}
+function _incStato(s){
+  if(s==='paid') return '<span style="color:#117A65;font-weight:700">\u25cf PAGATO</span>'
+  if(s==='failed') return '<span style="color:#c0392b;font-weight:600">\u2715 Fallito</span>'
+  return '<span style="color:#b7791f;font-weight:600">\u25cb In attesa</span>'
+}
+function _incData(s){
+  if(!s) return '\u2014'
+  try{ const d=new Date(s); return d.toLocaleDateString('it-IT')+' '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) }catch(e){ return s }
+}
+function renderIncassi(){
+  const tb=document.getElementById('tbl-incassi'); if(!tb) return
+  const q=(document.getElementById('inc-search')?document.getElementById('inc-search').value:'').toLowerCase().trim()
+  const fStato=(document.getElementById('inc-f-stato')||{}).value||''
+  const fArea=(document.getElementById('inc-f-area')||{}).value||''
+  let rows=_incassiCache.slice()
+  if(fStato) rows=rows.filter(function(p){return (p.stato||'')===fStato})
+  if(fArea) rows=rows.filter(function(p){return (p.area||'')===fArea})
+  if(q) rows=rows.filter(function(p){return ((p.prodotto_nome||'')+' '+(p.venditore_nome||'')+' '+(p.venditore_email||'')+' '+(p.cliente_nome||'')).toLowerCase().includes(q)})
+  const pagati=rows.filter(function(p){return p.stato==='paid'})
+  const totIncassato=pagati.reduce(function(s,p){return s+Number(p.importo_pagato||0)},0)
+  const totProvv=pagati.reduce(function(s,p){return s+Number(p.provvigione_importo||0)},0)
+  const nAttesa=rows.filter(function(p){return p.stato==='pending'}).length
+  const setTxt=function(id,v){ const e=document.getElementById(id); if(e) e.textContent=v }
+  setTxt('inc-tot-incassato',_eur(totIncassato))
+  setTxt('inc-tot-pagati',String(pagati.length))
+  setTxt('inc-tot-provv',_eur(totProvv))
+  setTxt('inc-tot-attesa',String(nAttesa))
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="7" style="color:var(--text2);padding:14px">Nessun incasso.</td></tr>'; return }
+  tb.innerHTML=rows.map(function(p){
+    const usoP=p.uso_personale?' <span style="font-size:11px;color:var(--text2)">(uso personale)</span>':''
+    const vend=escB(p.venditore_nome||p.venditore_email||'\u2014')
+    const cli=escB(p.cliente_nome||'\u2014')
+    const prov=Number(p.provvigione_importo||0)>0?'<div style="font-size:11px;color:var(--text2)">prov. '+_eur(p.provvigione_importo)+'</div>':''
+    return '<tr>'+
+      '<td style="white-space:nowrap;font-size:12px">'+_incData(p.paid_at||p.created_at)+'</td>'+
+      '<td><strong>'+escB(p.prodotto_nome||'\u2014')+'</strong>'+usoP+'</td>'+
+      '<td style="white-space:nowrap"><strong>'+_eur(p.importo_pagato)+'</strong>'+prov+'</td>'+
+      '<td style="font-size:12px">'+vend+'</td>'+
+      '<td style="font-size:12px">'+cli+'</td>'+
+      '<td style="font-size:12px">'+escB(_ppAreeLabel([p.area]))+'</td>'+
+      '<td style="white-space:nowrap">'+_incStato(p.stato)+'</td>'+
+    '</tr>'
+  }).join('')
 }
 
 // ── PROVVIGIONI DOCENTI (compensi) ──────────────────────────
