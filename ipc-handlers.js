@@ -376,8 +376,8 @@ ipcMain.handle('sendMail', async (event, { to, subject, html, smtp, attachments 
     const msg = { from: fromFor('email', smtp), to, subject, html }
     if (Array.isArray(attachments) && attachments.length) {
       msg.attachments = attachments.map(a => ({
-        ...a,
-        content: Buffer.isBuffer(a.content) ? a.content : Buffer.from(a.content)
+        filename: a.filename,
+        content: Buffer.isBuffer(a.content) ? a.content : Buffer.from(a.content, 'base64')
       }))
     }
     await makeTransport('email', smtp).sendMail(msg)

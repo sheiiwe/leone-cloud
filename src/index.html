@@ -6353,7 +6353,20 @@ async function inviaContratto(sezione){
       // Docenti/Dipendenti: documento scelto in automatico dalla mappa dell'area
       const docId=getDocPerTipo(tipo, sezione)
       if(docId){
-        const pComp={ nome, email, tel:'' }
+        // Versa nel modello l'intera scheda anagrafica del destinatario (CF, P.IVA,
+        // indirizzo, citta, CAP, prov, telefono, IBAN...), non solo nome ed email.
+        let pComp={ nome, email, tel:'' }
+        if(sezione==='doc'){
+          if((document.getElementById('ctdoc-dest-tipo')?.value||'doc')==='doc'){
+            const didx=document.getElementById('ctdoc-doc')?.value
+            const dd=(didx!==''&&didx!=null)?(docenti||[])[parseInt(didx)]:null
+            if(dd) pComp={ ...dd, nome:(nome||dd.nome||''), email:(email||dd.email||dd.email_aziendale||'') }
+          }
+        } else {
+          const didx=document.getElementById('ctd-dip')?.value
+          const dd=(didx!==''&&didx!=null)?(dipendenti||[])[parseInt(didx)]:null
+          if(dd) pComp={ ...dd, nome:(nome||dd.nome||''), email:(email||dd.email||dd.email_aziendale||'') }
+        }
         const scelte = sezione==='doc' ? getCtScelteDoc(docId) : getCtScelte(docId)
         docFirma=await preparaDocFirma(docId, token, pComp, scelte)
       }
