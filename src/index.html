@@ -638,7 +638,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="card" style="flex:1;min-width:110px;padding:14px"><div style="font-size:12px;color:var(--text2)">In attesa</div><div id="inc-tot-attesa" style="font-size:22px;font-weight:700;color:#b7791f">0</div></div>
   </div>
   <div class="card">
-    <div class="card-hdr"><h3>Registro incassi</h3><button class="btn" onclick="caricaIncassi()">↻ Aggiorna</button></div>
+    <div class="card-hdr"><h3>Registro incassi</h3><div style="display:flex;gap:8px"><button class="btn btn-p" onclick="apriContanti()">💵 Registra in contanti</button><button class="btn" onclick="caricaIncassi()">↻ Aggiorna</button></div></div>
     <div class="search-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <input type="text" id="inc-search" placeholder="🔍 Cerca (prodotto, venditore, cliente...)" oninput="renderIncassi()" style="flex:1;min-width:200px;padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
       <select id="inc-f-stato" onchange="renderIncassi()" style="padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
@@ -1213,7 +1213,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="pg-title" style="margin-bottom:0">⚙️ Impostazioni</div>
     <div style="display:flex;align-items:center;gap:8px">
       <button onclick="logout()" style="font-size:11px;color:var(--text2);background:var(--surface2);border:0.5px solid var(--border);cursor:pointer;padding:5px 10px;border-radius:6px">🚪 Esci</button>
-      <span id="app-version" style="font-size:11px;color:var(--text3)">v1.9.194</span>
+      <span id="app-version" style="font-size:11px;color:var(--text3)">v1.9.195</span>
       <button onclick="controllaAggiornamenti()" style="font-size:11px;color:var(--text2);background:var(--surface2);border:0.5px solid var(--border);cursor:pointer;padding:5px 10px;border-radius:6px">🔄 Controlla aggiornamenti</button>
       <button onclick="window.electronAPI?.openDevTools?.()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px" title="Apri console sviluppatori">🛠</button>
     </div>
@@ -2306,6 +2306,22 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="fr"><div class="fg"><label>Stato</label><select id="pp-attivo"><option value="1">Attivo (vendibile)</option><option value="0">Disattivato</option></select></div></div>
     <div class="mact"><button class="btn" onclick="closeM('m-prodpag')">Annulla</button><button class="btn btn-p" onclick="salvaProdPag()">💾 Salva prodotto</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-contanti">
+  <div class="modal" style="max-width:560px;width:95vw">
+    <h3>💵 Registra incasso in contanti</h3>
+    <div style="color:var(--text2);font-size:12.5px;margin:-4px 0 12px">Registra una vendita gia&#39; pagata in contanti. Parte l&#39;email promemoria come per la carta.</div>
+    <div class="fr">
+      <div class="fg"><label>Area</label><select id="cont-area" onchange="_contPopola()"><option value="proc">Procacciatori</option><option value="doc">Docenti</option><option value="dip">Dipendenti</option></select></div>
+      <div class="fg"><label>Venditore *</label><select id="cont-vend"></select></div>
+    </div>
+    <div class="fr"><div class="fg"><label>Prodotto *</label><select id="cont-prod" onchange="_contPreview()"></select></div></div>
+    <div class="fr"><div class="fg"><label>Cliente (facoltativo)</label><input id="cont-cliente" type="text" placeholder="Nome del cliente"></div></div>
+    <label style="display:flex;align-items:center;gap:8px;font-weight:500;margin-bottom:10px"><input type="checkbox" id="cont-uso" onchange="_contPreview()"> 🛒 Uso personale (il venditore compra per se&#39;, scontato, niente provvigione)</label>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text2);margin-bottom:12px" id="cont-preview">Seleziona un prodotto</div>
+    <div class="mact"><button class="btn" onclick="closeM('m-contanti')">Annulla</button><button class="btn btn-p" onclick="salvaContanti()">💾 Registra incasso</button></div>
   </div>
 </div>
 
@@ -3598,6 +3614,65 @@ function renderIncassi(){
       '<td style="white-space:nowrap">'+_incStato(p.stato)+'</td>'+
     '</tr>'
   }).join('')
+}
+
+// ── INCASSO IN CONTANTI (admin) ─────────────────────────────
+function _contAttr(s){ return escB(s).replace(/"/g,'&quot;') }
+function _contSellers(area){
+  if(area==='proc') return (procs||[]).map(function(p){return {id:p._id, nome:((p.nome||'')+' '+(p.cognome||'')).trim()||p.nome||'', email:(''+(p.email||p.email_aziendale||'')).trim().toLowerCase()}})
+  if(area==='doc') return (docenti||[]).map(function(d){return {id:d._id, nome:((d.nome||'')+' '+(d.cognome||'')).trim()||d.nome||'', email:(''+(d.email_aziendale||d.email||'')).trim().toLowerCase()}})
+  if(area==='dip') return (dipendenti||[]).map(function(d){return {id:d._id, nome:((d.nome||'')+' '+(d.cognome||'')).trim()||d.nome||'', email:(''+(d.email||d.email_aziendale||'')).trim().toLowerCase()}})
+  return []
+}
+function _contProdotti(area){
+  return (_prodPagCache||[]).filter(function(p){return p.attivo && (!Array.isArray(p.aree)||!p.aree.length||p.aree.indexOf(area)>=0)})
+}
+function _contPopola(){
+  const area=document.getElementById('cont-area').value
+  const sv=document.getElementById('cont-vend')
+  sv.innerHTML='<option value="">Seleziona venditore</option>'+_contSellers(area).map(function(s){return '<option value="'+s.id+'" data-nome="'+_contAttr(s.nome)+'" data-email="'+_contAttr(s.email)+'">'+escB(s.nome||s.email||'(senza nome)')+(s.email?(' \u00b7 '+escB(s.email)):'')+'</option>'}).join('')
+  const pv=document.getElementById('cont-prod')
+  pv.innerHTML='<option value="">Seleziona prodotto</option>'+_contProdotti(area).map(function(p){return '<option value="'+p.id+'">'+escB(p.nome)+' \u00b7 '+_eur(p.prezzo)+'</option>'}).join('')
+  _contPreview()
+}
+function _contPreview(){
+  const pid=document.getElementById('cont-prod').value
+  const uso=document.getElementById('cont-uso').checked
+  const el=document.getElementById('cont-preview')
+  const p=(_prodPagCache||[]).find(function(x){return x.id===pid})
+  if(!p){ if(el) el.textContent='Seleziona un prodotto'; return }
+  const prezzo=Number(p.prezzo||0), pct=Number(p.provvigione_pct||0)
+  const provFull=Math.round(prezzo*pct/100*100)/100
+  let imp=prezzo, prov=provFull
+  if(uso){ imp=Math.round((prezzo-provFull)*100)/100; prov=0 }
+  if(el) el.innerHTML='Incasso <strong>'+_eur(imp)+'</strong> \u00b7 provvigione <strong>'+_eur(prov)+'</strong> \u00b7 netto azienda <strong>'+_eur(imp-prov)+'</strong>'
+}
+function apriContanti(){
+  const a=(typeof sezioneAttiva!=='undefined'&&['proc','doc','dip'].indexOf(sezioneAttiva)>=0)?sezioneAttiva:'doc'
+  const open=function(){ document.getElementById('cont-area').value=a; document.getElementById('cont-cliente').value=''; document.getElementById('cont-uso').checked=false; _contPopola(); openM('m-contanti') }
+  if(!_prodPagCache||!_prodPagCache.length){ caricaProdottiPag().then(open) } else open()
+}
+async function salvaContanti(){
+  const area=document.getElementById('cont-area').value
+  const vsel=document.getElementById('cont-vend')
+  const vopt=vsel.options[vsel.selectedIndex]
+  const pid=document.getElementById('cont-prod').value
+  const uso=document.getElementById('cont-uso').checked
+  const cliente=(document.getElementById('cont-cliente').value||'').trim()
+  if(!pid){ toast('Scegli il prodotto'); return }
+  if(!vopt||!vopt.value){ toast('Scegli il venditore'); return }
+  const p=(_prodPagCache||[]).find(function(x){return x.id===pid}); if(!p){ toast('Prodotto non valido'); return }
+  const prezzo=Number(p.prezzo||0), pct=Number(p.provvigione_pct||0)
+  const provFull=Math.round(prezzo*pct/100*100)/100
+  let imp=prezzo, prov=provFull
+  if(uso){ imp=Math.round((prezzo-provFull)*100)/100; prov=0 }
+  if(!(imp>0)){ toast('Importo non valido'); return }
+  let ref=''; try{ ref=crypto.randomUUID() }catch(e){ ref='cash-'+Date.now()+'-'+Math.random().toString(16).slice(2) }
+  const rec={ prodotto_id:p.id, prodotto_nome:p.nome, prezzo_pieno:prezzo, provvigione_pct:pct, provvigione_importo:prov, importo_pagato:imp, area:area, venditore_id:vopt.value, venditore_email:(vopt.getAttribute('data-email')||''), venditore_nome:(vopt.getAttribute('data-nome')||''), cliente_nome:cliente, cliente_email:'', cliente_tel:'', uso_personale:uso, sumup_reference:ref, stato:'paid', paid_at:new Date().toISOString() }
+  try{
+    const r=await db.from('pagamenti').insert(rec); if(r.error) throw r.error
+    closeM('m-contanti'); toast('Incasso in contanti registrato \u2705'); caricaIncassi()
+  }catch(e){ console.error('salvaContanti',e); toast('Errore: '+(e.message||e)) }
 }
 
 // ── PROVVIGIONI DOCENTI (compensi) ──────────────────────────
