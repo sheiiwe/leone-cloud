@@ -272,7 +272,7 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="nav-sec">Provvigioni</div>
     <div class="nav-item" onclick="sp('provv',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Provvigioni
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M15 9.4a3.4 3.4 0 1 0 0 5.2"/><line x1="7.5" y1="11" x2="13" y2="11"/><line x1="7.5" y1="13" x2="13" y2="13"/></svg>Provvigioni
     </div>
     <div class="nav-item" onclick="sp('rete',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="12" y2="14"/><line x1="12" y1="14" x2="5" y2="16"/><line x1="12" y1="14" x2="19" y2="16"/></svg>Reti commerciali
@@ -290,9 +290,6 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="nav-item" onclick="sp('prodottipag',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Prodotti &amp; pagamenti
-    </div>
-    <div class="nav-item" onclick="sp('incassi',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Incassi<span id="nav-dot-incassi" style="display:none;width:9px;height:9px;border-radius:50%;background:#117A65;margin-left:auto;box-shadow:0 0 0 2px rgba(17,122,101,.25)"></span>
     </div>
     <div class="nav-sec">Notifiche</div>
     <div class="nav-item" onclick="sp('avvisi',this)">
@@ -355,7 +352,10 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="nav-sec">Compensi</div>
     <div class="nav-item" onclick="sp('provv-doc',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M9 9h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H15"/></svg>Provvigioni
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M15 9.4a3.4 3.4 0 1 0 0 5.2"/><line x1="7.5" y1="11" x2="13" y2="11"/><line x1="7.5" y1="13" x2="13" y2="13"/></svg>Provvigioni
+    </div>
+    <div class="nav-item" onclick="sp('incassi',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 7a7 7 0 1 0 0 10"/><line x1="3" y1="10" x2="13" y2="10"/><line x1="3" y1="14" x2="13" y2="14"/></svg>Incassi
     </div>
     <div class="nav-sec">Contratti</div>
     <div class="nav-item" onclick="sp('contratti-doc',this)">
@@ -424,6 +424,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-sec">Paghe</div>
     <div class="nav-item" onclick="sp('buste',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Buste paga
+    </div>
+    <div class="nav-item" onclick="sp('incassi',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 7a7 7 0 1 0 0 10"/><line x1="3" y1="10" x2="13" y2="10"/><line x1="3" y1="14" x2="13" y2="14"/></svg>Incassi
     </div>
     <div class="nav-sec">Contratti</div>
     <div class="nav-item" onclick="sp('contratti-dip',this)">
@@ -1210,7 +1213,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="pg-title" style="margin-bottom:0">⚙️ Impostazioni</div>
     <div style="display:flex;align-items:center;gap:8px">
       <button onclick="logout()" style="font-size:11px;color:var(--text2);background:var(--surface2);border:0.5px solid var(--border);cursor:pointer;padding:5px 10px;border-radius:6px">🚪 Esci</button>
-      <span id="app-version" style="font-size:11px;color:var(--text3)">v1.9.191</span>
+      <span id="app-version" style="font-size:11px;color:var(--text3)">v1.9.194</span>
       <button onclick="controllaAggiornamenti()" style="font-size:11px;color:var(--text2);background:var(--surface2);border:0.5px solid var(--border);cursor:pointer;padding:5px 10px;border-radius:6px">🔄 Controlla aggiornamenti</button>
       <button onclick="window.electronAPI?.openDevTools?.()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px" title="Apri console sviluppatori">🛠</button>
     </div>
@@ -3346,7 +3349,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:caricaIncassi,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -3567,8 +3570,8 @@ function renderIncassi(){
   const fStato=(document.getElementById('inc-f-stato')||{}).value||''
   const fArea=(document.getElementById('inc-f-area')||{}).value||''
   let rows=_incassiCache.slice()
-  if(fStato) rows=rows.filter(function(p){return (p.stato||'')===fStato})
   if(fArea) rows=rows.filter(function(p){return (p.area||'')===fArea})
+  if(fStato) rows=rows.filter(function(p){return (p.stato||'')===fStato})
   if(q) rows=rows.filter(function(p){return ((p.prodotto_nome||'')+' '+(p.venditore_nome||'')+' '+(p.venditore_email||'')+' '+(p.cliente_nome||'')).toLowerCase().includes(q)})
   const pagati=rows.filter(function(p){return p.stato==='paid'})
   const totIncassato=pagati.reduce(function(s,p){return s+Number(p.importo_pagato||0)},0)
