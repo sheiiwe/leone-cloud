@@ -1,7 +1,7 @@
 {
   "name": "leone-consulting",
-  "version": "1.9.189",
-  "description": "Gestionale \u2014 Leone Consulting di Leonardo Angelucci",
+  "version": "1.9.190",
+  "description": "Gestionale — Leone Consulting di Leonardo Angelucci",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -12,7 +12,7 @@
   "build": {
     "appId": "it.leoneconsulting.gestionale",
     "productName": "Leone Consulting",
-    "copyright": "\u00a9 2025 Leone Consulting di Leonardo Angelucci",
+    "copyright": "© 2025 Leone Consulting di Leonardo Angelucci",
     "mac": {
       "category": "public.app-category.business",
       "icon": "assets/icon.png",

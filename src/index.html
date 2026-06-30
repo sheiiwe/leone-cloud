@@ -288,6 +288,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('offerte',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Offerte luce/gas/telefonia
     </div>
+    <div class="nav-item" onclick="sp('prodottipag',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Prodotti &amp; pagamenti
+    </div>
     <div class="nav-sec">Notifiche</div>
     <div class="nav-item" onclick="sp('avvisi',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Avvisi<span id="nav-dot-avvisi" style="display:none;width:9px;height:9px;border-radius:50%;background:#e63946;margin-left:auto;box-shadow:0 0 0 2px rgba(230,57,70,.25)"></span>
@@ -606,6 +609,18 @@ tbody tr:hover td{background:var(--surface2)}
 </div>
 
 <!-- DOCUMENTI -->
+<div class="page" id="page-prodottipag">
+  <div class="pg-title">Prodotti &amp; pagamenti</div>
+  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Catalogo dei corsi/servizi vendibili con pagamento SumUp. Per ogni prodotto: prezzo pieno (che paga il cliente), provvigione del venditore e in quali aree è vendibile.</div>
+  <input id="prodpag-search" type="text" oninput="renderProdottiPag()" placeholder="🔍 Cerca prodotto..." style="width:100%;max-width:420px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:1rem;background:var(--surface);color:var(--text);box-sizing:border-box">
+  <div class="card"><div class="card-hdr"><h3>Catalogo prodotti</h3><button class="btn btn-p" onclick="apriProdPag()">+ Nuovo prodotto</button></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Prodotto</th><th>Prezzo</th><th>Provvigione</th><th>Aree</th><th>Stato</th><th></th></tr></thead>
+      <tbody id="tbl-prodpag"><tr><td colspan="6" style="color:var(--text2);padding:14px">Caricamento...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
 <div class="page" id="page-documenti">
   <div class="pg-title">Documenti</div>
   <div class="card">
@@ -2230,6 +2245,29 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<div class="modal-overlay" id="m-prodpag">
+  <div class="modal" style="max-width:560px;width:95vw">
+    <h3 id="prodpag-modal-title">Nuovo prodotto</h3>
+    <input type="hidden" id="pp-id">
+    <div class="fr"><div class="fg"><label>Nome prodotto *</label><input id="pp-nome" type="text" placeholder="es. Corso EIPASS 7 moduli"></div></div>
+    <div class="fr"><div class="fg"><label>Descrizione</label><input id="pp-desc" type="text" placeholder="Breve descrizione (facoltativa)"></div></div>
+    <div class="fr">
+      <div class="fg"><label>Prezzo pieno (€) *</label><input id="pp-prezzo" type="number" min="0" step="0.01" placeholder="300.00" oninput="_ppPreview()"></div>
+      <div class="fg"><label>Provvigione venditore (%)</label><input id="pp-prov" type="number" min="0" max="100" step="0.1" placeholder="20" oninput="_ppPreview()"></div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text2);margin-bottom:12px" id="pp-preview">Il venditore guadagna —</div>
+    <div class="msec">Vendibile nelle aree</div>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:6px;font-weight:500"><input type="checkbox" id="pp-area-proc" checked> Procacciatori</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:500"><input type="checkbox" id="pp-area-dip" checked> Dipendenti</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:500"><input type="checkbox" id="pp-area-doc"> Docenti</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:500"><input type="checkbox" id="pp-area-studenti"> Studenti</label>
+    </div>
+    <div class="fr"><div class="fg"><label>Stato</label><select id="pp-attivo"><option value="1">Attivo (vendibile)</option><option value="0">Disattivato</option></select></div></div>
+    <div class="mact"><button class="btn" onclick="closeM('m-prodpag')">Annulla</button><button class="btn btn-p" onclick="salvaProdPag()">💾 Salva prodotto</button></div>
+  </div>
+</div>
+
 <script>
 // ── SUPABASE ──────────────────────────────────────────────────
 const SUPA_URL='https://uljdbdbkiulbcquuhfwd.supabase.co'
@@ -3269,7 +3307,7 @@ function sp(id,el){
   if(el)el.classList.add('active')
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
-  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -3366,6 +3404,91 @@ function openM(id){
   {const _m=document.querySelector('#'+id+' .modal'); if(_m)_m.scrollTop=0}
 }
 function closeM(id){document.getElementById(id).classList.remove('open')}
+
+// ── PRODOTTI & PAGAMENTI (catalogo) ─────────────────────────
+let _prodPagCache=[]
+async function caricaProdottiPag(){
+  try{
+    const {data,error}=await db.from('prodotti_pagamento').select('*').order('created_at',{ascending:false})
+    if(error) throw error
+    _prodPagCache=data||[]
+  }catch(e){ console.error('caricaProdottiPag',e); _prodPagCache=[]; toast('Errore caricamento prodotti') }
+  renderProdottiPag()
+}
+function _ppAreeLabel(a){ const m={proc:'Procacciatori',dip:'Dipendenti',doc:'Docenti',studenti:'Studenti'}; return (a||[]).map(x=>m[x]||x).join(', ')||'\u2014' }
+function _eur(n){ return '\u20ac '+Number(n||0).toFixed(2).replace('.',',') }
+function renderProdottiPag(){
+  const tb=document.getElementById('tbl-prodpag'); if(!tb) return
+  const q=(document.getElementById('prodpag-search')?document.getElementById('prodpag-search').value:'').toLowerCase().trim()
+  let rows=_prodPagCache
+  if(q) rows=rows.filter(p=>(p.nome||'').toLowerCase().includes(q)||(p.descrizione||'').toLowerCase().includes(q))
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="6" style="color:var(--text2);padding:14px">Nessun prodotto. Premi \u0022+ Nuovo prodotto\u0022.</td></tr>'; return }
+  tb.innerHTML=rows.map(function(p){
+    const prov=Number(p.provvigione_pct||0)+'% ('+_eur(Number(p.prezzo||0)*Number(p.provvigione_pct||0)/100)+')'
+    const stato=p.attivo?'<span style="color:#117A65;font-weight:600">\u25cf Attivo</span>':'<span style="color:#999">\u25cb Off</span>'
+    return '<tr><td><strong>'+escB(p.nome||'')+'</strong>'+(p.descrizione?'<div style="font-size:12px;color:var(--text2)">'+escB(p.descrizione)+'</div>':'')+'</td><td style="white-space:nowrap">'+_eur(p.prezzo)+'</td><td style="white-space:nowrap">'+prov+'</td><td style="font-size:12px">'+escB(_ppAreeLabel(p.aree))+'</td><td>'+stato+'</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="apriProdPag(\u0027'+p.id+'\u0027)">\u270f\ufe0f</button> <button class="btn btn-sm" onclick="eliminaProdPag(\u0027'+p.id+'\u0027)">\ud83d\uddd1</button></td></tr>'
+  }).join('')
+}
+function _ppPreview(){
+  const pr=Number((document.getElementById('pp-prezzo')||{}).value||0)
+  const pc=Number((document.getElementById('pp-prov')||{}).value||0)
+  const el=document.getElementById('pp-preview')
+  if(el) el.innerHTML='Il cliente paga <strong>'+_eur(pr)+'</strong> \u00b7 il venditore guadagna <strong>'+_eur(pr*pc/100)+'</strong>'
+}
+function apriProdPag(id){
+  const t=document.getElementById('prodpag-modal-title')
+  if(id){
+    const p=_prodPagCache.find(function(x){return x.id===id}); if(!p) return
+    t.textContent='Modifica prodotto'
+    document.getElementById('pp-id').value=p.id
+    document.getElementById('pp-nome').value=p.nome||''
+    document.getElementById('pp-desc').value=p.descrizione||''
+    document.getElementById('pp-prezzo').value=(p.prezzo!=null?p.prezzo:'')
+    document.getElementById('pp-prov').value=(p.provvigione_pct!=null?p.provvigione_pct:'')
+    const a=p.aree||[]
+    document.getElementById('pp-area-proc').checked=a.indexOf('proc')>=0
+    document.getElementById('pp-area-dip').checked=a.indexOf('dip')>=0
+    document.getElementById('pp-area-doc').checked=a.indexOf('doc')>=0
+    document.getElementById('pp-area-studenti').checked=a.indexOf('studenti')>=0
+    document.getElementById('pp-attivo').value=p.attivo?'1':'0'
+  } else {
+    t.textContent='Nuovo prodotto'
+    document.getElementById('pp-id').value=''
+    document.getElementById('pp-nome').value=''
+    document.getElementById('pp-desc').value=''
+    document.getElementById('pp-prezzo').value=''
+    document.getElementById('pp-prov').value=''
+    document.getElementById('pp-area-proc').checked=true
+    document.getElementById('pp-area-dip').checked=true
+    document.getElementById('pp-area-doc').checked=false
+    document.getElementById('pp-area-studenti').checked=false
+    document.getElementById('pp-attivo').value='1'
+  }
+  _ppPreview(); openM('m-prodpag')
+}
+async function salvaProdPag(){
+  const nome=(document.getElementById('pp-nome').value||'').trim()
+  if(!nome){ toast('Inserisci il nome del prodotto'); return }
+  const prezzo=Number(document.getElementById('pp-prezzo').value||0)
+  if(!(prezzo>0)){ toast('Inserisci un prezzo valido'); return }
+  const aree=[]
+  if(document.getElementById('pp-area-proc').checked) aree.push('proc')
+  if(document.getElementById('pp-area-dip').checked) aree.push('dip')
+  if(document.getElementById('pp-area-doc').checked) aree.push('doc')
+  if(document.getElementById('pp-area-studenti').checked) aree.push('studenti')
+  const rec={ nome:nome, descrizione:(document.getElementById('pp-desc').value||'').trim(), prezzo:prezzo, provvigione_pct:Number(document.getElementById('pp-prov').value||0), aree:aree, attivo:document.getElementById('pp-attivo').value==='1' }
+  const id=document.getElementById('pp-id').value
+  try{
+    if(id){ const r=await db.from('prodotti_pagamento').update(rec).eq('id',id); if(r.error) throw r.error }
+    else { const r=await db.from('prodotti_pagamento').insert(rec); if(r.error) throw r.error }
+    closeM('m-prodpag'); toast('Prodotto salvato'); caricaProdottiPag()
+  }catch(e){ console.error('salvaProdPag',e); toast('Errore salvataggio: '+(e.message||e)) }
+}
+async function eliminaProdPag(id){
+  if(!confirm('Eliminare questo prodotto dal catalogo?')) return
+  try{ const r=await db.from('prodotti_pagamento').delete().eq('id',id); if(r.error) throw r.error; toast('Prodotto eliminato'); caricaProdottiPag() }
+  catch(e){ console.error('eliminaProdPag',e); toast('Errore eliminazione: '+(e.message||e)) }
+}
 
 // ── PROVVIGIONI DOCENTI (compensi) ──────────────────────────
 function _cdEur(n){ return '€ '+(Number(n)||0).toFixed(2).replace('.',',') }
