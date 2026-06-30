@@ -1213,7 +1213,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="pg-title" style="margin-bottom:0">⚙️ Impostazioni</div>
     <div style="display:flex;align-items:center;gap:8px">
       <button onclick="logout()" style="font-size:11px;color:var(--text2);background:var(--surface2);border:0.5px solid var(--border);cursor:pointer;padding:5px 10px;border-radius:6px">🚪 Esci</button>
-      <span id="app-version" style="font-size:11px;color:var(--text3)">v1.9.195</span>
+      <span id="app-version" style="font-size:11px;color:var(--text3)">v1.9.196</span>
       <button onclick="controllaAggiornamenti()" style="font-size:11px;color:var(--text2);background:var(--surface2);border:0.5px solid var(--border);cursor:pointer;padding:5px 10px;border-radius:6px">🔄 Controlla aggiornamenti</button>
       <button onclick="window.electronAPI?.openDevTools?.()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px" title="Apri console sviluppatori">🛠</button>
     </div>
@@ -2278,8 +2278,18 @@ tbody tr:hover td{background:var(--surface2)}
 <div class="modal-overlay" id="m-invia-contratto-doc">
   <div class="modal">
     <h3>✉ Invia contratto docente per firma</h3>
-    <div class="fr"><div class="fg"><label>Docente *</label><select id="ctdoc-doc" onchange="onCtDocenteSel()"><option value="">-- Seleziona --</option></select></div><div class="fg"><label>Tipo contratto</label><select id="ctdoc-tipo" onchange="renderCtScelteDoc()"><option value="Contratto di Prestazione d&#39;Opera Autonoma">Prestazione d&#39;Opera Autonoma</option><option value="Contratto di Prestazione di Servizi Didattici">Prestazione di Servizi Didattici</option><option value="Lettera di Incarico">Lettera di Incarico</option><option value="Aggiornamento Contratto">Aggiornamento Contratto</option></select></div></div>
-    <div class="fr"><div class="fg"><label>Email destinatario *</label><input id="ctdoc-email" type="email" placeholder="email@esempio.it"></div><div class="fg"><label>Nome destinatario</label><input id="ctdoc-nome" type="text" placeholder="Mario Rossi"></div></div>
+    <div class="fr">
+      <div class="fg"><label>Tipo destinatario</label>
+        <select id="ctdoc-dest-tipo" onchange="onCtDocDestTipo()">
+          <option value="doc">Docente esistente</option>
+          <option value="ext">Persona esterna / nuovo contatto</option>
+        </select>
+      </div>
+      <div class="fg"><label>Tipo contratto</label><select id="ctdoc-tipo" onchange="renderCtScelteDoc()"><option value="Contratto di Prestazione d&#39;Opera Autonoma">Prestazione d&#39;Opera Autonoma</option><option value="Contratto di Prestazione di Servizi Didattici">Prestazione di Servizi Didattici</option><option value="Lettera di Incarico">Lettera di Incarico</option><option value="Aggiornamento Contratto">Aggiornamento Contratto</option></select></div>
+    </div>
+    <div id="ctdoc-doc-row" class="fr"><div class="fg"><label>Docente *</label><select id="ctdoc-doc" onchange="onCtDocenteSel()"><option value="">-- Seleziona --</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Nome destinatario *</label><input id="ctdoc-nome" type="text" placeholder="Mario Rossi"></div><div class="fg"><label>Email destinatario *</label><input id="ctdoc-email" type="email" placeholder="email@esempio.it"></div></div>
+    <div class="fr"><div class="fg" id="ctdoc-tel-row" style="display:none"><label>Telefono</label><input id="ctdoc-tel" type="tel" placeholder="+39 333 000000"></div><div class="fg" id="ctdoc-save-row" style="display:none"><label>Salva come</label><select id="ctdoc-save-come"><option value="">Non salvare</option><option value="doc">Salva come docente</option></select></div></div>
     <div class="fr"><div class="fg"><label>Invia tramite</label><select id="ctdoc-via"><option value="email">📧 Email — amministrazione@leoneconsultingitalia.it</option><option value="pec">🔒 PEC — amministratore@pec.leoneconsultingitalia.it</option></select></div></div>
     <div id="ctdoc-scelte-box" style="display:none;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--rsm);padding:.75rem 1rem;margin-bottom:10px"></div>
     <div class="mact"><button class="btn" onclick="closeM('m-invia-contratto-doc')">Annulla</button><button class="btn btn-p" id="btn-invia-ctdoc" onclick="inviaContratto('doc')">✉ Invia contratto</button></div>
@@ -3365,7 +3375,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':renderProvvDoc,vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -3470,7 +3480,16 @@ function openM(id){
     fillDocFirmaSel()
   }
   if(id==='m-invia-contratto-dip'){fillDipSel('ctd-dip')}
-  if(id==='m-invia-contratto-doc'){fillDocenteSel('ctdoc-doc'); renderCtScelteDoc()}
+  if(id==='m-invia-contratto-doc'){
+    fillDocenteSel('ctdoc-doc')
+    const dt=document.getElementById('ctdoc-dest-tipo'); if(dt) dt.value='doc'
+    const nm=document.getElementById('ctdoc-nome'); if(nm) nm.value=''
+    const em=document.getElementById('ctdoc-email'); if(em) em.value=''
+    const tl=document.getElementById('ctdoc-tel'); if(tl) tl.value=''
+    const sc=document.getElementById('ctdoc-save-come'); if(sc) sc.value=''
+    onCtDocDestTipo()
+    renderCtScelteDoc()
+  }
   document.getElementById(id).classList.add('open')
   {const _m=document.querySelector('#'+id+' .modal'); if(_m)_m.scrollTop=0}
 }
@@ -3697,6 +3716,7 @@ function _compFillSel(){
   const fd=document.getElementById('cd-f-docente'); if(fd){const c=fd.value;fd.innerHTML='<option value="">Tutti i docenti</option>'+docenti.map(d=>'<option value="'+d._id+'">'+escB(d.nome||'')+'</option>').join('');fd.value=c}
 }
 function apriCompDoc(id){
+  if(id&&String(id).indexOf('inc:')===0){ toast('Questa voce arriva da un incasso: gestiscila nella sezione Incassi'); return }
   _compFillSel()
   const c=id?compensiDoc.find(x=>x._id===id):null
   document.getElementById('comp-modal-title').textContent=c?'Modifica compenso':'Nuovo compenso'
@@ -3732,22 +3752,28 @@ async function caricaCompDoc(){
   renderProvvDoc()
 }
 async function eliminaCompDoc(id){
+  if(id&&String(id).indexOf('inc:')===0){ toast('Questa voce arriva da un incasso: gestiscila nella sezione Incassi'); return }
   if(!confirm('Eliminare questo compenso?')) return
   try{ const r=await db.from('compensi_docenti').delete().eq('id',id); if(r.error)throw r.error; await caricaCompDoc(); toast('Compenso eliminato') }catch(e){ alert('Errore: '+(e.message||e)) }
+}
+function _provvDocIncassi(){
+  return (_incassiCache||[]).filter(function(p){return p.area==='doc' && p.stato==='paid' && Number(p.provvigione_importo||0)>0}).map(function(p){
+    return { _id:'inc:'+p.id, _fromIncasso:true, docenteId:p.venditore_id||'', docenteNome:p.venditore_nome||p.venditore_email||'—', studenteNome:p.cliente_nome||'', materia:p.prodotto_nome||'Vendita prodotto', data:(''+(p.paid_at||p.created_at||'')).slice(0,10), importo:Number(p.importo_pagato||0), compDocente:Number(p.provvigione_importo||0), pct:Number(p.provvigione_pct||0), compAzienda:Number(p.importo_pagato||0)-Number(p.provvigione_importo||0), note:'Da incasso prodotto' }
+  })
 }
 function renderProvvDoc(){
   _compFillSel()
   const box=document.getElementById('provv-doc-lista'); if(!box) return
   const q=(document.getElementById('cd-search')?.value||'').trim().toLowerCase()
   const fd=document.getElementById('cd-f-docente')?.value||''
-  let list=compensiDoc.slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''))
+  let list=compensiDoc.concat(_provvDocIncassi()).sort((a,b)=>(b.data||'').localeCompare(a.data||''))
   if(fd) list=list.filter(c=>c.docenteId===fd)
   if(q) list=list.filter(c=>((c.docenteNome||'')+' '+(c.studenteNome||'')+' '+(c.materia||'')).toLowerCase().includes(q))
   const tInc=list.reduce((s,c)=>s+(+c.importo||0),0), tDoc=list.reduce((s,c)=>s+(+c.compDocente||0),0), tAz=list.reduce((s,c)=>s+(+c.compAzienda||0),0)
   const tot=document.getElementById('provv-doc-tot')
   if(tot) tot.innerHTML=[['Incassato',tInc],['Ai docenti',tDoc],['All\u0027azienda',tAz]].map(kv=>'<div style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:10px;padding:10px 14px;min-width:120px"><div style="font-size:11px;color:var(--text3)">'+kv[0]+'</div><div style="font-size:17px;font-weight:700">'+_cdEur(kv[1])+'</div></div>').join('')
-  if(!compensiDoc.length){ box.innerHTML='<div class="empty" style="padding:3rem">Nessun compenso registrato. Premi "+ Nuovo compenso".</div>'; return }
-  if(!list.length){ box.innerHTML='<div class="empty" style="padding:2rem">Nessun compenso con questi filtri.</div>'; return }
+  // mostra anche gli incassi: nessun blocco se non ci sono compensi manuali
+  if(!list.length){ box.innerHTML='<div class="empty" style="padding:2rem">Nessun compenso o incasso da mostrare.</div>'; return }
   box.innerHTML=list.map(c=>'<div class="card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
     '<div style="flex:1"><div style="font-weight:600">'+escB(c.docenteNome||'—')+(c.studenteNome?(' <span style="font-weight:400;color:var(--text2)">· '+escB(c.studenteNome)+'</span>'):'')+'</div>'+
     '<div style="font-size:12px;color:var(--text2);margin-top:3px">'+(c.materia?escB(c.materia)+' · ':'')+_cdData(c.data)+'</div>'+
@@ -4826,6 +4852,18 @@ function onCtDestTipo(){
     document.getElementById('ct-nome').value=''
     document.getElementById('ct-email').value=''
     document.getElementById('ct-tel').value=''
+  }
+}
+function onCtDocDestTipo(){
+  const t=document.getElementById('ctdoc-dest-tipo').value
+  const r=document.getElementById('ctdoc-doc-row'); if(r) r.style.display=t==='doc'?'grid':'none'
+  const sr=document.getElementById('ctdoc-save-row'); if(sr) sr.style.display=t==='ext'?'flex':'none'
+  const tr=document.getElementById('ctdoc-tel-row'); if(tr) tr.style.display=t==='ext'?'flex':'none'
+  if(t==='ext'){
+    const nm=document.getElementById('ctdoc-nome'); if(nm) nm.value=''
+    const em=document.getElementById('ctdoc-email'); if(em) em.value=''
+    const tel=document.getElementById('ctdoc-tel'); if(tel) tel.value=''
+    const sel=document.getElementById('ctdoc-doc'); if(sel) sel.value=''
   }
 }
 function onCtProcSel(){
@@ -6279,6 +6317,14 @@ async function inviaContratto(sezione){
     if(saveCome==='proc'){
       const tel=document.getElementById('ct-tel').value
       await db.from('procacciatori').insert({data:{nome,email,tel,regime:'ritenuta',stato:'Attivo',rete:[]}})
+    }
+  }
+  // Salva come docente se richiesto (destinatario esterno)
+  if(sezione==='doc'){
+    const saveComeD=document.getElementById('ctdoc-save-come')?.value
+    if(saveComeD==='doc'){
+      const telD=document.getElementById('ctdoc-tel')?.value||''
+      await db.from('docenti').insert({data:{nome,email,tel:telD}})
     }
   }
 
