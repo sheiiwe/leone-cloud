@@ -278,11 +278,11 @@ tbody tr:hover td{background:var(--surface2)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="12" y2="14"/><line x1="12" y1="14" x2="5" y2="16"/><line x1="12" y1="14" x2="19" y2="16"/></svg>Reti commerciali
     </div>
     <div class="nav-sec">Contratti</div>
-    <div class="nav-item" onclick="sp('fatture',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Fatture
-    </div>
-    <div class="nav-item" onclick="sp('contratti-firmati',this)">
+    <div class="nav-item" onclick="sp('contratti-firmati-proc',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6L9 17l-5-5"/></svg>Contratti firmati
+    </div>
+    <div class="nav-item" onclick="sp('fatture-proc',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Fatture
     </div>
     <div class="nav-item" onclick="sp('contratti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><polyline points="10 17 8 17 8 19"/></svg>Contratti &amp; Firme<span id="nav-dot-contratti" style="display:none;width:9px;height:9px;border-radius:50%;background:#e63946;margin-left:auto;box-shadow:0 0 0 2px rgba(230,57,70,.25)"></span>
@@ -366,6 +366,12 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-sec">Contratti</div>
     <div class="nav-item" onclick="sp('contratti-doc',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><polyline points="10 17 8 17 8 19"/></svg>Contratti & Firme
+    </div>
+    <div class="nav-item" onclick="sp('contratti-firmati-doc',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6L9 17l-5-5"/></svg>Contratti firmati
+    </div>
+    <div class="nav-item" onclick="sp('fatture-doc',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Fatture
     </div>
     <div class="nav-item" onclick="sp('proposte',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Proposte
@@ -594,27 +600,52 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<div class="page" id="page-fatture">
-  <div class="pg-title">Fatture</div>
+<div class="page" id="page-fatture-proc">
+  <div class="pg-title">Fatture · Procacciatori</div>
   <div class="card">
     <div class="card-hdr"><h3>Fatture elettroniche</h3></div>
-    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Emetti la fattura per gli incassi pagati. &laquo;Bozza&raquo; crea il documento in Fatture in Cloud senza inviarlo; &laquo;Emetti+invia&raquo; lo trasmette all&apos;Agenzia. Il PDF resta archiviato qui.</p>
-    <input id="fatt-search" type="text" placeholder="🔍 Cerca (cliente, prodotto, numero...)" oninput="renderFatture()" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
+    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Emetti la fattura per gli incassi dei procacciatori. &laquo;Bozza&raquo; crea il documento senza inviarlo; &laquo;Emetti+invia&raquo; lo trasmette all&apos;Agenzia. Il PDF resta archiviato qui.</p>
+    <input id="fatt-search-proc" type="text" placeholder="🔍 Cerca (cliente, prodotto, numero...)" oninput="renderFattArea('proc')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div class="tbl-wrap"><table>
       <thead><tr><th>Cliente</th><th>Prodotto</th><th>Importo</th><th>Data incasso</th><th>Fattura</th><th>Azioni</th></tr></thead>
-      <tbody id="tbl-fatture"><tr><td colspan="6" class="empty">Caricamento...</td></tr></tbody>
+      <tbody id="tbl-fatt-proc"><tr><td colspan="6" class="empty">Caricamento...</td></tr></tbody>
     </table></div>
   </div>
 </div>
 
-<div class="page" id="page-contratti-firmati">
-  <div class="pg-title">Contratti firmati</div>
+<div class="page" id="page-fatture-doc">
+  <div class="pg-title">Fatture · Docenti</div>
+  <div class="card">
+    <div class="card-hdr"><h3>Fatture elettroniche</h3></div>
+    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Emetti la fattura per gli incassi dei docenti. &laquo;Bozza&raquo; crea il documento senza inviarlo; &laquo;Emetti+invia&raquo; lo trasmette all&apos;Agenzia. Il PDF resta archiviato qui.</p>
+    <input id="fatt-search-doc" type="text" placeholder="🔍 Cerca (cliente, prodotto, numero...)" oninput="renderFattArea('doc')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Cliente</th><th>Prodotto</th><th>Importo</th><th>Data incasso</th><th>Fattura</th><th>Azioni</th></tr></thead>
+      <tbody id="tbl-fatt-doc"><tr><td colspan="6" class="empty">Caricamento...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<div class="page" id="page-contratti-firmati-proc">
+  <div class="pg-title">Contratti firmati · Procacciatori</div>
   <div class="card">
     <div class="card-hdr"><h3>Archivio contratti firmati</h3></div>
-    <input id="cfirm-search" type="text" placeholder="🔍 Cerca (nome, email, tipo, area...)" oninput="renderContrattiFirmati()" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
+    <input id="cf-search-proc" type="text" placeholder="🔍 Cerca (nome, email, tipo...)" oninput="renderCFArea('proc')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div class="tbl-wrap"><table>
-      <thead><tr><th>Destinatario</th><th>Area</th><th>Tipo contratto</th><th>Data firma</th><th>Azioni</th></tr></thead>
-      <tbody id="tbl-contratti-firmati"><tr><td colspan="5" class="empty">Nessun contratto firmato</td></tr></tbody>
+      <thead><tr><th>Destinatario</th><th>Tipo contratto</th><th>Data firma</th><th>Azioni</th></tr></thead>
+      <tbody id="tbl-cf-proc"><tr><td colspan="4" class="empty">Nessun contratto firmato</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<div class="page" id="page-contratti-firmati-doc">
+  <div class="pg-title">Contratti firmati · Docenti</div>
+  <div class="card">
+    <div class="card-hdr"><h3>Archivio contratti firmati</h3></div>
+    <input id="cf-search-doc" type="text" placeholder="🔍 Cerca (nome, email, tipo...)" oninput="renderCFArea('doc')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Destinatario</th><th>Tipo contratto</th><th>Data firma</th><th>Azioni</th></tr></thead>
+      <tbody id="tbl-cf-doc"><tr><td colspan="4" class="empty">Nessun contratto firmato</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -3406,7 +3437,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati':renderContrattiFirmati,fatture:()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderFatture) } else renderFatture() },'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -6112,20 +6143,21 @@ function renderContratti(){
   tb.innerHTML=ct.map(c=>`<tr><td><strong style="font-weight:600">${c.nomeDestinatario}</strong><br><span style="font-size:11px;color:var(--text2)">${c.emailDestinatario}</span></td><td style="font-size:12px">${c.tipoContratto}</td><td><span class="badge ${c.via==='pec'?'bp':'bb'}">${c.via==='pec'?'🔒 PEC':'📧 Email'}</span></td><td style="color:var(--text2)">${c.dataInvio}</td><td>${statoBadge(c.statoFirma)}</td><td style="color:var(--text2)">${c.dataFirma||'—'}</td><td class="acts">${c.statoFirma==='Firmato'?`<button class="btn btn-sm btn-p" onclick="creaProcDaFirma('${c._id}')" title="Crea scheda procacciatore dai dati della firma">➕ Proc.</button>`:''}${c.pdfFirmatoPath?`<button class="btn btn-sm" onclick="apriPdfFirmato('${c._id}')" title="Apri PDF firmato">📄 PDF</button>`:(c.statoFirma==='Firmato'?`<button class="btn btn-sm" onclick="generaEApriPdfFirmato('${c._id}')" title="Genera il PDF firmato">📄 Genera PDF</button>`:'')}${(c.documentiCaricati&&Object.keys(c.documentiCaricati).length)?`<button class="btn btn-sm" onclick="apriAllegatiFirma('${c._id}')" title="Documenti del firmatario">📎 Doc.</button>`:''}<button class="btn btn-sm" onclick="reinviaContratto('${c._id}')">↺ Reinvia</button><button class="btn btn-sm btn-r" onclick="eliminaContratto('${c._id}')" title="Elimina">✕</button></td></tr>`).join('')
 }
 function _areaLabel(s){ return s==='doc'?'Docenti':(s==='dip'?'Dipendenti':'Procacciatori') }
-function renderContrattiFirmati(){
-  const tb=document.getElementById('tbl-contratti-firmati'); if(!tb) return
-  let ct=contratti.filter(c=>c.statoFirma==='Firmato')
-  const _q=(document.getElementById('cfirm-search')&&document.getElementById('cfirm-search').value||'').trim().toLowerCase()
-  if(_q) ct=ct.filter(c=>((c.nomeDestinatario||'')+' '+(c.emailDestinatario||'')+' '+(c.tipoContratto||'')+' '+_areaLabel(c.sezione)).toLowerCase().includes(_q))
-  ct=ct.slice().sort((a,b)=>((b.dataFirma||'')+'').localeCompare((a.dataFirma||'')+''))
-  if(!ct.length){ tb.innerHTML='<tr><td colspan="5" class="empty">'+(_q?'Nessun risultato per la ricerca':'Nessun contratto firmato')+'</td></tr>'; return }
-  tb.innerHTML=ct.map(c=>`<tr><td><strong style="font-weight:600">${c.nomeDestinatario||''}</strong><br><span style="font-size:11px;color:var(--text2)">${c.emailDestinatario||''}</span></td><td><span class="badge bb">${_areaLabel(c.sezione)}</span></td><td style="font-size:12px">${c.tipoContratto||''}</td><td style="color:var(--text2)">${c.dataFirma||'—'}</td><td class="acts">${c.pdfFirmatoPath?`<button class="btn btn-sm btn-p" onclick="apriPdfFirmato('${c._id}')" title="Apri PDF firmato">📄 PDF</button>`:`<button class="btn btn-sm" onclick="generaEApriPdfFirmato('${c._id}')" title="Genera il PDF firmato">📄 Genera PDF</button>`}${(c.documentiCaricati&&Object.keys(c.documentiCaricati).length)?`<button class="btn btn-sm" onclick="apriAllegatiFirma('${c._id}')" title="Documenti del firmatario">📎 Doc.</button>`:''}</td></tr>`).join('')
-}
 function _eurA(n){ return '\u20ac '+(Number(n)||0).toFixed(2).replace('.',',') }
-function renderFatture(){
-  const tb=document.getElementById('tbl-fatture'); if(!tb) return
-  let rows=(_incassiCache||[]).filter(p=>p.stato==='paid')
-  const _q=(document.getElementById('fatt-search')&&document.getElementById('fatt-search').value||'').trim().toLowerCase()
+function renderCFArea(sez){
+  const tb=document.getElementById('tbl-cf-'+sez); if(!tb) return
+  let ct=contratti.filter(c=>c.sezione===sez && c.statoFirma==='Firmato')
+  const _q=(document.getElementById('cf-search-'+sez)&&document.getElementById('cf-search-'+sez).value||'').trim().toLowerCase()
+  if(_q) ct=ct.filter(c=>((c.nomeDestinatario||'')+' '+(c.emailDestinatario||'')+' '+(c.tipoContratto||'')).toLowerCase().includes(_q))
+  ct=ct.slice().sort((a,b)=>((b.dataFirma||'')+'').localeCompare((a.dataFirma||'')+''))
+  if(!ct.length){ tb.innerHTML='<tr><td colspan="4" class="empty">'+(_q?'Nessun risultato per la ricerca':'Nessun contratto firmato')+'</td></tr>'; return }
+  tb.innerHTML=ct.map(c=>`<tr><td><strong style="font-weight:600">${c.nomeDestinatario||''}</strong><br><span style="font-size:11px;color:var(--text2)">${c.emailDestinatario||''}</span></td><td style="font-size:12px">${c.tipoContratto||''}</td><td style="color:var(--text2)">${c.dataFirma||'\u2014'}</td><td class="acts">${c.pdfFirmatoPath?`<button class="btn btn-sm btn-p" onclick="apriPdfFirmato('${c._id}')" title="Apri PDF firmato">\ud83d\udcc4 PDF</button>`:`<button class="btn btn-sm" onclick="generaEApriPdfFirmato('${c._id}')" title="Genera il PDF firmato">\ud83d\udcc4 Genera PDF</button>`}${(c.documentiCaricati&&Object.keys(c.documentiCaricati).length)?`<button class="btn btn-sm" onclick="apriAllegatiFirma('${c._id}')" title="Documenti del firmatario">\ud83d\udcce Doc.</button>`:''}</td></tr>`).join('')
+}
+function _openFatture(area){ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(()=>renderFattArea(area)) } else renderFattArea(area) }
+function renderFattArea(area){
+  const tb=document.getElementById('tbl-fatt-'+area); if(!tb) return
+  let rows=(_incassiCache||[]).filter(p=>p.stato==='paid' && p.area===area)
+  const _q=(document.getElementById('fatt-search-'+area)&&document.getElementById('fatt-search-'+area).value||'').trim().toLowerCase()
   if(_q) rows=rows.filter(p=>((p.cliente_nome||'')+' '+(p.prodotto_nome||'')+' '+(p.fattura_numero||'')+' '+(p.venditore_nome||'')).toLowerCase().includes(_q))
   rows=rows.slice().sort((a,b)=>((b.paid_at||b.created_at||'')+'').localeCompare((a.paid_at||a.created_at||'')+''))
   if(!rows.length){ tb.innerHTML='<tr><td colspan="6" class="empty">'+(_q?'Nessun risultato per la ricerca':'Nessun incasso da fatturare')+'</td></tr>'; return }
@@ -6133,14 +6165,14 @@ function renderFatture(){
     const emessa=p.fattura_stato==='emessa'
     const err=p.fattura_stato==='errore'
     const badge=emessa?`<span class="badge bg">Emessa n.${p.fattura_numero||''}</span>`:(err?`<span class="badge br" title="${(p.fattura_errore||'').replace(/"/g,'&quot;')}">Errore</span>`:'<span class="badge ba">Da emettere</span>')
-    const pdfBtn=p.fattura_pdf_path?`<button class="btn btn-sm btn-p" onclick="apriPdfFattura('${p.fattura_pdf_path}')" title="Apri PDF archiviato">📄 PDF</button>`:''
-    const emitBtns=emessa?'':`<button class="btn btn-sm" onclick="emettiFattura('${p._id||p.id}',true)" title="Crea bozza in Fatture in Cloud senza inviarla">📝 Bozza</button><button class="btn btn-sm btn-p" onclick="emettiFattura('${p._id||p.id}',false)" title="Emette e invia la fattura elettronica">📤 Emetti+invia</button>`
+    const pdfBtn=p.fattura_pdf_path?`<button class="btn btn-sm btn-p" onclick="apriPdfFattura('${p.fattura_pdf_path}')" title="Apri PDF archiviato">\ud83d\udcc4 PDF</button>`:''
+    const emitBtns=emessa?'':`<button class="btn btn-sm" onclick="emettiFattura('${p._id||p.id}',true,'${area}')" title="Crea bozza senza inviarla">\ud83d\udcdd Bozza</button><button class="btn btn-sm btn-p" onclick="emettiFattura('${p._id||p.id}',false,'${area}')" title="Emette e invia">\ud83d\udce4 Emetti+invia</button>`
     const data=(p.paid_at||p.created_at||'').slice(0,10)
-    const chi=p.cliente_nome||(p.uso_personale?'(uso personale)':'—')
+    const chi=p.cliente_nome||(p.uso_personale?'(uso personale)':'\u2014')
     return `<tr><td><strong style="font-weight:600">${chi}</strong><br><span style="font-size:11px;color:var(--text2)">${p.cliente_cf||p.cliente_piva||''}</span></td><td style="font-size:12px">${p.prodotto_nome||''}</td><td>${_eurA(p.importo_pagato)}</td><td style="color:var(--text2)">${data}</td><td>${badge}</td><td class="acts">${pdfBtn}${emitBtns}</td></tr>`
   }).join('')
 }
-async function emettiFattura(id, soloCrea){
+async function emettiFattura(id, soloCrea, area){
   if(!soloCrea && !confirm('Emettere e INVIARE la fattura elettronica all\u0027Agenzia delle Entrate?\u000a\u000aL\u0027operazione e\u0027 definitiva.')) return
   try{ toast(soloCrea?'Creo la bozza...':'Emetto la fattura...') }catch(e){}
   try{
@@ -6148,7 +6180,7 @@ async function emettiFattura(id, soloCrea){
     const d=r.data||{}
     if(r.error||d.error||d.ok===false){ throw new Error(d.error||(r.error&&r.error.message)||'Errore emissione') }
     try{ toast(soloCrea?('Bozza creata n.'+(d.fattura_numero||'')):('Fattura emessa n.'+(d.fattura_numero||''))) }catch(e){}
-    await caricaIncassi(); renderFatture()
+    await caricaIncassi(); renderFattArea(area||'doc')
   }catch(e){ alert('Errore fattura: '+((e&&e.message)||e)) }
 }
 function apriPdfFattura(path){ if(!path) return; window.open(SUPA_URL+'/storage/v1/object/public/contratti/'+path,'_blank') }
