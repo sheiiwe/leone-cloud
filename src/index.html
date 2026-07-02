@@ -6164,12 +6164,15 @@ function renderFattArea(area){
   tb.innerHTML=rows.map(p=>{
     const emessa=p.fattura_stato==='emessa'
     const err=p.fattura_stato==='errore'
-    const badge=emessa?`<span class="badge bg">Emessa n.${p.fattura_numero||''}</span>`:(err?`<span class="badge br" title="${(p.fattura_errore||'').replace(/"/g,'&quot;')}">Errore</span>`:'<span class="badge ba">Da emettere</span>')
+    const stornata=p.fattura_stato==='stornata'
+    const badge=stornata?`<span class="badge br">Stornata${p.nota_credito_numero?(' \u00b7 NC n.'+p.nota_credito_numero):''}</span>`:(emessa?`<span class="badge bg">Emessa n.${p.fattura_numero||''}</span>`:(err?`<span class="badge br" title="${(p.fattura_errore||'').replace(/"/g,'&quot;')}">Errore</span>`:(p.fattura_fic_id?'<span class="badge ba">Bozza</span>':'<span class="badge ba">Da emettere</span>')))
     const pdfBtn=p.fattura_pdf_path?`<button class="btn btn-sm btn-p" onclick="apriPdfFattura('${p.fattura_pdf_path}')" title="Apri PDF archiviato">\ud83d\udcc4 PDF</button>`:''
-    const emitBtns=emessa?'':`<button class="btn btn-sm" onclick="emettiFattura('${p._id||p.id}',true,'${area}')" title="Crea bozza senza inviarla">\ud83d\udcdd Bozza</button><button class="btn btn-sm btn-p" onclick="emettiFattura('${p._id||p.id}',false,'${area}')" title="Emette e invia">\ud83d\udce4 Emetti+invia</button>`
+    const ncPdfBtn=p.nota_credito_pdf_path?`<button class="btn btn-sm" onclick="apriPdfFattura('${p.nota_credito_pdf_path}')" title="PDF nota di credito">\ud83d\udcc4 NC</button>`:''
+    let emitBtns=''
+    if(stornata){ emitBtns='' } else if(emessa){ emitBtns=`<button class="btn btn-sm" onclick="notaCredito('${p._id||p.id}','${area}')" title="Nota di credito (rimborso)">\u21a9\ufe0f Nota credito</button>` } else if(p.fattura_fic_id){ emitBtns=`<button class="btn btn-sm btn-p" onclick="emettiFattura('${p._id||p.id}',false,'${area}')" title="Invia allo SDI">\ud83d\udce4 Invia SDI</button><button class="btn btn-sm" onclick="eliminaFattura('${p._id||p.id}','${area}')" title="Elimina bozza di prova">\ud83d\uddd1\ufe0f Elimina</button>` } else { emitBtns=`<button class="btn btn-sm" onclick="emettiFattura('${p._id||p.id}',true,'${area}')" title="Crea bozza">\ud83d\udcdd Bozza</button><button class="btn btn-sm btn-p" onclick="emettiFattura('${p._id||p.id}',false,'${area}')" title="Emetti e invia">\ud83d\udce4 Emetti+invia</button>` }
     const data=(p.paid_at||p.created_at||'').slice(0,10)
     const chi=p.cliente_nome||(p.uso_personale?'(uso personale)':'\u2014')
-    return `<tr><td><strong style="font-weight:600">${chi}</strong><br><span style="font-size:11px;color:var(--text2)">${p.cliente_cf||p.cliente_piva||''}</span></td><td style="font-size:12px">${p.prodotto_nome||''}</td><td>${_eurA(p.importo_pagato)}</td><td style="color:var(--text2)">${data}</td><td>${badge}</td><td class="acts">${pdfBtn}${emitBtns}</td></tr>`
+    return `<tr><td><strong style="font-weight:600">${chi}</strong><br><span style="font-size:11px;color:var(--text2)">${p.cliente_cf||p.cliente_piva||''}</span></td><td style="font-size:12px">${p.prodotto_nome||''}</td><td>${_eurA(p.importo_pagato)}</td><td style="color:var(--text2)">${data}</td><td>${badge}</td><td class="acts">${pdfBtn}${ncPdfBtn}${emitBtns}</td></tr>`
   }).join('')
 }
 async function emettiFattura(id, soloCrea, area){
@@ -6184,6 +6187,26 @@ async function emettiFattura(id, soloCrea, area){
   }catch(e){ alert('Errore fattura: '+((e&&e.message)||e)) }
 }
 function apriPdfFattura(path){ if(!path) return; window.open(SUPA_URL+'/storage/v1/object/public/contratti/'+path,'_blank') }
+async function eliminaFattura(id, area){
+  if(!confirm('Eliminare questa fattura di prova?\u000a(funziona solo se NON è ancora stata trasmessa allo SDI)')) return
+  try{
+    const r=await db.functions.invoke('fic-emetti-fattura',{ body:{ pagamento_id:id, azione:'elimina' } })
+    const d=r.data||{}
+    if(r.error||d.error||d.ok===false){ throw new Error(d.error||(r.error&&r.error.message)||'Errore') }
+    try{ toast('Fattura eliminata') }catch(e){}
+    await caricaIncassi(); renderFattArea(area||'doc')
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+async function notaCredito(id, area){
+  if(!confirm('Creare la nota di credito (storno/rimborso) per questo cliente?\u000aLa creo come BOZZA in Fatture in Cloud: controllala e inviala da lì.')) return
+  try{
+    const r=await db.functions.invoke('fic-emetti-fattura',{ body:{ pagamento_id:id, azione:'nota_credito' } })
+    const d=r.data||{}
+    if(r.error||d.error||d.ok===false){ throw new Error(d.error||(r.error&&r.error.message)||'Errore') }
+    try{ toast('Nota di credito creata n.'+(d.numero||'')) }catch(e){}
+    await caricaIncassi(); renderFattArea(area||'doc')
+  }catch(e){ alert('Errore nota di credito: '+((e&&e.message)||e)) }
+}
 function renderContrattiDip(){
   const tb=document.getElementById('tbl-contratti-dip')
   const ct=contratti.filter(c=>c.sezione==='dip')
