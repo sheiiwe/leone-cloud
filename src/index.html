@@ -302,6 +302,9 @@ tbody tr:hover td{background:var(--surface2)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Avvisi<span id="nav-dot-avvisi" style="display:none;width:9px;height:9px;border-radius:50%;background:#e63946;margin-left:auto;box-shadow:0 0 0 2px rgba(230,57,70,.25)"></span>
     </div>
     <div class="nav-sec">Strumenti</div>
+    <div class="nav-item" onclick="sp('email-mkt',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Email marketing
+    </div>
     <div class="nav-item" onclick="sp('documenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Documenti
     </div>
@@ -384,6 +387,9 @@ tbody tr:hover td{background:var(--surface2)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Listino prodotti
     </div>
     <div class="nav-sec">Strumenti</div>
+    <div class="nav-item" onclick="sp('email-mkt',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Email marketing
+    </div>
     <div class="nav-item" onclick="sp('documenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Documenti
     </div>
@@ -458,6 +464,9 @@ tbody tr:hover td{background:var(--surface2)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Listino prodotti
     </div>
     <div class="nav-sec">Strumenti</div>
+    <div class="nav-item" onclick="sp('email-mkt',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Email marketing
+    </div>
     <div class="nav-item" onclick="sp('documenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Documenti
     </div>
@@ -678,6 +687,17 @@ tbody tr:hover td{background:var(--surface2)}
       <thead><tr><th>Destinatario</th><th>Tipo contratto</th><th>Data firma</th><th>Azioni</th></tr></thead>
       <tbody id="tbl-cf-doc"><tr><td colspan="4" class="empty">Nessun contratto firmato</td></tr></tbody>
     </table></div>
+  </div>
+</div>
+
+<div class="page" id="page-email-mkt">
+  <div class="pg-title">Email marketing</div>
+  <div class="card">
+    <div class="card-hdr"><h3>Contatti &amp; liste su Brevo</h3></div>
+    <p class="muted" style="margin:0 0 12px">I contatti (docenti, studenti, procacciatori, dipendenti) vengono sincronizzati nelle liste Brevo per categoria. Le campagne email si creano e si inviano da Brevo, dove trovi anche le statistiche di apertura e click.</p>
+    <button class="btn btn-p" id="brevo-sync-btn" onclick="sincronizzaBrevo()">🔄 Sincronizza contatti su Brevo</button>
+    <a class="btn" href="https://app.brevo.com/" target="_blank" rel="noopener" style="text-decoration:none;margin-left:8px">Apri Brevo per le campagne</a>
+    <div id="brevo-sync-out" style="margin-top:14px"></div>
   </div>
 </div>
 
@@ -3469,7 +3489,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'email-mkt':()=>{},'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -6221,6 +6241,20 @@ async function emettiFattura(id, soloCrea, area){
   }catch(e){ alert('Errore fattura: '+((e&&e.message)||e)) }
 }
 function apriPdfFattura(path){ if(!path) return; window.open(SUPA_URL+'/storage/v1/object/public/contratti/'+path,'_blank') }
+async function sincronizzaBrevo(){
+  const btn=document.getElementById('brevo-sync-btn'), out=document.getElementById('brevo-sync-out')
+  btn.disabled=true; const _t=btn.innerHTML; btn.innerHTML='Sincronizzazione in corso...'; out.innerHTML=''
+  try{
+    const r=await db.functions.invoke('brevo-sync',{ body:{} })
+    const d=r.data||{}
+    if(r.error||d.ok===false){ throw new Error(d.error||(r.error&&r.error.message)||'Errore') }
+    const ris=d.risultato||{}
+    let html='<div class="msg msg-ok">Sincronizzazione completata.</div><div style="margin-top:8px">'
+    for(const k in ris){ html+='<div class="kv"><span class="k">'+k+'</span><span>'+((ris[k]&&ris[k].sincronizzati)||0)+' contatti</span></div>' }
+    out.innerHTML=html+'</div>'
+  }catch(e){ out.innerHTML='<div class="msg msg-err">Errore: '+((e&&e.message)||e)+'</div>' }
+  btn.disabled=false; btn.innerHTML=_t
+}
 async function eliminaFattura(id, area){
   if(!confirm('Eliminare questa fattura di prova?\u000a(funziona solo se NON è ancora stata trasmessa allo SDI)')) return
   try{
