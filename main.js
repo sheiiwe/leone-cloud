@@ -89,6 +89,7 @@ app.whenReady().then(() => {
     createDesktopAlias()
   }
   require('./ipc-handlers')
+  try { app.setLoginItemSettings({ openAtLogin: true }) } catch (e) {}
   Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
   createWindow()
   app.on('activate', () => {
