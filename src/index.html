@@ -441,6 +441,12 @@ tbody tr:hover td{background:var(--surface2)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 7a7 7 0 1 0 0 10"/><line x1="3" y1="10" x2="13" y2="10"/><line x1="3" y1="14" x2="13" y2="14"/></svg>Incassi
     </div>
     <div class="nav-sec">Contratti</div>
+    <div class="nav-item" onclick="sp('contratti-firmati-dip',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6L9 17l-5-5"/></svg>Contratti firmati
+    </div>
+    <div class="nav-item" onclick="sp('fatture-dip',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Fatture
+    </div>
     <div class="nav-item" onclick="sp('contratti-dip',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><polyline points="10 17 8 17 8 19"/></svg>Contratti & Firme
     </div>
@@ -622,6 +628,31 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="tbl-wrap"><table>
       <thead><tr><th>Cliente</th><th>Prodotto</th><th>Importo</th><th>Data incasso</th><th>Fattura</th><th>Azioni</th></tr></thead>
       <tbody id="tbl-fatt-doc"><tr><td colspan="6" class="empty">Caricamento...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<div class="page" id="page-contratti-firmati-dip">
+  <div class="pg-title">Contratti firmati · Dipendenti</div>
+  <div class="card">
+    <div class="card-hdr"><h3>Archivio contratti firmati</h3></div>
+    <input id="cf-search-dip" type="text" placeholder="🔍 Cerca (nome, email, tipo...)" oninput="renderCFArea('dip')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Destinatario</th><th>Tipo contratto</th><th>Data firma</th><th>Azioni</th></tr></thead>
+      <tbody id="tbl-cf-dip"><tr><td colspan="4" class="empty">Nessun contratto firmato</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<div class="page" id="page-fatture-dip">
+  <div class="pg-title">Fatture · Dipendenti</div>
+  <div class="card">
+    <div class="card-hdr"><h3>Fatture elettroniche</h3></div>
+    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Emetti la fattura per gli incassi dei dipendenti. &laquo;Bozza&raquo; crea il documento senza inviarlo; &laquo;Emetti+invia&raquo; lo trasmette all&apos;Agenzia. Il PDF resta archiviato qui.</p>
+    <input id="fatt-search-dip" type="text" placeholder="🔍 Cerca (cliente, prodotto, numero...)" oninput="renderFattArea('dip')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Cliente</th><th>Prodotto</th><th>Importo</th><th>Data incasso</th><th>Fattura</th><th>Azioni</th></tr></thead>
+      <tbody id="tbl-fatt-dip"><tr><td colspan="6" class="empty">Caricamento...</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -2367,6 +2398,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="fr">
       <div class="fg"><label>Prezzo pieno (€) *</label><input id="pp-prezzo" type="number" min="0" step="0.01" placeholder="300.00" oninput="_ppPreview()"></div>
       <div class="fg"><label>Provvigione venditore (%)</label><input id="pp-prov" type="number" min="0" max="100" step="0.1" placeholder="20" oninput="_ppPreview()"></div>
+      <div class="fg"><label>Oppure provvigione fissa (€)</label><input id="pp-prov-fissa" type="number" min="0" step="0.01" placeholder="es. 40" oninput="_ppPreview()"></div>
     </div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text2);margin-bottom:12px" id="pp-preview">Il venditore guadagna —</div>
     <div class="msec">Vendibile nelle aree</div>
@@ -3437,7 +3469,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -3597,6 +3629,7 @@ function apriProdPag(id){
     document.getElementById('pp-desc').value=p.descrizione||''
     document.getElementById('pp-prezzo').value=(p.prezzo!=null?p.prezzo:'')
     document.getElementById('pp-prov').value=(p.provvigione_pct!=null?p.provvigione_pct:'')
+    document.getElementById('pp-prov-fissa').value=(p.provvigione_fissa!=null?p.provvigione_fissa:'')
     const a=p.aree||[]
     document.getElementById('pp-area-proc').checked=a.indexOf('proc')>=0
     document.getElementById('pp-area-dip').checked=a.indexOf('dip')>=0
@@ -3610,6 +3643,7 @@ function apriProdPag(id){
     document.getElementById('pp-desc').value=''
     document.getElementById('pp-prezzo').value=''
     document.getElementById('pp-prov').value=''
+    document.getElementById('pp-prov-fissa').value=''
     document.getElementById('pp-area-proc').checked=true
     document.getElementById('pp-area-dip').checked=true
     document.getElementById('pp-area-doc').checked=false
@@ -3628,7 +3662,7 @@ async function salvaProdPag(){
   if(document.getElementById('pp-area-dip').checked) aree.push('dip')
   if(document.getElementById('pp-area-doc').checked) aree.push('doc')
   if(document.getElementById('pp-area-studenti').checked) aree.push('studenti')
-  const rec={ nome:nome, descrizione:(document.getElementById('pp-desc').value||'').trim(), prezzo:prezzo, provvigione_pct:Number(document.getElementById('pp-prov').value||0), aree:aree, attivo:document.getElementById('pp-attivo').value==='1' }
+  const rec={ nome:nome, descrizione:(document.getElementById('pp-desc').value||'').trim(), prezzo:prezzo, provvigione_pct:Number(document.getElementById('pp-prov').value||0), provvigione_fissa:(document.getElementById('pp-prov-fissa').value!==''?Number(document.getElementById('pp-prov-fissa').value):null), aree:aree, attivo:document.getElementById('pp-attivo').value==='1' }
   const id=document.getElementById('pp-id').value
   try{
     if(id){ const r=await db.from('prodotti_pagamento').update(rec).eq('id',id); if(r.error) throw r.error }
