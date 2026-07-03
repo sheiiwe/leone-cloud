@@ -376,7 +376,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('fatture-doc',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Fatture
     </div>
-    <div class="nav-item" onclick="sp('proposte',this)">
+    <div class="nav-item" onclick="sp('proposte-docenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Proposte
     </div>
     <div class="nav-item" onclick="sp('bonus',this)">
@@ -686,6 +686,19 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="tbl-wrap"><table>
       <thead><tr><th>Destinatario</th><th>Tipo contratto</th><th>Data firma</th><th>Azioni</th></tr></thead>
       <tbody id="tbl-cf-doc"><tr><td colspan="4" class="empty">Nessun contratto firmato</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<div class="page" id="page-proposte-docenti">
+  <div class="pg-title">Proposte docenti</div>
+  <div class="card">
+    <div class="card-hdr"><h3>Richieste inviate dai docenti</h3></div>
+    <p class="muted" style="margin:0 0 12px">Qui trovi le richieste che i docenti ti mandano dal loro portale, cliccando sul listino e selezionando i corsi. Contattali per finalizzare.</p>
+    <input id="prop-doc-search" type="text" placeholder="🔍 Cerca (docente, cliente, prodotto…)" oninput="renderProposteDoc()" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Data</th><th>Docente</th><th>Cliente</th><th>Contatti</th><th>Prodotti</th><th>Stato</th><th>Azioni</th></tr></thead>
+      <tbody id="tbl-prop-doc"><tr><td colspan="7" class="empty">Caricamento…</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -3489,7 +3502,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'email-mkt':()=>{},'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -6241,6 +6254,33 @@ async function emettiFattura(id, soloCrea, area){
   }catch(e){ alert('Errore fattura: '+((e&&e.message)||e)) }
 }
 function apriPdfFattura(path){ if(!path) return; window.open(SUPA_URL+'/storage/v1/object/public/contratti/'+path,'_blank') }
+let _PROP_DOC=[]
+async function _openProposteDoc(){
+  const tb=document.getElementById('tbl-prop-doc'); if(tb) tb.innerHTML='<tr><td colspan="7" class="empty">Caricamento…</td></tr>'
+  try{ const r=await db.from('proposte_docenti').select('*').order('created_at',{ascending:false}); if(r.error) throw r.error; _PROP_DOC=r.data||[] }
+  catch(e){ _PROP_DOC=[]; if(tb) tb.innerHTML='<tr><td colspan="7" class="empty">Errore caricamento</td></tr>'; return }
+  renderProposteDoc()
+}
+function renderProposteDoc(){
+  const tb=document.getElementById('tbl-prop-doc'); if(!tb) return
+  let rows=_PROP_DOC||[]
+  const _q=(document.getElementById('prop-doc-search')&&document.getElementById('prop-doc-search').value||'').trim().toLowerCase()
+  if(_q) rows=rows.filter(p=>((p.docente_nome||'')+' '+(p.docente_email||'')+' '+(p.cliente_nome||'')+' '+(p.cliente_cognome||'')+' '+(p.cliente_email||'')+' '+(p.cliente_telefono||'')+' '+JSON.stringify(p.prodotti||[])).toLowerCase().includes(_q))
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="7" class="empty">'+(_q?'Nessun risultato':'Nessuna proposta ricevuta')+'</td></tr>'; return }
+  tb.innerHTML=rows.map(p=>{
+    const data=(p.created_at||'').slice(0,10)
+    const prod=Array.isArray(p.prodotti)?p.prodotti.map(x=>(x&&x.nome)||'').filter(Boolean).join(', '):''
+    const stato=p.stato==='chiusa'?'<span class="badge bg">Chiusa</span>':(p.stato==='in_lavorazione'?'<span class="badge ba">In lavorazione</span>':'<span class="badge br">Nuova</span>')
+    const az=p.stato==='chiusa'?'':`<button class="btn btn-sm" onclick="cambiaStatoPropDoc('${p.id}','in_lavorazione')">In lavorazione</button><button class="btn btn-sm btn-p" onclick="cambiaStatoPropDoc('${p.id}','chiusa')">Chiudi</button>`
+    return `<tr><td style="color:var(--text2)">${data}</td><td><strong>${esc(p.docente_nome||'')}</strong><br><span style="font-size:11px;color:var(--text2)">${esc(p.docente_email||'')}</span></td><td><strong>${esc(((p.cliente_nome||'')+' '+(p.cliente_cognome||'')).trim())}</strong></td><td style="font-size:12px">${esc(p.cliente_email||'')}<br>${esc(p.cliente_telefono||'')}</td><td style="font-size:12px">${esc(prod)}</td><td>${stato}</td><td class="acts">${az}</td></tr>`
+  }).join('')
+}
+async function cambiaStatoPropDoc(id, stato){
+  try{
+    const r=await db.from('proposte_docenti').update({stato:stato}).eq('id',id); if(r.error) throw r.error
+    toast('Stato aggiornato'); await _openProposteDoc()
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
 async function sincronizzaBrevo(){
   const btn=document.getElementById('brevo-sync-btn'), out=document.getElementById('brevo-sync-out')
   btn.disabled=true; const _t=btn.innerHTML; btn.innerHTML='Sincronizzazione in corso...'; out.innerHTML=''
