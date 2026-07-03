@@ -7460,6 +7460,50 @@ function calcolaBusta(){
   document.getElementById('bp-costo-az').textContent=fmtE(costoAz)
   window._bustaCalc={lordobase,straordVal,bonus,tratt,lordoTot,contrib,irpef,netto,tfr,costoAz}
 }
+function _bustaHtml(d, mese, c){
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Busta Paga ${d.nome} \u2014 ${mese}</title>
+  <style>body{font-family:-apple-system,'Helvetica Neue',sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#1a1a18;font-size:13px}
+  .hdr{display:flex;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid #185FA5}
+  .logo{font-size:18px;font-weight:700;color:#185FA5}.sub{font-size:12px;color:#6b6b66;margin-top:2px}
+  h2{font-size:15px;font-weight:600;margin:1.5rem 0 .5rem}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:1rem}
+  th{background:#f0efe9;padding:7px 10px;text-align:left;font-weight:600;border-bottom:1px solid #ddd}
+  td{padding:7px 10px;border-bottom:.5px solid #eee}
+  .tot{background:#f5f5f0;border-radius:8px;padding:1rem 1.25rem;margin-top:1.5rem}
+  .tr{display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid #ddd;font-size:13px}
+  .tr:last-child{border-bottom:none;font-weight:700;font-size:15px}
+  .foot{margin-top:2rem;padding-top:1rem;border-top:.5px solid #ddd;font-size:11px;color:#9e9e98;text-align:center}
+  .prbtn{position:fixed;top:10px;right:10px;padding:10px 16px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit}
+  @media print{.prbtn{display:none}}
+  </style></head><body>
+  <button class="prbtn" onclick="window.print()">\ud83d\udda8 Stampa / Salva PDF</button>
+  <div class="hdr"><div><div class="logo">Leone Consulting</div><div class="sub">di Leonardo Angelucci \u00b7 Via Pia 42, 00049 Velletri (RM)</div><div class="sub">P.IVA 18231181001</div></div>
+  <div style="text-align:right"><div style="font-size:14px;font-weight:600">BUSTA PAGA</div><div style="color:#6b6b66;font-size:12px">Competenza: ${mese}</div><div style="color:#6b6b66;font-size:12px">Emessa il: ${new Date().toLocaleDateString('it-IT')}</div></div></div>
+  <h2>Dati dipendente</h2>
+  <table><tr><td><strong>Nome:</strong></td><td>${d.nome||'\u2014'}</td><td><strong>Codice fiscale:</strong></td><td>${d.cf||'\u2014'}</td></tr>
+  <tr><td><strong>Ruolo:</strong></td><td>${d.ruolo||'\u2014'}</td><td><strong>CCNL:</strong></td><td>${d.ccnl||'\u2014'}</td></tr>
+  <tr><td><strong>Tipo contratto:</strong></td><td>${{fulltime:'Full-time',parttime:'Part-time',ore:'A ore'}[d.tipo]||d.tipo||'\u2014'}</td><td><strong>IBAN:</strong></td><td>${d.iban||'\u2014'}</td></tr></table>
+  <div class="tot">
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">Riepilogo competenze e trattenute</div>
+    <div class="tr"><span>Retribuzione lorda base</span><span>${fmtE(c.lordobase)}</span></div>
+    ${c.straordVal>0?`<div class="tr"><span>Straordinari (25% maggiorazione)</span><span>+${fmtE(c.straordVal)}</span></div>`:''}
+    ${c.bonus>0?`<div class="tr"><span>Bonus / premi</span><span>+${fmtE(c.bonus)}</span></div>`:''}
+    <div class="tr"><span style="font-weight:600">Totale lordo</span><span style="font-weight:600">${fmtE(c.lordoTot)}</span></div>
+    <div class="tr"><span style="color:#A32D2D">Contributi INPS a carico dipendente (9.19%)</span><span style="color:#A32D2D">\u2212${fmtE(c.contrib)}</span></div>
+    <div class="tr"><span style="color:#A32D2D">IRPEF stimata (aliquota 23%)</span><span style="color:#A32D2D">\u2212${fmtE(c.irpef)}</span></div>
+    ${c.tratt>0?`<div class="tr"><span style="color:#A32D2D">Altre trattenute</span><span style="color:#A32D2D">\u2212${fmtE(c.tratt)}</span></div>`:''}
+    <div class="tr"><span style="color:#3B6D11;font-size:15px">NETTO IN BUSTA</span><span style="color:#3B6D11;font-size:15px">${fmtE(c.netto)}</span></div>
+  </div>
+  <table style="margin-top:1rem"><thead><tr><th>Voci costo azienda</th><th style="text-align:right">Importo</th></tr></thead>
+  <tbody><tr><td>Retribuzione lorda</td><td style="text-align:right">${fmtE(c.lordoTot)}</td></tr>
+  <tr><td>Contributi INPS a carico azienda (~30%)</td><td style="text-align:right">${fmtE(c.lordoTot*0.30)}</td></tr>
+  <tr><td>TFR accantonato (6.91%)</td><td style="text-align:right">${fmtE(c.tfr)}</td></tr>
+  <tr style="font-weight:600"><td>Costo totale azienda</td><td style="text-align:right">${fmtE(c.costoAz)}</td></tr></tbody></table>
+  <p style="font-size:11px;color:#9e9e98;margin-top:.5rem">* I calcoli IRPEF sono una stima semplificata. Per il calcolo esatto consultare il commercialista o utilizzare il software paghe ufficiale.</p>
+  <div class="foot">Leone Consulting di Leonardo Angelucci \u00b7 P.IVA 18231181001 \u00b7 Foro competente: Velletri (RM)</div>
+  </body></html>`
+}
+
 async function saveBusta(){
   if(bpDipIdx===null||isNaN(bpDipIdx))return alert('Seleziona un dipendente')
   if(!window._bustaCalc)return alert('Compila i dati della busta paga')
@@ -7470,7 +7514,18 @@ async function saveBusta(){
   const obj={dipIdx:bpDipIdx,nomeDip:d.nome,mese,...window._bustaCalc,tipo:d.tipo,ore:parseFloat(document.getElementById('bp-ore').value)||0}
   try{
     syncStatus('syncing','Salvataggio...')
-    await db.from('buste_paga').insert({data:obj})
+    const ins=await db.from('buste_paga').insert({data:obj}).select().single()
+    if(ins.error) throw ins.error
+    // Genero e carico l'HTML della busta su Storage per un link stabile (dipendente puo' consultarla)
+    try{
+      const html=_bustaHtml(d, mese, window._bustaCalc)
+      const path='buste/'+ins.data.id+'.html'
+      const up=await db.storage.from('contratti').upload(path, new Blob([html],{type:'text/html;charset=utf-8'}), {upsert:true, contentType:'text/html;charset=utf-8'})
+      if(!up.error){
+        const dip_id=(d && d._id)||null
+        await db.from('buste_paga').update({ data: { ...obj, pdf_path: path, dipendente_id: dip_id } }).eq('id', ins.data.id)
+      }
+    }catch(e){ console.warn('Storage busta:', e) }
     closeM('m-busta');await loadAll();renderBuste()
   }catch(e){syncStatus('err','Errore: '+e.message);alert('Errore: '+e.message)}
   finally{btn.disabled=false;btn.innerHTML='Salva busta'}
@@ -7527,8 +7582,14 @@ function renderBuste(){
   const mf=document.getElementById('busta-mese').value
   let bb=buste.filter(b=>(!dIdx||b.dipIdx==dIdx)&&(!mf||b.mese===mf))
   if(!bb.length){tb.innerHTML='<tr><td colspan="9" class="empty">Nessuna busta paga</td></tr>';return}
-  tb.innerHTML=[...bb].reverse().map(b=>`<tr><td><div class="ar"><div class="av ${avc(b.dipIdx)}" style="width:26px;height:26px;font-size:10px">${ini(b.nomeDip||'?')}</div>${b.nomeDip||'?'}</div></td><td>${b.mese}</td><td><span class="badge ${b.tipo==='fulltime'?'bg':b.tipo==='parttime'?'bb':'ba'}">${{fulltime:'Full-time',parttime:'Part-time',ore:'A ore'}[b.tipo]||b.tipo}</span></td><td>${fmtE(b.lordoTot)}</td><td style="color:var(--red)">−${fmtE(b.contrib)}</td><td style="color:var(--red)">−${fmtE(b.irpef)}</td><td style="font-weight:600;color:var(--green)">${fmtE(b.netto)}</td><td>${fmtE(b.costoAz)}</td><td><button class="btn btn-sm" onclick="scaricaBustaStorico('${b._id}')">⬇ PDF</button></td></tr>`).join('')
+  tb.innerHTML=[...bb].reverse().map(b=>{
+    const az = b.pdf_path
+      ? `<button class="btn btn-sm btn-p" onclick="apriBustaPdf('${b.pdf_path}')" title="Apri busta salvata (con bottone Stampa/PDF)">📄 Apri</button>`
+      : `<button class="btn btn-sm" onclick="scaricaBustaStorico('${b._id}')">⬇ Genera PDF</button>`
+    return `<tr><td><div class="ar"><div class="av ${avc(b.dipIdx)}" style="width:26px;height:26px;font-size:10px">${ini(b.nomeDip||'?')}</div>${b.nomeDip||'?'}</div></td><td>${b.mese}</td><td><span class="badge ${b.tipo==='fulltime'?'bg':b.tipo==='parttime'?'bb':'ba'}">${{fulltime:'Full-time',parttime:'Part-time',ore:'A ore'}[b.tipo]||b.tipo}</span></td><td>${fmtE(b.lordoTot)}</td><td style="color:var(--red)">−${fmtE(b.contrib)}</td><td style="color:var(--red)">−${fmtE(b.irpef)}</td><td style="font-weight:600;color:var(--green)">${fmtE(b.netto)}</td><td>${fmtE(b.costoAz)}</td><td>${az}</td></tr>`
+  }).join('')
 }
+function apriBustaPdf(path){ if(!path) return; window.open(SUPA_URL+'/storage/v1/object/public/contratti/'+path,'_blank') }
 function scaricaBustaStorico(id){const b=buste.find(x=>x._id===id);if(!b)return;const d=dipendenti[b.dipIdx]||{nome:b.nomeDip,cf:'',ruolo:'',ccnl:'',iban:''};window._bustaCalc=b;const el=document.getElementById('bp-mese');if(el)el.value=b.mese;bpDipIdx=b.dipIdx;scaricaBusta()}
 
 // ── DASHBOARD ─────────────────────────────────────────────────
