@@ -6263,6 +6263,7 @@ async function _openProposteDoc(){
 }
 function renderProposteDoc(){
   const tb=document.getElementById('tbl-prop-doc'); if(!tb) return
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
   let rows=_PROP_DOC||[]
   const _q=(document.getElementById('prop-doc-search')&&document.getElementById('prop-doc-search').value||'').trim().toLowerCase()
   if(_q) rows=rows.filter(p=>((p.docente_nome||'')+' '+(p.docente_email||'')+' '+(p.cliente_nome||'')+' '+(p.cliente_cognome||'')+' '+(p.cliente_email||'')+' '+(p.cliente_telefono||'')+' '+JSON.stringify(p.prodotti||[])).toLowerCase().includes(_q))
