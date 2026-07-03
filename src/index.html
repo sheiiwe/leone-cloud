@@ -377,7 +377,7 @@ tbody tr:hover td{background:var(--surface2)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Fatture
     </div>
     <div class="nav-item" onclick="sp('proposte-docenti',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Proposte
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Proposte<span id="nav-dot-proposte-docenti" style="display:none;width:9px;height:9px;border-radius:50%;background:#e63946;margin-left:auto;box-shadow:0 0 0 2px rgba(230,57,70,.25)"></span>
     </div>
     <div class="nav-item" onclick="sp('bonus',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>Bonus porta cliente
@@ -6278,9 +6278,26 @@ function renderProposteDoc(){
 async function cambiaStatoPropDoc(id, stato){
   try{
     const r=await db.from('proposte_docenti').update({stato:stato}).eq('id',id); if(r.error) throw r.error
-    toast('Stato aggiornato'); await _openProposteDoc()
+    toast('Stato aggiornato'); await _openProposteDoc(); await _refreshPropDocDot()
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
+async function _refreshPropDocDot(){
+  try{
+    const r=await db.from('proposte_docenti').select('id',{count:'exact',head:true}).eq('stato','nuova')
+    const dot=document.getElementById('nav-dot-proposte-docenti'); if(dot) dot.style.display=(r.count||0)>0?'block':'none'
+  }catch(e){}
+}
+setInterval(_refreshPropDocDot, 30000)
+setTimeout(_refreshPropDocDot, 1200)
+try{
+  db.channel('proposte_docenti_ch').on('postgres_changes',{event:'INSERT',schema:'public',table:'proposte_docenti'}, payload=>{
+    _refreshPropDocDot()
+    try{ suonaNotifica() }catch(e){}
+    try{ const p=payload.new||{}; const chi=((p.cliente_nome||'')+' '+(p.cliente_cognome||'')).trim(); toast('\ud83c\udf93 Nuova proposta docente: '+chi) }catch(e){}
+    // se sto guardando la pagina proposte docenti, aggiorno
+    const pg=document.getElementById('page-proposte-docenti'); if(pg && !pg.classList.contains('hidden')) _openProposteDoc()
+  }).subscribe()
+}catch(e){}
 async function sincronizzaBrevo(){
   const btn=document.getElementById('brevo-sync-btn'), out=document.getElementById('brevo-sync-out')
   btn.disabled=true; const _t=btn.innerHTML; btn.innerHTML='Sincronizzazione in corso...'; out.innerHTML=''
