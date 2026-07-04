@@ -2133,7 +2133,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="stu-autorizz"> Autorizzazione del genitore/tutore acquisita</label></div>
     <div class="fg"><label>Documento / autorizzazione (PDF o foto)</label><div style="display:flex;gap:8px;align-items:center"><label class="btn btn-sm" style="cursor:pointer">📤 Carica<input type="file" id="stu-genitore-file" accept="application/pdf,image/*" style="display:none" onchange="caricaDocGenitore(this)"></label> <span id="stu-genitore-file-stato" style="font-size:11px;color:var(--text2)"></span></div></div>
     <div class="msec">Scuola e ripetizioni</div>
-    <div class="fr"><div class="fg"><label>Grado di istruzione</label><select id="stu-livello" onchange="_stuCheckMinore()"><option value="">—</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select></div><div class="fg"><label>Classe / Anno</label><input id="stu-classe" type="text" placeholder="es. 3ª media"></div><div class="fg"><label>Istituto / Scuola</label><input id="stu-istituto" type="text" placeholder="es. I.C. Velletri"></div></div>
+    <div class="fr"><div class="fg"><label>Grado di istruzione</label><select id="stu-livello" onchange="_stuCheckMinore(); _stuRenderDocenti()"><option value="">—</option><option>Elementari</option><option>Medie</option><option>Superiori</option><option>Università</option></select></div><div class="fg"><label>Classe / Anno</label><input id="stu-classe" type="text" placeholder="es. 3ª media"></div><div class="fg"><label>Istituto / Scuola</label><input id="stu-istituto" type="text" placeholder="es. I.C. Velletri"></div></div>
     <div class="fg"><label>Materie richieste</label>
       <div style="display:flex;gap:6px"><input id="stu-materia-in" type="text" placeholder="es. Inglese" list="dl-materie" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();_stuAddMateria()}"><button type="button" class="btn btn-sm" onclick="_stuAddMateria()">+ Aggiungi</button></div>
       <div id="stu-materie-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
@@ -3748,7 +3748,8 @@ async function _ppRenderDocenti(prodottoId){
   }
   box.innerHTML=lista.map(d=>{
     const checked=abilitati.has(String(d._id))?'checked':''
-    const materie=(Array.isArray(d.materie)&&d.materie.length)?(' <span style="color:var(--text3);font-size:11px">('+escB(d.materie.slice(0,3).join(', '))+(d.materie.length>3?'…':'')+')</span>'):''
+    const materieNomi=(Array.isArray(d.materie)?d.materie.map(m=>(typeof m==='string')?m:(m&&m.nome)||'').filter(Boolean):[])
+    const materie=materieNomi.length?(' <span style="color:var(--text3);font-size:11px">('+escB(materieNomi.slice(0,3).join(', '))+(materieNomi.length>3?'…':'')+')</span>'):''
     return '<label style="display:flex;align-items:center;gap:8px;padding:4px 2px;font-size:13px;cursor:pointer"><input type="checkbox" class="pp-doc-chk" data-id="'+d._id+'" '+checked+'> '+escB(d.nome||'?')+materie+'</label>'
   }).join('')
 }
@@ -4022,13 +4023,30 @@ function _stuFillDocenti(){
 function _nomeDocente(id){ const d=docenti.find(x=>x._id===id); return d?d.nome:'' }
 function _docentiDiStudente(s){ let a=(s&&Array.isArray(s.docenti)&&s.docenti.length)?s.docenti:((s&&s.docenteId)?[{docenteId:s.docenteId,materia:''}]:[]); return a.filter(d=>d&&d.docenteId) }
 function _nomiDocenti(s){ return _docentiDiStudente(s).map(d=>{ const n=_nomeDocente(d.docenteId); if(!n) return ''; return n+(d.materia?(' \u2013 '+d.materia):'') }).filter(Boolean).join(', ') }
-function _docentiOptions(sel){ return '<option value="">\u2014 Scegli docente \u2014</option>'+docenti.filter(d=>d.stato!=='Terminato').map(d=>'<option value="'+d._id+'"'+(String(sel||'')===String(d._id)?' selected':'')+'>'+escB(d.nome||'')+'</option>').join('') }
+function _docentiOptions(sel, materia, livello){
+  const _liv=({Elementari:'E',Medie:'M',Superiori:'S',Universita:''})[livello]||''
+  const _mat=(materia||'').trim().toLowerCase()
+  let lista=docenti.filter(d=>d.stato!=='Terminato')
+  if(_mat && _liv){
+    const filtered=lista.filter(d=>{
+      const mm=Array.isArray(d.materie)?d.materie:[]
+      return mm.some(m=>{
+        const nome=(typeof m==='string')?m:(m&&m.nome)||''
+        const liv=(m&&Array.isArray(m.livelli))?m.livelli:['E','M','S']
+        return nome.toLowerCase()===_mat && liv.indexOf(_liv)>=0
+      })
+    })
+    if(filtered.length) lista=filtered
+  }
+  return '<option value="">\u2014 Scegli docente \u2014</option>'+lista.map(d=>'<option value="'+d._id+'"'+(String(sel||'')===String(d._id)?' selected':'')+'>'+escB(d.nome||'')+'</option>').join('')
+}
 function _stuRenderDocenti(){
   const box=document.getElementById('stu-docenti-list'); if(!box) return
   if(!_stuDocenti.length){ box.innerHTML='<div style="font-size:12px;color:var(--text3);padding:4px 0">Nessun docente. Premi \u0022+ Aggiungi docente\u0022.</div>'; return }
+  const stuLiv=document.getElementById('stu-livello')?document.getElementById('stu-livello').value:''
   box.innerHTML=_stuDocenti.map((d,i)=>'<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">'+
-    '<select onchange="_stuSetDocente('+i+',this.value)" style="flex:2;min-width:140px">'+_docentiOptions(d.docenteId)+'</select>'+
-    '<input type="text" list="dl-materie" placeholder="Materia" value="'+escB(d.materia||'')+'" oninput="_stuSetMateria('+i+',this.value)" style="flex:2;min-width:120px">'+
+    '<input type="text" list="dl-materie" placeholder="Materia" value="'+escB(d.materia||'')+'" oninput="_stuSetMateria('+i+',this.value); _stuRenderDocenti()" style="flex:2;min-width:120px">'+
+    '<select onchange="_stuSetDocente('+i+',this.value)" style="flex:2;min-width:140px">'+_docentiOptions(d.docenteId, d.materia, stuLiv)+'</select>'+
     '<input type="number" min="0" step="0.5" placeholder="Ore tot." value="'+(d.oreTot!=null?d.oreTot:'')+'" oninput="_stuSetOreTot('+i+',this.value)" style="flex:1;min-width:80px" title="Ore totali pattuite">'+
     '<input type="number" min="0" step="0.5" placeholder="Svolte" value="'+(d.oreFatte!=null?d.oreFatte:'')+'" oninput="_stuSetOreFatte('+i+',this.value)" style="flex:1;min-width:80px" title="Ore gia\u0027 svolte">'+
     '<button type="button" class="btn btn-sm btn-r" onclick="_stuDelDocente('+i+')" title="Rimuovi">\u2715</button>'+
@@ -4131,15 +4149,29 @@ async function _caricaMaterieDB(){
 }
 setTimeout(_caricaMaterieDB, 1500)
 function _docFillMaterieSugg(){
-  const dl=document.getElementById('dl-materie'); if(dl){ const used=[...new Set([..._MATERIE_SUGG, ...docenti.flatMap(d=>d.materie||[])])].sort((a,b)=>a.localeCompare(b,'it')); dl.innerHTML=used.map(m=>'<option value="'+escB(m)+'"></option>').join('') }
-  const sel=document.getElementById('doc-f-materia'); if(sel){ const cur=sel.value; const all=[...new Set(docenti.flatMap(d=>d.materie||[]))].sort((a,b)=>a.localeCompare(b,'it')); sel.innerHTML='<option value="">Tutte le materie</option>'+all.map(m=>'<option'+(m===cur?' selected':'')+'>'+escB(m)+'</option>').join('') }
+  const _matNome=m=>(typeof m==='string')?m:((m&&m.nome)||'')
+  const dl=document.getElementById('dl-materie'); if(dl){ const used=[...new Set([..._MATERIE_SUGG, ...docenti.flatMap(d=>(d.materie||[]).map(_matNome))])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'it')); dl.innerHTML=used.map(m=>'<option value="'+escB(m)+'"></option>').join('') }
+  const sel=document.getElementById('doc-f-materia'); if(sel){ const cur=sel.value; const all=[...new Set(docenti.flatMap(d=>(d.materie||[]).map(_matNome)))].filter(Boolean).sort((a,b)=>a.localeCompare(b,'it')); sel.innerHTML='<option value="">Tutte le materie</option>'+all.map(m=>'<option'+(m===cur?' selected':'')+'>'+escB(m)+'</option>').join('') }
 }
 function _docRenderChips(){
-  const mc=document.getElementById('doc-materie-chips'); if(mc) mc.innerHTML=_docMaterie.map((m,i)=>'<span style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:14px;padding:3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:6px">'+escB(m)+' <span style="cursor:pointer;color:#c0392b;font-weight:700" onclick="_docDelMateria('+i+')">×</span></span>').join('')
+  const mc=document.getElementById('doc-materie-chips'); if(mc) mc.innerHTML=_docMaterie.map((m,i)=>{
+    const nm=(typeof m==='string')?m:(m&&m.nome)||''
+    const lv=(m&&Array.isArray(m.livelli))?m.livelli:['E','M','S']
+    const lvTxt=lv.map(x=>({E:'Elem',M:'Med',S:'Sup'}[x]||x)).join(', ')
+    return '<span style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:14px;padding:5px 10px;font-size:12px;display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap"><b>'+escB(nm)+'</b>'+
+      '<span style="display:flex;gap:4px">'+['E','M','S'].map(k=>{
+        const on=lv.indexOf(k)>=0
+        const lbl={E:'Elementari',M:'Medie',S:'Superiori'}[k]
+        return '<button type="button" onclick="_docToggleLiv('+i+',\''+k+'\')" title="'+lbl+'" style="border:none;padding:1px 6px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:600;font-family:inherit;background:'+(on?'#185FA5':'#e5e5e0')+';color:'+(on?'#fff':'#999')+'">'+k+'</button>'
+      }).join('')+'</span>'+
+      '<span style="cursor:pointer;color:#c0392b;font-weight:700" onclick="_docDelMateria('+i+')">×</span></span>'
+  }).join('')
   const cc=document.getElementById('doc-cert-chips'); if(cc) cc.innerHTML=_docCerti.map((c,i)=>'<span style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:14px;padding:3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:6px">📄 '+escB(c)+' <span style="cursor:pointer;color:#c0392b;font-weight:700" onclick="_docDelCert('+i+')">×</span></span>').join('')
 }
-function _docAddMateria(){ const i=document.getElementById('doc-materia-in'); const v=(i.value||'').trim(); if(v&&!_docMaterie.some(x=>x.toLowerCase()===v.toLowerCase())){ _docMaterie.push(v); _docRenderChips() } i.value=''; i.focus() }
+function _docNormMateria(m){ if(typeof m==='string') return {nome:m, livelli:['E','M','S']}; return {nome:(m&&m.nome)||'', livelli:(m&&Array.isArray(m.livelli))?m.livelli:['E','M','S']} }
+function _docAddMateria(){ const i=document.getElementById('doc-materia-in'); const v=(i.value||'').trim(); if(v&&!_docMaterie.some(x=>((typeof x==='string')?x:x.nome).toLowerCase()===v.toLowerCase())){ _docMaterie.push({nome:v, livelli:['E','M','S']}); _docRenderChips() } i.value=''; i.focus() }
 function _docDelMateria(i){ _docMaterie.splice(i,1); _docRenderChips() }
+function _docToggleLiv(i,k){ if(!_docMaterie[i]) return; _docMaterie[i]=_docNormMateria(_docMaterie[i]); const arr=_docMaterie[i].livelli; const p=arr.indexOf(k); if(p>=0) arr.splice(p,1); else arr.push(k); _docMaterie[i].livelli=['E','M','S'].filter(x=>arr.indexOf(x)>=0); _docRenderChips() }
 function _docAddCert(){ const i=document.getElementById('doc-cert-in'); const v=(i.value||'').trim(); if(v&&!_docCerti.includes(v)){ _docCerti.push(v); _docRenderChips() } i.value=''; i.focus() }
 function _docDelCert(i){ _docCerti.splice(i,1); _docRenderChips() }
 function apriDocente(id){
@@ -4205,15 +4237,20 @@ function renderDocenti(){
   const fm=document.getElementById('doc-f-materia')?.value||''
   const fl=document.getElementById('doc-f-livello')?.value||''
   const fq=document.getElementById('doc-f-qualifica')?.value||''
+  const _matNomeR=m=>(typeof m==='string')?m:((m&&m.nome)||'')
   let list=docenti.slice()
-  if(fm) list=list.filter(d=>(d.materie||[]).includes(fm))
+  if(fm) list=list.filter(d=>(d.materie||[]).map(_matNomeR).includes(fm))
   if(fl) list=list.filter(d=>(d.livelli||[]).includes(fl))
   if(fq) list=list.filter(d=>(d.qualifica||'procacciatore')===fq)
-  if(q) list=list.filter(d=>((d.nome||'')+' '+(d.materie||[]).join(' ')+' '+(d.livelli||[]).join(' ')+' '+(d.email||'')).toLowerCase().includes(q))
+  if(q) list=list.filter(d=>((d.nome||'')+' '+(d.materie||[]).map(_matNomeR).join(' ')+' '+(d.livelli||[]).join(' ')+' '+(d.email||'')).toLowerCase().includes(q))
   if(!docenti.length){ box.innerHTML='<div class="empty" style="padding:3rem">Nessun docente. Premi "+ Nuovo docente" per iniziare.</div>'; return }
   if(!list.length){ box.innerHTML='<div class="empty" style="padding:2rem">Nessun docente trovato con questi filtri.</div>'; return }
   box.innerHTML=list.map(d=>{
-    const mat=(d.materie||[]).map(m=>'<span style="background:var(--surface2);border-radius:10px;padding:2px 8px;font-size:11px">'+escB(m)+'</span>').join(' ')
+    const mat=(d.materie||[]).map(m=>{
+      const nm=(typeof m==='string')?m:(m&&m.nome)||''
+      const lv=(m&&Array.isArray(m.livelli))?m.livelli.join(''):'EMS'
+      return '<span style="background:var(--surface2);border-radius:10px;padding:2px 8px;font-size:11px">'+escB(nm)+' <small style="opacity:.6">'+lv+'</small></span>'
+    }).join(' ')
     const liv=(d.livelli||[]).join(', ')
     const az=(d.pctDocente!=null&&isFinite(d.pctDocente))?(100-d.pctDocente):null
     const col=d.stato==='Attivo'?'#2a9d5c':(d.stato==='In pausa'?'#888':'#c0392b')
