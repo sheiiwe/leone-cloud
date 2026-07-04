@@ -6337,7 +6337,12 @@ function renderProposteDoc(){
     const data=(p.created_at||'').slice(0,10)
     const prod=Array.isArray(p.prodotti)?p.prodotti.map(x=>(x&&x.nome)||'').filter(Boolean).join(', '):''
     const stato=p.stato==='chiusa'?'<span class="badge bg">Chiusa</span>':(p.stato==='in_lavorazione'?'<span class="badge ba">In lavorazione</span>':'<span class="badge br">Nuova</span>')
-    const az=p.stato==='chiusa'?'':`<button class="btn btn-sm" onclick="cambiaStatoPropDoc('${p.id}','in_lavorazione')">In lavorazione</button><button class="btn btn-sm btn-p" onclick="cambiaStatoPropDoc('${p.id}','chiusa')">Chiudi</button>`
+    let az=''
+    const del=`<button class="btn btn-sm" onclick="cancellaPropDoc('${p.id}')" title="Cancella proposta" style="color:var(--red)">🗑️</button>`
+    if(p.stato==='chiusa'){ az=`<button class="btn btn-sm" onclick="cambiaStatoPropDoc('${p.id}','nuova')" title="Riapri come nuova">↻ Riapri</button>${del}` }
+    else if(p.stato==='in_lavorazione'){ az=`<button class="btn btn-sm btn-p" onclick="cambiaStatoPropDoc('${p.id}','chiusa')">Chiudi</button>${del}` }
+    else { az=`<button class="btn btn-sm" onclick="cambiaStatoPropDoc('${p.id}','in_lavorazione')">In lavorazione</button><button class="btn btn-sm btn-p" onclick="cambiaStatoPropDoc('${p.id}','chiusa')">Chiudi</button>${del}` }
+    az += `<button class="btn btn-sm" style="background:#a32d2d;color:#fff;border-color:#a32d2d" onclick="eliminaPropDoc('${p.id}')" title="Elimina proposta">🗑️ Elimina</button>`
     return `<tr><td style="color:var(--text2)">${data}</td><td><strong>${esc(p.docente_nome||'')}</strong><br><span style="font-size:11px;color:var(--text2)">${esc(p.docente_email||'')}</span></td><td><strong>${esc(((p.cliente_nome||'')+' '+(p.cliente_cognome||'')).trim())}</strong></td><td style="font-size:12px">${esc(p.cliente_email||'')}<br>${esc(p.cliente_telefono||'')}</td><td style="font-size:12px">${esc(prod)}</td><td>${stato}</td><td class="acts">${az}</td></tr>`
   }).join('')
 }
@@ -6345,6 +6350,13 @@ async function cambiaStatoPropDoc(id, stato){
   try{
     const r=await db.from('proposte_docenti').update({stato:stato}).eq('id',id); if(r.error) throw r.error
     toast('Stato aggiornato'); await _openProposteDoc(); await _refreshPropDocDot()
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+async function cancellaPropDoc(id){
+  if(!confirm('Cancellare definitivamente questa proposta?')) return
+  try{
+    const r=await db.from('proposte_docenti').delete().eq('id',id); if(r.error) throw r.error
+    toast('Proposta cancellata'); await _openProposteDoc(); await _refreshPropDocDot()
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
 async function _refreshPropDocDot(){
