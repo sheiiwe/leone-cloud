@@ -4225,6 +4225,7 @@ function renderStudenti(){
     return '<div class="card" style="margin-bottom:10px;cursor:pointer" ondblclick="apriStudente(\''+s._id+'\')" title="Doppio click per aprire la scheda"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
       '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(s.nome||'—')+' '+badge+contrBadge+'</div>'+
       (scuola?'<div style="font-size:12px;color:var(--text2);margin:3px 0">🎓 '+escB(scuola)+'</div>':'')+
+      ((s.contratto&&(s.contratto.inizio||s.contratto.fine))?('<div style="font-size:12px;color:var(--text2);margin:3px 0">📝 Contratto: '+(s.contratto.inizio?new Date(s.contratto.inizio+'T00:00:00').toLocaleDateString('it-IT'):'—')+' → '+(s.contratto.fine?new Date(s.contratto.fine+'T00:00:00').toLocaleDateString('it-IT'):'—')+((s.contratto.rinnovi&&s.contratto.rinnovi.length)?('  ·  🔄 '+s.contratto.rinnovi.length+' rinnov'+(s.contratto.rinnovi.length===1?'o':'i')):'')+'</div>'):'')+
       (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
       (dn?'<div style="font-size:11px;color:var(--text2);margin-top:5px">👨\u200d🏫 Docenti: '+escB(dn)+'</div>':'<div style="font-size:11px;color:#c0392b;margin-top:5px">Nessun docente assegnato</div>')+
       warnAut+
@@ -4436,6 +4437,7 @@ function renderDocenti(){
     return '<div class="card" style="margin-bottom:10px;cursor:pointer" ondblclick="apriDocente(\''+d._id+'\')"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
       '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(d.nome||'—')+' '+badge+' '+ql+contrBadge+'</div>'+
       '<div style="font-size:12px;color:var(--text2);margin:3px 0">'+(liv?('📚 '+escB(liv)):'')+(d.pctDocente!=null?('  ·  💶 docente '+d.pctDocente+'% / azienda '+az+'%'):'')+'</div>'+
+      ((d.contratto&&(d.contratto.inizio||d.contratto.fine))?('<div style="font-size:12px;color:var(--text2);margin:3px 0">📝 Contratto: '+(d.contratto.inizio?new Date(d.contratto.inizio+'T00:00:00').toLocaleDateString('it-IT'):'—')+' → '+(d.contratto.fine?new Date(d.contratto.fine+'T00:00:00').toLocaleDateString('it-IT'):'—')+((d.contratto.rinnovi&&d.contratto.rinnovi.length)?('  ·  🔄 '+d.contratto.rinnovi.length+' rinnov'+(d.contratto.rinnovi.length===1?'o':'i')):'')+'</div>'):'')+
       (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
       ((d.certificati||[]).length?'<div style="font-size:11px;color:var(--text2);margin-top:5px">📄 '+(d.certificati||[]).map(escB).join(', ')+'</div>':'')+
       '<div style="font-size:11px;color:var(--text3);margin-top:5px">'+escB(d.email||'')+(d.tel?(' · '+escB(d.tel)):'')+'</div>'+
