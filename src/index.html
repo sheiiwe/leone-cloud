@@ -4377,12 +4377,13 @@ async function salvaDocente(){
   const livelli=[...document.querySelectorAll('.doc-liv')].filter(c=>c.checked).map(c=>c.value)
   const g=k=>{ const e=document.getElementById(k); return e?e.value.trim():'' }
   const pct=parseFloat(document.getElementById('doc-pct').value)
+  const id=document.getElementById('doc-id').value
+  const d0=id?docenti.find(x=>x._id===id):null
   const contInizio=g('doc-contr-inizio')
-  const existing = d ? (d.contratto||{}) : {}
+  const existing = d0 ? (d0.contratto||{}) : {}
   const rinnovi = Array.isArray(existing.rinnovi) ? existing.rinnovi : []
   const contFine = _calcFineContratto(contInizio, rinnovi)
   const obj={ nome, nascita:g('doc-nascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), prov:(g('doc-prov')||'').toUpperCase(), consensoMkt:g('doc-consenso-mkt'), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), qualifica:document.getElementById('doc-qualifica').value, pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note'), contratto:{ inizio:contInizio, fine:contFine, rinnovi:rinnovi } }
-  const id=document.getElementById('doc-id').value
   try{
     if(id){ const r=await db.from('docenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
     else { const r=await db.from('docenti').insert({data:obj}); if(r.error) throw r.error }
