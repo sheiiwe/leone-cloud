@@ -2097,6 +2097,8 @@ tbody tr:hover td{background:var(--surface2)}
       <div id="doc-cert-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
     </div>
     <div class="fg"><label>Note</label><textarea id="doc-note" rows="2" placeholder="Note interne"></textarea></div>
+    <div class="msec">Studenti seguiti</div>
+    <div id="doc-studenti-list" style="font-size:13px"><div style="color:var(--text3);padding:6px 0">Nessuno studente collegato.</div></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeM('m-docente')">Annulla</button><button class="btn btn-p" onclick="salvaDocente()">Salva docente</button></div>
   </div>
 </div>
@@ -3999,15 +4001,19 @@ function _docentiOptions(sel){ return '<option value="">\u2014 Scegli docente \u
 function _stuRenderDocenti(){
   const box=document.getElementById('stu-docenti-list'); if(!box) return
   if(!_stuDocenti.length){ box.innerHTML='<div style="font-size:12px;color:var(--text3);padding:4px 0">Nessun docente. Premi \u0022+ Aggiungi docente\u0022.</div>'; return }
-  box.innerHTML=_stuDocenti.map((d,i)=>'<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">'+
-    '<select onchange="_stuSetDocente('+i+',this.value)" style="flex:2">'+_docentiOptions(d.docenteId)+'</select>'+
-    '<input type="text" placeholder="Materia (es. Matematica)" value="'+escB(d.materia||'')+'" oninput="_stuSetMateria('+i+',this.value)" style="flex:2">'+
+  box.innerHTML=_stuDocenti.map((d,i)=>'<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">'+
+    '<select onchange="_stuSetDocente('+i+',this.value)" style="flex:2;min-width:140px">'+_docentiOptions(d.docenteId)+'</select>'+
+    '<input type="text" list="dl-materie" placeholder="Materia" value="'+escB(d.materia||'')+'" oninput="_stuSetMateria('+i+',this.value)" style="flex:2;min-width:120px">'+
+    '<input type="number" min="0" step="0.5" placeholder="Ore tot." value="'+(d.oreTot!=null?d.oreTot:'')+'" oninput="_stuSetOreTot('+i+',this.value)" style="flex:1;min-width:80px" title="Ore totali pattuite">'+
+    '<input type="number" min="0" step="0.5" placeholder="Svolte" value="'+(d.oreFatte!=null?d.oreFatte:'')+'" oninput="_stuSetOreFatte('+i+',this.value)" style="flex:1;min-width:80px" title="Ore gia\u0027 svolte">'+
     '<button type="button" class="btn btn-sm btn-r" onclick="_stuDelDocente('+i+')" title="Rimuovi">\u2715</button>'+
     '</div>').join('')
 }
 function _stuSetDocente(i,v){ if(_stuDocenti[i]) _stuDocenti[i].docenteId=v }
 function _stuSetMateria(i,v){ if(_stuDocenti[i]) _stuDocenti[i].materia=v }
-function _stuAddDocente(){ _stuDocenti.push({docenteId:'',materia:''}); _stuRenderDocenti() }
+function _stuSetOreTot(i,v){ if(_stuDocenti[i]) _stuDocenti[i].oreTot=(v===''?null:Number(v)) }
+function _stuSetOreFatte(i,v){ if(_stuDocenti[i]) _stuDocenti[i].oreFatte=(v===''?null:Number(v)) }
+function _stuAddDocente(){ _stuDocenti.push({docenteId:'',materia:'',oreTot:null,oreFatte:null}); _stuRenderDocenti() }
 function _stuDelDocente(i){ _stuDocenti.splice(i,1); _stuRenderDocenti() }
 function apriStudente(id){
   _stuMaterie=[]
@@ -4095,6 +4101,10 @@ function renderStudenti(){
 let _docMaterie=[], _docCerti=[]
 const _MATERIE_SUGG=['Italiano','Matematica','Inglese','Spagnolo','Francese','Tedesco','Storia','Geografia','Scienze','Fisica','Chimica','Biologia','Latino','Greco','Filosofia','Informatica','Economia','Diritto','Disegno','Musica']
 function _docPctEcho(){ const v=parseFloat(document.getElementById('doc-pct').value); const az=document.getElementById('doc-pct-az'); if(az) az.value=(isFinite(v)?(Math.max(0,Math.min(100,100-v))+'%'):'') }
+async function _caricaMaterieDB(){
+  try{ const r=await db.from('materie').select('nome').order('nome'); if(r.data&&r.data.length){ const set=new Set(_MATERIE_SUGG.concat(r.data.map(x=>x.nome))); _MATERIE_SUGG.length=0; set.forEach(m=>_MATERIE_SUGG.push(m)); _docFillMaterieSugg() } }catch(e){}
+}
+setTimeout(_caricaMaterieDB, 1500)
 function _docFillMaterieSugg(){
   const dl=document.getElementById('dl-materie'); if(dl){ const used=[...new Set([..._MATERIE_SUGG, ...docenti.flatMap(d=>d.materie||[])])].sort((a,b)=>a.localeCompare(b,'it')); dl.innerHTML=used.map(m=>'<option value="'+escB(m)+'"></option>').join('') }
   const sel=document.getElementById('doc-f-materia'); if(sel){ const cur=sel.value; const all=[...new Set(docenti.flatMap(d=>d.materie||[]))].sort((a,b)=>a.localeCompare(b,'it')); sel.innerHTML='<option value="">Tutte le materie</option>'+all.map(m=>'<option'+(m===cur?' selected':'')+'>'+escB(m)+'</option>').join('') }
@@ -4125,7 +4135,20 @@ function apriDocente(id){
   _docMaterie=(d&&Array.isArray(d.materie))?[...d.materie]:[]
   _docCerti=(d&&Array.isArray(d.certificati))?[...d.certificati]:[]
   _docFillMaterieSugg(); _docRenderChips()
+  _docRenderStudenti(d?d._id:null)
   openM('m-docente')
+}
+function _docRenderStudenti(docId){
+  const box=document.getElementById('doc-studenti-list'); if(!box) return
+  if(!docId){ box.innerHTML='<div style="color:var(--text3);padding:6px 0">Salva prima il docente per vedere gli studenti collegati.</div>'; return }
+  const legami=[]
+  ;(typeof studenti!=='undefined'?studenti:[]).forEach(s=>{
+    ;(s.docenti||[]).forEach(x=>{ if(x&&x.docenteId===docId){ legami.push({stu:s, materia:x.materia||'', oreTot:x.oreTot||0, oreFatte:x.oreFatte||0}) } })
+  })
+  if(!legami.length){ box.innerHTML='<div style="color:var(--text3);padding:6px 0">Nessuno studente collegato a questo docente.</div>'; return }
+  box.innerHTML='<table class="tbl" style="width:100%;font-size:13px"><thead><tr><th>Studente</th><th>Materia</th><th>Ore tot.</th><th>Svolte</th><th>Residue</th></tr></thead><tbody>'+
+    legami.map(l=>{ const res=Math.max(0,(Number(l.oreTot)||0)-(Number(l.oreFatte)||0)); return '<tr><td>'+escB(l.stu.nome||'')+'</td><td>'+escB(l.materia)+'</td><td>'+(l.oreTot||'\u2014')+'</td><td>'+(l.oreFatte||'\u2014')+'</td><td>'+(res||'\u2014')+'</td></tr>' }).join('')+
+    '</tbody></table>'
 }
 async function salvaDocente(){
   const nome=(document.getElementById('doc-nome').value||'').trim()
