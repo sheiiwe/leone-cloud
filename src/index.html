@@ -2097,6 +2097,20 @@ tbody tr:hover td{background:var(--surface2)}
       <div id="doc-cert-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
     </div>
     <div class="fg"><label>Note</label><textarea id="doc-note" rows="2" placeholder="Note interne"></textarea></div>
+    <div class="msec">Contratto <span style="font-weight:400;color:var(--text2)">(durata sempre 12 mesi)</span></div>
+    <div class="fr">
+      <div class="fg"><label>Data inizio contratto</label><input id="doc-contr-inizio" type="date" onchange="_docCalcFine()"></div>
+      <div class="fg"><label>Data fine <span style="font-size:10px;color:var(--text3)">(automatica: inizio + 12 mesi)</span></label><input id="doc-contr-fine" type="date" readonly style="background:var(--surface2);opacity:.85"></div>
+    </div>
+    <div id="doc-contr-alert" style="display:none;padding:10px 12px;border-radius:8px;margin-top:8px;font-size:13px"></div>
+    <div style="margin-top:10px">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">📋 Storico rinnovi</div>
+      <div id="doc-rinnovi-list" style="font-size:13px"></div>
+      <div style="margin-top:6px">
+        <label class="btn btn-sm" style="cursor:pointer">📤 Carica rinnovo manuale<input type="file" id="doc-rinnovo-file" accept="application/pdf" style="display:none" onchange="caricaRinnovoDoc(this)"></label>
+        <span style="font-size:11px;color:var(--text3);margin-left:6px">Oppure il rinnovo si registra automaticamente quando ricevi una firma dalla sezione Contratti e Firme.</span>
+      </div>
+    </div>
     <div class="msec">Studenti seguiti</div>
     <div id="doc-studenti-list" style="font-size:13px"><div style="color:var(--text3);padding:6px 0">Nessuno studente collegato.</div></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeM('m-docente')">Annulla</button><button class="btn btn-p" onclick="salvaDocente()">Salva docente</button></div>
@@ -2144,6 +2158,20 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="fr"><div class="fg"><label>Stato</label><select id="stu-stato"><option>Attivo</option><option>Inattivo</option></select></div><div class="fg"></div></div>
     <div class="fg"><label>Note</label><textarea id="stu-note" rows="2" placeholder="Note interne"></textarea></div>
+    <div class="msec">Contratto <span style="font-weight:400;color:var(--text2)">(durata sempre 12 mesi)</span></div>
+    <div class="fr">
+      <div class="fg"><label>Data inizio contratto</label><input id="stu-contr-inizio" type="date" onchange="_stuCalcFine()"></div>
+      <div class="fg"><label>Data fine <span style="font-size:10px;color:var(--text3)">(automatica)</span></label><input id="stu-contr-fine" type="date" readonly style="background:var(--surface2);opacity:.85"></div>
+    </div>
+    <div id="stu-contr-alert" style="display:none;padding:10px 12px;border-radius:8px;margin-top:8px;font-size:13px"></div>
+    <div style="margin-top:10px">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">📋 Storico rinnovi</div>
+      <div id="stu-rinnovi-list" style="font-size:13px"></div>
+      <div style="margin-top:6px">
+        <label class="btn btn-sm" style="cursor:pointer">📤 Carica rinnovo manuale<input type="file" id="stu-rinnovo-file" accept="application/pdf" style="display:none" onchange="caricaRinnovoStu(this)"></label>
+        <span style="font-size:11px;color:var(--text3);margin-left:6px">Oppure automatico via Contratti e Firme.</span>
+      </div>
+    </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeM('m-studente')">Annulla</button><button class="btn btn-p" onclick="salvaStudente()">Salva studente</button></div>
   </div>
 </div>
@@ -4083,14 +4111,73 @@ function apriStudente(id){
   _stuMaterie=(s&&Array.isArray(s.materie))?[...s.materie]:[]
   _stuRenderChips()
   _stuCheckMinore()
+  // Contratto studente
+  const sc=(s&&s.contratto)||{}
+  set('stu-contr-inizio', sc.inizio||'')
+  set('stu-contr-fine', sc.fine||_calcFineContratto(sc.inizio, sc.rinnovi))
+  _stuContrAlert(sc)
+  _stuRenderRinnovi(sc.rinnovi||[])
   openM('m-studente')
+}
+function _stuCalcFine(){
+  const inizio=document.getElementById('stu-contr-inizio').value
+  const id=document.getElementById('stu-id').value
+  const s=id?studenti.find(x=>x._id===id):null
+  const rinnovi=(s&&s.contratto&&s.contratto.rinnovi)||[]
+  document.getElementById('stu-contr-fine').value = _calcFineContratto(inizio, rinnovi)
+  _stuContrAlert({ inizio, fine:document.getElementById('stu-contr-fine').value, rinnovi })
+}
+function _stuContrAlert(c){
+  const box=document.getElementById('stu-contr-alert'); if(!box) return
+  if(!c||!c.fine){ box.style.display='none'; return }
+  const oggi=new Date(); oggi.setHours(0,0,0,0)
+  const fine=new Date(c.fine+'T00:00:00')
+  const gg=Math.floor((fine.getTime()-oggi.getTime())/86400000)
+  if(gg<0){ box.style.display='block'; box.style.background='#fee'; box.style.color='#c0392b'; box.style.border='1px solid #f5c6cb'; box.innerHTML='⚠️ <strong>Contratto scaduto</strong> il '+fine.toLocaleDateString('it-IT')+' ('+Math.abs(gg)+' giorni fa). Rinnovare o disattivare.' }
+  else if(gg<=30){ box.style.display='block'; box.style.background='#fff3cd'; box.style.color='#856404'; box.style.border='1px solid #ffeaa7'; box.innerHTML='⚠️ <strong>Contratto in scadenza</strong>: mancano '+gg+' giorni ('+fine.toLocaleDateString('it-IT')+').' }
+  else box.style.display='none'
+}
+function _stuRenderRinnovi(rinnovi){
+  const box=document.getElementById('stu-rinnovi-list'); if(!box) return
+  if(!rinnovi||!rinnovi.length){ box.innerHTML='<div style="color:var(--text3);font-size:12px;padding:4px 0">Nessun rinnovo ancora. Il contratto scade tra 12 mesi dalla data di inizio.</div>'; return }
+  box.innerHTML=rinnovi.map((r,i)=>{
+    const dt=r.data||'—'
+    const link=r.pdf_path?('<a href="'+SUPA_URL+'/storage/v1/object/public/contratti/'+r.pdf_path+'" target="_blank" style="color:var(--blu);text-decoration:none">📄 PDF</a>'):''
+    const fonte = r.fonte==='auto' ? '<span style="color:var(--green);font-size:11px">🔄 Automatico</span>' : '<span style="color:var(--text2);font-size:11px">📤 Manuale</span>'
+    return '<div style="padding:6px 10px;background:var(--surface2);border-radius:6px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:8px"><div>Rinnovo #'+(i+1)+' · '+escB(dt)+' '+fonte+'</div><div style="display:flex;gap:6px;align-items:center">'+link+'</div></div>'
+  }).join('')
+}
+async function caricaRinnovoStu(input){
+  const f=input.files&&input.files[0]; if(!f) return
+  const id=document.getElementById('stu-id').value
+  if(!id){ alert('Salva prima lo studente, poi carica il rinnovo.'); input.value=''; return }
+  const s=studenti.find(x=>x._id===id); if(!s) return
+  try{
+    const ext=(f.name.split('.').pop()||'pdf').toLowerCase()
+    const path='rinnovi/stu_'+id+'_'+Date.now()+'.'+ext
+    const up=await db.storage.from('contratti').upload(path, f, {upsert:false, contentType:f.type||'application/pdf'})
+    if(up.error) throw up.error
+    const contr=Object.assign({}, s.contratto||{})
+    contr.rinnovi=Array.isArray(contr.rinnovi)?contr.rinnovi:[]
+    contr.rinnovi.push({ data:new Date().toISOString().slice(0,10), pdf_path:path, fonte:'manuale' })
+    contr.fine=_calcFineContratto(contr.inizio, contr.rinnovi)
+    const newData=Object.assign({}, s); delete newData._id; newData.contratto=contr
+    const r=await db.from('studenti').update({data:newData}).eq('id',id); if(r.error) throw r.error
+    toast('✅ Rinnovo caricato')
+    await caricaStudenti(); apriStudente(id)
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+  input.value=''
 }
 async function salvaStudente(){
   const nome=(document.getElementById('stu-nome').value||'').trim()
   if(!nome) return alert('Inserisci cognome e nome.')
   const g=k=>{ const e=document.getElementById(k); return e?e.value.trim():'' }
-  const obj={ nome, nascita:g('stu-nascita'), tel:g('stu-tel'), email:g('stu-email'), indirizzo:g('stu-indirizzo'), citta:g('stu-citta'), cap:g('stu-cap'), genitore:g('stu-genitore'), genitore_cf:g('stu-genitore-cf').toUpperCase(), genitore_email:g('stu-genitore-email'), tel_genitore:g('stu-tel-genitore'), genitore_doctipo:document.getElementById('stu-genitore-doctipo').value, genitore_docnum:g('stu-genitore-docnum'), autorizzazione:document.getElementById('stu-autorizz').checked, genitore_doc:_stuGenitoreDoc||null, livello:document.getElementById('stu-livello').value, classe:g('stu-classe'), istituto:g('stu-istituto'), materie:_stuMaterie, docenti:_stuDocenti.filter(d=>d&&d.docenteId), docenteId:((_stuDocenti.find(d=>d&&d.docenteId)||{}).docenteId)||'', stato:document.getElementById('stu-stato').value, note:g('stu-note') }
   const id=document.getElementById('stu-id').value
+  const s0=id?studenti.find(x=>x._id===id):null
+  const stuContrInizio=g('stu-contr-inizio')
+  const rinnoviEs=(s0&&s0.contratto&&s0.contratto.rinnovi)||[]
+  const stuContrFine=_calcFineContratto(stuContrInizio, rinnoviEs)
+  const obj={ nome, nascita:g('stu-nascita'), tel:g('stu-tel'), email:g('stu-email'), indirizzo:g('stu-indirizzo'), citta:g('stu-citta'), cap:g('stu-cap'), genitore:g('stu-genitore'), genitore_cf:g('stu-genitore-cf').toUpperCase(), genitore_email:g('stu-genitore-email'), tel_genitore:g('stu-tel-genitore'), genitore_doctipo:document.getElementById('stu-genitore-doctipo').value, genitore_docnum:g('stu-genitore-docnum'), autorizzazione:document.getElementById('stu-autorizz').checked, genitore_doc:_stuGenitoreDoc||null, livello:document.getElementById('stu-livello').value, classe:g('stu-classe'), istituto:g('stu-istituto'), materie:_stuMaterie, docenti:_stuDocenti.filter(d=>d&&d.docenteId), docenteId:((_stuDocenti.find(d=>d&&d.docenteId)||{}).docenteId)||'', stato:document.getElementById('stu-stato').value, note:g('stu-note'), contratto:{ inizio:stuContrInizio, fine:stuContrFine, rinnovi:rinnoviEs } }
   try{
     if(id){ const r=await db.from('studenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
     else { const r=await db.from('studenti').insert({data:obj}); if(r.error) throw r.error }
@@ -4123,12 +4210,20 @@ function renderStudenti(){
     const dn=_nomiDocenti(s)
     const col=s.stato==='Attivo'?'#2a9d5c':'#888'
     const badge='<span style="background:'+col+';color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">'+escB(s.stato||'Attivo')+'</span>'
+    let contrBadge=''
+    if(s.contratto&&s.contratto.fine){
+      const oggi0=new Date(); oggi0.setHours(0,0,0,0)
+      const fine0=new Date(s.contratto.fine+'T00:00:00')
+      const gg=Math.floor((fine0.getTime()-oggi0.getTime())/86400000)
+      if(gg<0){ contrBadge=' <span title="Contratto scaduto" style="background:#c0392b;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">⚠️ Contratto scaduto</span>' }
+      else if(gg<=30){ contrBadge=' <span title="Contratto in scadenza" style="background:#e67e22;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">⏳ '+gg+'gg</span>' }
+    }
     const scuola=[s.livello,s.classe,s.istituto].filter(Boolean).join(' · ')
     const minore=(s.livello==='Elementari'||s.livello==='Medie')
     const warnAut=(minore && !s.autorizzazione)?'<div style="font-size:11px;color:#c0392b;margin-top:4px">⚠ Manca l\u0027autorizzazione del genitore/tutore</div>':''
     const docG=(s.genitore_doc&&s.genitore_doc.url)?' · <a href="'+escB(s.genitore_doc.url)+'" target="_blank">documento genitore</a>':''
     return '<div class="card" style="margin-bottom:10px;cursor:pointer" ondblclick="apriStudente(\''+s._id+'\')" title="Doppio click per aprire la scheda"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
-      '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(s.nome||'—')+' '+badge+'</div>'+
+      '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(s.nome||'—')+' '+badge+contrBadge+'</div>'+
       (scuola?'<div style="font-size:12px;color:var(--text2);margin:3px 0">🎓 '+escB(scuola)+'</div>':'')+
       (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
       (dn?'<div style="font-size:11px;color:var(--text2);margin-top:5px">👨\u200d🏫 Docenti: '+escB(dn)+'</div>':'<div style="font-size:11px;color:#c0392b;margin-top:5px">Nessun docente assegnato</div>')+
@@ -4193,7 +4288,76 @@ function apriDocente(id){
   _docCerti=(d&&Array.isArray(d.certificati))?[...d.certificati]:[]
   _docFillMaterieSugg(); _docRenderChips()
   _docRenderStudenti(d?d._id:null)
+  // Contratto (semplificato: solo data inizio, fine calcolata, storico rinnovi)
+  const c=(d&&d.contratto)||{}
+  set('doc-contr-inizio', c.inizio||'')
+  set('doc-contr-fine', c.fine||_calcFineContratto(c.inizio, c.rinnovi))
+  _docContrAlert(c)
+  _docRenderRinnovi(c.rinnovi||[])
   openM('m-docente')
+}
+function _calcFineContratto(inizio, rinnovi){
+  if(!inizio) return ''
+  const base=new Date(inizio+'T00:00:00'); if(isNaN(base.getTime())) return ''
+  // fine = inizio + 12 mesi + (1 anno per ogni rinnovo)
+  const nRinnovi = Array.isArray(rinnovi) ? rinnovi.length : 0
+  base.setFullYear(base.getFullYear() + 1 + nRinnovi)
+  return base.toISOString().slice(0,10)
+}
+function _docCalcFine(){
+  const inizio=document.getElementById('doc-contr-inizio').value
+  const id=document.getElementById('doc-id').value
+  const d=id?docenti.find(x=>x._id===id):null
+  const rinnovi=(d&&d.contratto&&d.contratto.rinnovi)||[]
+  document.getElementById('doc-contr-fine').value = _calcFineContratto(inizio, rinnovi)
+  _docContrAlert({ inizio, fine:document.getElementById('doc-contr-fine').value, rinnovi })
+}
+function _docRenderRinnovi(rinnovi){
+  const box=document.getElementById('doc-rinnovi-list'); if(!box) return
+  if(!rinnovi||!rinnovi.length){ box.innerHTML='<div style="color:var(--text3);font-size:12px;padding:4px 0">Nessun rinnovo ancora. Il contratto scade tra 12 mesi dalla data di inizio.</div>'; return }
+  box.innerHTML=rinnovi.map((r,i)=>{
+    const dt=r.data||'—'
+    const link=r.pdf_path?('<a href="'+SUPA_URL+'/storage/v1/object/public/contratti/'+r.pdf_path+'" target="_blank" style="color:var(--blu);text-decoration:none">📄 PDF</a>'):''
+    const fonte = r.fonte==='auto' ? '<span style="color:var(--green);font-size:11px">🔄 Automatico</span>' : '<span style="color:var(--text2);font-size:11px">📤 Manuale</span>'
+    return '<div style="padding:6px 10px;background:var(--surface2);border-radius:6px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:8px"><div>Rinnovo #'+(i+1)+' · '+escB(dt)+' '+fonte+'</div><div style="display:flex;gap:6px;align-items:center">'+link+'</div></div>'
+  }).join('')
+}
+async function caricaRinnovoDoc(input){
+  const f=input.files&&input.files[0]; if(!f) return
+  const id=document.getElementById('doc-id').value
+  if(!id){ alert('Salva prima il docente, poi carica il rinnovo.'); input.value=''; return }
+  const d=docenti.find(x=>x._id===id); if(!d) return
+  try{
+    const ext=(f.name.split('.').pop()||'pdf').toLowerCase()
+    const path='rinnovi/doc_'+id+'_'+Date.now()+'.'+ext
+    const up=await db.storage.from('contratti').upload(path, f, {upsert:false, contentType:f.type||'application/pdf'})
+    if(up.error) throw up.error
+    const contr=Object.assign({}, d.contratto||{})
+    contr.rinnovi=Array.isArray(contr.rinnovi)?contr.rinnovi:[]
+    contr.rinnovi.push({ data:new Date().toISOString().slice(0,10), pdf_path:path, fonte:'manuale' })
+    contr.fine=_calcFineContratto(contr.inizio, contr.rinnovi)
+    const newData=Object.assign({}, d); delete newData._id; newData.contratto=contr
+    const r=await db.from('docenti').update({data:newData}).eq('id',id); if(r.error) throw r.error
+    toast('✅ Rinnovo caricato')
+    await caricaDocenti(); apriDocente(id)
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+  input.value=''
+}
+function _docContrAlert(c){
+  const box=document.getElementById('doc-contr-alert'); if(!box) return
+  if(!c||!c.fine){ box.style.display='none'; return }
+  const oggi=new Date(); oggi.setHours(0,0,0,0)
+  const fine=new Date(c.fine+'T00:00:00')
+  const giorniMancanti=Math.floor((fine.getTime()-oggi.getTime())/86400000)
+  if(giorniMancanti<0){
+    box.style.display='block'; box.style.background='#fee'; box.style.color='#c0392b'; box.style.border='1px solid #f5c6cb'
+    box.innerHTML='⚠️ <strong>Contratto scaduto</strong> il '+fine.toLocaleDateString('it-IT')+' ('+Math.abs(giorniMancanti)+' giorni fa). Rinnovare o disattivare il docente.'
+  } else if(giorniMancanti<=30){
+    box.style.display='block'; box.style.background='#fff3cd'; box.style.color='#856404'; box.style.border='1px solid #ffeaa7'
+    box.innerHTML='⚠️ <strong>Contratto in scadenza</strong>: mancano '+giorniMancanti+' giorni ('+fine.toLocaleDateString('it-IT')+').'
+  } else {
+    box.style.display='none'
+  }
 }
 function _docRenderStudenti(docId){
   const box=document.getElementById('doc-studenti-list'); if(!box) return
@@ -4213,7 +4377,11 @@ async function salvaDocente(){
   const livelli=[...document.querySelectorAll('.doc-liv')].filter(c=>c.checked).map(c=>c.value)
   const g=k=>{ const e=document.getElementById(k); return e?e.value.trim():'' }
   const pct=parseFloat(document.getElementById('doc-pct').value)
-  const obj={ nome, nascita:g('doc-nascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), prov:(g('doc-prov')||'').toUpperCase(), consensoMkt:g('doc-consenso-mkt'), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), qualifica:document.getElementById('doc-qualifica').value, pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note') }
+  const contInizio=g('doc-contr-inizio')
+  const existing = d ? (d.contratto||{}) : {}
+  const rinnovi = Array.isArray(existing.rinnovi) ? existing.rinnovi : []
+  const contFine = _calcFineContratto(contInizio, rinnovi)
+  const obj={ nome, nascita:g('doc-nascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), prov:(g('doc-prov')||'').toUpperCase(), consensoMkt:g('doc-consenso-mkt'), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), qualifica:document.getElementById('doc-qualifica').value, pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note'), contratto:{ inizio:contInizio, fine:contFine, rinnovi:rinnovi } }
   const id=document.getElementById('doc-id').value
   try{
     if(id){ const r=await db.from('docenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
@@ -4256,8 +4424,16 @@ function renderDocenti(){
     const col=d.stato==='Attivo'?'#2a9d5c':(d.stato==='In pausa'?'#888':'#c0392b')
     const badge='<span onclick="apriPopupStatoDoc(\''+d._id+'\',event)" title="Cambia stato" style="cursor:pointer;background:'+col+';color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">'+escB(d.stato||'Attivo')+'</span>'
     const ql=(d.qualifica==='assunto')?'<span style="background:#3a5a8c;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">Assunto</span>':'<span style="background:#7a5c2e;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">Autonomo</span>'
+    let contrBadge=''
+    if(d.contratto&&d.contratto.fine){
+      const oggi0=new Date(); oggi0.setHours(0,0,0,0)
+      const fine0=new Date(d.contratto.fine+'T00:00:00')
+      const gg=Math.floor((fine0.getTime()-oggi0.getTime())/86400000)
+      if(gg<0){ contrBadge=' <span title="Contratto scaduto" style="background:#c0392b;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">⚠️ Contratto scaduto</span>' }
+      else if(gg<=30){ contrBadge=' <span title="Contratto in scadenza" style="background:#e67e22;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">⏳ '+gg+'gg</span>' }
+    }
     return '<div class="card" style="margin-bottom:10px;cursor:pointer" ondblclick="apriDocente(\''+d._id+'\')"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
-      '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(d.nome||'—')+' '+badge+' '+ql+'</div>'+
+      '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(d.nome||'—')+' '+badge+' '+ql+contrBadge+'</div>'+
       '<div style="font-size:12px;color:var(--text2);margin:3px 0">'+(liv?('📚 '+escB(liv)):'')+(d.pctDocente!=null?('  ·  💶 docente '+d.pctDocente+'% / azienda '+az+'%'):'')+'</div>'+
       (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
       ((d.certificati||[]).length?'<div style="font-size:11px;color:var(--text2);margin-top:5px">📄 '+(d.certificati||[]).map(escB).join(', ')+'</div>':'')+
