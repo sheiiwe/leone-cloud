@@ -2492,6 +2492,9 @@ tbody tr:hover td{background:var(--surface2)}
       <label style="display:flex;align-items:center;gap:6px;font-weight:500"><input type="checkbox" id="pp-area-studenti"> Studenti</label>
     </div>
     <div class="fr"><div class="fg"><label>Stato</label><select id="pp-attivo"><option value="1">Attivo (vendibile)</option><option value="0">Disattivato</option></select></div></div>
+    <div class="fg"><label>Docenti abilitati <span style="font-size:10px;color:var(--text3)">(chi può insegnare/vendere questo corso — la provvigione va a chi vende)</span></label>
+      <div id="pp-docenti-list" style="max-height:180px;overflow:auto;border:0.5px solid var(--border);border-radius:8px;padding:8px;background:var(--surface)"></div>
+    </div>
     <div class="mact"><button class="btn" onclick="closeM('m-prodpag')">Annulla</button><button class="btn btn-p" onclick="salvaProdPag()">💾 Salva prodotto</button></div>
   </div>
 </div>
@@ -3733,7 +3736,21 @@ function apriProdPag(id){
     document.getElementById('pp-area-studenti').checked=false
     document.getElementById('pp-attivo').value='1'
   }
-  _ppPreview(); openM('m-prodpag')
+  _ppPreview(); _ppRenderDocenti(id); openM('m-prodpag')
+}
+async function _ppRenderDocenti(prodottoId){
+  const box=document.getElementById('pp-docenti-list'); if(!box) return
+  const lista=(typeof docenti!=='undefined'?docenti:[]).filter(d=>d.stato==='Attivo'||!d.stato)
+  if(!lista.length){ box.innerHTML='<div style="color:var(--text3);font-size:12px">Nessun docente attivo.</div>'; return }
+  let abilitati=new Set()
+  if(prodottoId){
+    try{ const r=await db.from('corsi_docenti').select('docente_id').eq('prodotto_id',prodottoId); (r.data||[]).forEach(x=>abilitati.add(String(x.docente_id))) }catch(e){}
+  }
+  box.innerHTML=lista.map(d=>{
+    const checked=abilitati.has(String(d._id))?'checked':''
+    const materie=(Array.isArray(d.materie)&&d.materie.length)?(' <span style="color:var(--text3);font-size:11px">('+escB(d.materie.slice(0,3).join(', '))+(d.materie.length>3?'…':'')+')</span>'):''
+    return '<label style="display:flex;align-items:center;gap:8px;padding:4px 2px;font-size:13px;cursor:pointer"><input type="checkbox" class="pp-doc-chk" data-id="'+d._id+'" '+checked+'> '+escB(d.nome||'?')+materie+'</label>'
+  }).join('')
 }
 async function salvaProdPag(){
   const nome=(document.getElementById('pp-nome').value||'').trim()
@@ -3748,8 +3765,16 @@ async function salvaProdPag(){
   const rec={ nome:nome, descrizione:(document.getElementById('pp-desc').value||'').trim(), prezzo:prezzo, provvigione_pct:Number(document.getElementById('pp-prov').value||0), provvigione_fissa:(document.getElementById('pp-prov-fissa').value!==''?Number(document.getElementById('pp-prov-fissa').value):null), aree:aree, attivo:document.getElementById('pp-attivo').value==='1' }
   const id=document.getElementById('pp-id').value
   try{
+    let prodId=id
     if(id){ const r=await db.from('prodotti_pagamento').update(rec).eq('id',id); if(r.error) throw r.error }
-    else { const r=await db.from('prodotti_pagamento').insert(rec); if(r.error) throw r.error }
+    else { const r=await db.from('prodotti_pagamento').insert(rec).select().single(); if(r.error) throw r.error; prodId=r.data.id }
+    // salvo docenti abilitati
+    try{
+      const chk=[...document.querySelectorAll('.pp-doc-chk')]
+      const scelti=chk.filter(c=>c.checked).map(c=>c.dataset.id)
+      await db.from('corsi_docenti').delete().eq('prodotto_id',prodId)
+      if(scelti.length){ await db.from('corsi_docenti').insert(scelti.map(docId=>({prodotto_id:prodId, docente_id:docId}))) }
+    }catch(e){ console.warn('corsi_docenti:', e) }
     closeM('m-prodpag'); toast('Prodotto salvato'); caricaProdottiPag()
   }catch(e){ console.error('salvaProdPag',e); toast('Errore salvataggio: '+(e.message||e)) }
 }
