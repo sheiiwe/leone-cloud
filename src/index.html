@@ -817,6 +817,7 @@ tbody tr:hover td{background:var(--surface2)}
       <input type="text" id="inc-search" placeholder="🔍 Cerca (prodotto, venditore, cliente...)" oninput="renderIncassi()" style="flex:1;min-width:200px;padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
       <select id="inc-f-stato" onchange="renderIncassi()" style="padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
         <option value="">Tutti gli stati</option>
+        <option value="attesa_contanti">💵 Da confermare</option>
         <option value="paid">Pagati</option>
         <option value="pending">In attesa</option>
         <option value="failed">Falliti</option>
@@ -830,8 +831,8 @@ tbody tr:hover td{background:var(--surface2)}
       </select>
     </div>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>Data</th><th>Prodotto</th><th>Importo</th><th>Venditore</th><th>Cliente</th><th>Area</th><th>Stato</th></tr></thead>
-      <tbody id="tbl-incassi"><tr><td colspan="7" style="color:var(--text2);padding:14px">Caricamento...</td></tr></tbody>
+      <thead><tr><th>Data</th><th>Prodotto</th><th>Importo</th><th>Venditore</th><th>Cliente</th><th>Area</th><th>Stato</th><th>Azioni</th></tr></thead>
+      <tbody id="tbl-incassi"><tr><td colspan="8" style="color:var(--text2);padding:14px">Caricamento...</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -2529,10 +2530,13 @@ tbody tr:hover td{background:var(--surface2)}
 
 <div class="modal-overlay" id="m-contanti">
   <div class="modal" style="max-width:560px;width:95vw">
-    <h3>💵 Registra incasso in contanti</h3>
-    <div style="color:var(--text2);font-size:12.5px;margin:-4px 0 12px">Registra una vendita gia&#39; pagata in contanti. Parte l&#39;email promemoria come per la carta.</div>
+    <h3>💵 Registra incasso (contanti / bonifico)</h3>
+    <div style="color:var(--text2);font-size:12.5px;margin:-4px 0 12px">Registra una vendita gia&#39; incassata. Risulta subito PAGATA e parte l&#39;email di conferma.</div>
     <div class="fr">
+      <div class="fg"><label>Metodo</label><select id="cont-metodo"><option value="contanti">💵 Contanti</option><option value="bonifico">🏦 Bonifico</option></select></div>
       <div class="fg"><label>Area</label><select id="cont-area" onchange="_contPopola()"><option value="proc">Procacciatori</option><option value="doc">Docenti</option><option value="dip">Dipendenti</option></select></div>
+    </div>
+    <div class="fr">
       <div class="fg"><label>Venditore *</label><select id="cont-vend"></select></div>
     </div>
     <div class="fr"><div class="fg"><label>Prodotto *</label><select id="cont-prod" onchange="_contPreview()"></select></div></div>
@@ -3844,18 +3848,24 @@ function renderIncassi(){
   const pagati=rows.filter(function(p){return p.stato==='paid'})
   const totIncassato=pagati.reduce(function(s,p){return s+Number(p.importo_pagato||0)},0)
   const totProvv=pagati.reduce(function(s,p){return s+Number(p.provvigione_importo||0)},0)
-  const nAttesa=rows.filter(function(p){return p.stato==='pending'}).length
+  const nAttesa=rows.filter(function(p){return p.stato==='pending'||p.stato==='attesa_contanti'}).length
   const setTxt=function(id,v){ const e=document.getElementById(id); if(e) e.textContent=v }
   setTxt('inc-tot-incassato',_eur(totIncassato))
   setTxt('inc-tot-pagati',String(pagati.length))
   setTxt('inc-tot-provv',_eur(totProvv))
   setTxt('inc-tot-attesa',String(nAttesa))
-  if(!rows.length){ tb.innerHTML='<tr><td colspan="7" style="color:var(--text2);padding:14px">Nessun incasso.</td></tr>'; return }
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="8" style="color:var(--text2);padding:14px">Nessun incasso.</td></tr>'; return }
   tb.innerHTML=rows.map(function(p){
     const usoP=p.uso_personale?' <span style="font-size:11px;color:var(--text2)">(uso personale)</span>':''
     const vend=escB(p.venditore_nome||p.venditore_email||'\u2014')
     const cli=escB(p.cliente_nome||'\u2014')
     const prov=Number(p.provvigione_importo||0)>0?'<div style="font-size:11px;color:var(--text2)">prov. '+_eur(p.provvigione_importo)+'</div>':''
+    const isAtt=(p.stato==='attesa_contanti')
+    const metLbl=p.metodo==='bonifico'?'\ud83c\udfe6 bonifico':(p.metodo==='contanti'?'\ud83d\udcb5 contanti':(p.metodo==='paypal'?'PayPal':(p.metodo?'Carta':'')))
+    const statoCell=isAtt?('<span style="color:#b7791f;font-weight:700;white-space:nowrap">'+(p.metodo==='bonifico'?'\ud83c\udfe6 bonifico':'\ud83d\udcb5 contanti')+' da confermare</span>'):_incStato(p.stato)
+    const azioni=isAtt
+      ? '<div style="display:flex;gap:6px;white-space:nowrap"><button class="btn btn-sm btn-p" onclick="confermaIncasso(\''+p.id+'\')">\u2705 Conferma</button><button class="btn btn-sm" onclick="rifiutaIncasso(\''+p.id+'\')">Rifiuta</button></div>'
+      : (metLbl?'<span style="font-size:11px;color:var(--text2)">'+metLbl+'</span>':'\u2014')
     return '<tr>'+
       '<td style="white-space:nowrap;font-size:12px">'+_incData(p.paid_at||p.created_at)+'</td>'+
       '<td><strong>'+escB(p.prodotto_nome||'\u2014')+'</strong>'+usoP+'</td>'+
@@ -3863,9 +3873,28 @@ function renderIncassi(){
       '<td style="font-size:12px">'+vend+'</td>'+
       '<td style="font-size:12px">'+cli+'</td>'+
       '<td style="font-size:12px">'+escB(_ppAreeLabel([p.area]))+'</td>'+
-      '<td style="white-space:nowrap">'+_incStato(p.stato)+'</td>'+
+      '<td style="white-space:nowrap">'+statoCell+'</td>'+
+      '<td>'+azioni+'</td>'+
     '</tr>'
   }).join('')
+}
+
+// ── CONFERMA / RIFIUTA INCASSI DA CONFERMARE (contanti/bonifico) ──
+async function confermaIncasso(id){
+  if(!confirm('Confermare l\u0027incasso ricevuto? La vendita risulter\u00e0 PAGATA e partir\u00e0 l\u0027email di conferma al cliente.')) return
+  try{
+    const r=await db.from('pagamenti').update({ stato:'paid', paid_at:new Date().toISOString() }).eq('id',id)
+    if(r.error) throw r.error
+    toast('Incasso confermato \u2705'); caricaIncassi()
+  }catch(e){ console.error('confermaIncasso',e); toast('Errore: '+(e.message||e)) }
+}
+async function rifiutaIncasso(id){
+  if(!confirm('Rifiutare/annullare questa richiesta di incasso? Non risulter\u00e0 pagata.')) return
+  try{
+    const r=await db.from('pagamenti').update({ stato:'failed' }).eq('id',id)
+    if(r.error) throw r.error
+    toast('Richiesta annullata'); caricaIncassi()
+  }catch(e){ console.error('rifiutaIncasso',e); toast('Errore: '+(e.message||e)) }
 }
 
 // ── INCASSO IN CONTANTI (admin) ─────────────────────────────
@@ -3894,14 +3923,15 @@ function _contPreview(){
   const p=(_prodPagCache||[]).find(function(x){return x.id===pid})
   if(!p){ if(el) el.textContent='Seleziona un prodotto'; return }
   const prezzo=Number(p.prezzo||0), pct=Number(p.provvigione_pct||0)
-  const provFull=Math.round(prezzo*pct/100*100)/100
+  const _pf=p.provvigione_fissa, _hf=(_pf!=null&&_pf!==''&&Number(_pf)>0)
+  const provFull=_hf?(Math.round(Number(_pf)*100)/100):(Math.round(prezzo*pct/100*100)/100)
   let imp=prezzo, prov=provFull
   if(uso){ imp=Math.round((prezzo-provFull)*100)/100; prov=0 }
   if(el) el.innerHTML='Incasso <strong>'+_eur(imp)+'</strong> \u00b7 provvigione <strong>'+_eur(prov)+'</strong> \u00b7 netto azienda <strong>'+_eur(imp-prov)+'</strong>'
 }
 function apriContanti(){
   const a=(typeof sezioneAttiva!=='undefined'&&['proc','doc','dip'].indexOf(sezioneAttiva)>=0)?sezioneAttiva:'doc'
-  const open=function(){ document.getElementById('cont-area').value=a; document.getElementById('cont-cliente').value=''; document.getElementById('cont-uso').checked=false; _contPopola(); openM('m-contanti') }
+  const open=function(){ document.getElementById('cont-area').value=a; const cm=document.getElementById('cont-metodo'); if(cm) cm.value='contanti'; document.getElementById('cont-cliente').value=''; document.getElementById('cont-uso').checked=false; _contPopola(); openM('m-contanti') }
   if(!_prodPagCache||!_prodPagCache.length){ caricaProdottiPag().then(open) } else open()
 }
 async function salvaContanti(){
@@ -3915,15 +3945,17 @@ async function salvaContanti(){
   if(!vopt||!vopt.value){ toast('Scegli il venditore'); return }
   const p=(_prodPagCache||[]).find(function(x){return x.id===pid}); if(!p){ toast('Prodotto non valido'); return }
   const prezzo=Number(p.prezzo||0), pct=Number(p.provvigione_pct||0)
-  const provFull=Math.round(prezzo*pct/100*100)/100
+  const _pf=p.provvigione_fissa, _hf=(_pf!=null&&_pf!==''&&Number(_pf)>0)
+  const provFull=_hf?(Math.round(Number(_pf)*100)/100):(Math.round(prezzo*pct/100*100)/100)
   let imp=prezzo, prov=provFull
   if(uso){ imp=Math.round((prezzo-provFull)*100)/100; prov=0 }
   if(!(imp>0)){ toast('Importo non valido'); return }
+  const metodo=(document.getElementById('cont-metodo')||{}).value||'contanti'
   let ref=''; try{ ref=crypto.randomUUID() }catch(e){ ref='cash-'+Date.now()+'-'+Math.random().toString(16).slice(2) }
-  const rec={ prodotto_id:p.id, prodotto_nome:p.nome, prezzo_pieno:prezzo, provvigione_pct:pct, provvigione_importo:prov, importo_pagato:imp, area:area, venditore_id:vopt.value, venditore_email:(vopt.getAttribute('data-email')||''), venditore_nome:(vopt.getAttribute('data-nome')||''), cliente_nome:cliente, cliente_email:'', cliente_tel:'', uso_personale:uso, sumup_reference:ref, stato:'paid', paid_at:new Date().toISOString() }
+  const rec={ prodotto_id:p.id, prodotto_nome:p.nome, prezzo_pieno:prezzo, provvigione_pct:pct, provvigione_importo:prov, importo_pagato:imp, area:area, venditore_id:vopt.value, venditore_email:(vopt.getAttribute('data-email')||''), venditore_nome:(vopt.getAttribute('data-nome')||''), cliente_nome:cliente, cliente_email:'', cliente_tel:'', uso_personale:uso, sumup_reference:ref, metodo:metodo, stato:'paid', paid_at:new Date().toISOString() }
   try{
     const r=await db.from('pagamenti').insert(rec); if(r.error) throw r.error
-    closeM('m-contanti'); toast('Incasso in contanti registrato \u2705'); caricaIncassi()
+    closeM('m-contanti'); toast('Incasso registrato \u2705'); caricaIncassi()
   }catch(e){ console.error('salvaContanti',e); toast('Errore: '+(e.message||e)) }
 }
 
