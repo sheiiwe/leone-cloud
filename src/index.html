@@ -362,6 +362,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('calendario',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendario
     </div>
+    <div class="nav-item" onclick="sp('prenotazioni',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8.5 15.5l2 2 4-4"/></svg>Prenotazioni
+    </div>
     <div class="nav-sec">Compensi</div>
     <div class="nav-item" onclick="sp('provv-doc',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M15 9.4a3.4 3.4 0 1 0 0 5.2"/><line x1="7.5" y1="11" x2="13" y2="11"/><line x1="7.5" y1="13" x2="13" y2="13"/></svg>Provvigioni
@@ -1203,6 +1206,41 @@ tbody tr:hover td{background:var(--surface2)}
         <button class="btn btn-sm" onclick="calAdminSvuotaRic()">Svuota ricorrenti</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="page" id="page-prenotazioni">
+  <div class="pg-title">Prenotazioni</div>
+  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Tutte le lezioni prenotate dagli studenti nel marketplace. Le cancellazioni fatte con meno di 12 ore di preavviso sono evidenziate.</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+    <div class="card" style="flex:1;min-width:130px;padding:14px"><div style="font-size:12px;color:var(--text2)">Prossime lezioni</div><div id="pren-tot-prossime" style="font-size:22px;font-weight:700;color:#117A65">0</div></div>
+    <div class="card" style="flex:1;min-width:110px;padding:14px"><div style="font-size:12px;color:var(--text2)">Oggi</div><div id="pren-tot-oggi" style="font-size:22px;font-weight:700">0</div></div>
+    <div class="card" style="flex:1;min-width:110px;padding:14px"><div style="font-size:12px;color:var(--text2)">Svolte</div><div id="pren-tot-svolte" style="font-size:22px;font-weight:700">0</div></div>
+    <div class="card" style="flex:1;min-width:150px;padding:14px"><div style="font-size:12px;color:var(--text2)">Cancellate &lt;12h</div><div id="pren-tot-canc12" style="font-size:22px;font-weight:700;color:#c0392b">0</div></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr"><h3>Occupazione docenti (prossime lezioni)</h3></div>
+    <div id="pren-occ" style="padding:6px 14px 14px"><div style="color:var(--text2)">Caricamento...</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><h3>Elenco lezioni</h3><button class="btn" onclick="caricaPrenotazioni()">↻ Aggiorna</button></div>
+    <div class="search-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <input type="text" id="pren-search" placeholder="🔍 Cerca (studente, docente, materia...)" oninput="renderPrenotazioni()" style="flex:1;min-width:200px;padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+      <select id="pren-f-periodo" onchange="renderPrenotazioni()" style="padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+        <option value="prossime">Prossime</option>
+        <option value="oggi">Oggi</option>
+        <option value="storico">Storico (svolte/passate)</option>
+        <option value="cancellate">Cancellate</option>
+        <option value="">Tutte</option>
+      </select>
+      <select id="pren-f-doc" onchange="renderPrenotazioni()" style="padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+        <option value="">Tutti i docenti</option>
+      </select>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Data e ora</th><th>Docente</th><th>Studente</th><th>Materia</th><th>Pagamento</th><th>Stato</th></tr></thead>
+      <tbody id="tbl-prenotazioni"><tr><td colspan="6" style="color:var(--text2);padding:14px">Caricamento...</td></tr></tbody>
+    </table></div>
   </div>
 </div>
 
@@ -3587,7 +3625,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -3815,6 +3853,79 @@ async function eliminaProdPag(id){
   if(!confirm('Eliminare questo prodotto dal catalogo?')) return
   try{ const r=await db.from('prodotti_pagamento').delete().eq('id',id); if(r.error) throw r.error; toast('Prodotto eliminato'); caricaProdottiPag() }
   catch(e){ console.error('eliminaProdPag',e); toast('Errore eliminazione: '+(e.message||e)) }
+}
+
+// ── PRENOTAZIONI (marketplace lezioni) ──────────────────────
+let _prenCache=[]
+function _prenDocNome(id){ const d=(docenti||[]).find(x=>String(x._id)===String(id)); return d?(((d.nome||'')+' '+(d.cognome||'')).trim()||d.nome||'\u2014'):'\u2014' }
+function _prenStuNome(id){ const s=(studenti||[]).find(x=>String(x._id)===String(id)); return s?(((s.nome||'')+' '+(s.cognome||'')).trim()||s.nome||'\u2014'):'\u2014' }
+function _prenDt(iso){ if(!iso) return '\u2014'; const d=new Date(iso); return d.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) }
+function _prenStatoBadge(l){
+  const s=l.stato||'confermata'
+  if(s==='svolta') return '<span class="badge bg">Svolta</span>'
+  if(s==='no_show') return '<span class="badge br">No show</span>'
+  if(String(s).indexOf('cancellata')===0){ const chi=s==='cancellata_docente'?'docente':(s==='cancellata_studente'?'studente':''); return '<span class="badge br">Cancellata'+(chi?(' ('+chi+')'):'')+'</span>' }
+  return '<span class="badge bb">Confermata</span>'
+}
+function _prenCanc12(l){ if(String(l.stato||'').indexOf('cancellata')!==0) return false; if(!l.updated_at) return false; const ini=new Date(l.inizio).getTime(), upd=new Date(l.updated_at).getTime(); return (ini-upd) < 12*3600000 }
+function _prenPagBadge(l){ const m=l.metodo_pagamento||''; if(m==='ore_pacchetto') return '\ud83c\udf9f Pacchetto'; if(m==='contanti') return '\ud83d\udcb5 Contanti'; if(m==='bonifico') return '\ud83c\udfe6 Bonifico'; if(m==='paypal') return 'PayPal'; if(m==='sumup') return 'Carta'; return '\u2014' }
+async function caricaPrenotazioni(){
+  const tb=document.getElementById('tbl-prenotazioni'); if(tb) tb.innerHTML='<tr><td colspan="6" style="color:var(--text2);padding:14px">Caricamento...</td></tr>'
+  try{
+    const {data,error}=await db.from('lezioni_prenotate').select('*').order('inizio',{ascending:false}).limit(3000)
+    if(error) throw error
+    _prenCache=data||[]
+  }catch(e){ console.error('caricaPrenotazioni',e); _prenCache=[]; try{toast('Errore caricamento prenotazioni')}catch(_){} }
+  const sel=document.getElementById('pren-f-doc')
+  if(sel){
+    const cur=sel.value
+    const ids=[...new Set(_prenCache.map(l=>String(l.docente_id)))]
+    sel.innerHTML='<option value="">Tutti i docenti</option>'+ids.map(id=>'<option value="'+id+'">'+escB(_prenDocNome(id))+'</option>').join('')
+    sel.value=cur
+  }
+  renderPrenotazioni()
+}
+function renderPrenotazioni(){
+  const tb=document.getElementById('tbl-prenotazioni'); if(!tb) return
+  const now=Date.now(), oggi=new Date().toDateString()
+  const per=(document.getElementById('pren-f-periodo')||{}).value||'prossime'
+  const fdoc=(document.getElementById('pren-f-doc')||{}).value||''
+  const q=((document.getElementById('pren-search')||{}).value||'').toLowerCase().trim()
+  const attive=_prenCache.filter(l=>String(l.stato||'').indexOf('cancellata')<0)
+  const nProssime=attive.filter(l=>new Date(l.fine).getTime()>=now && l.stato!=='svolta').length
+  const nOggi=attive.filter(l=>new Date(l.inizio).toDateString()===oggi).length
+  const nSvolte=_prenCache.filter(l=>l.stato==='svolta').length
+  const nCanc12=_prenCache.filter(_prenCanc12).length
+  const setT=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=String(v)}
+  setT('pren-tot-prossime',nProssime); setT('pren-tot-oggi',nOggi); setT('pren-tot-svolte',nSvolte); setT('pren-tot-canc12',nCanc12)
+  const occ={}
+  attive.filter(l=>new Date(l.fine).getTime()>=now && l.stato==='confermata').forEach(l=>{ const k=String(l.docente_id); const ore=Math.max(0,(new Date(l.fine)-new Date(l.inizio))/3600000); occ[k]=occ[k]||{n:0,ore:0}; occ[k].n++; occ[k].ore+=ore })
+  const occBox=document.getElementById('pren-occ')
+  if(occBox){
+    const keys=Object.keys(occ).sort((a,b)=>occ[b].n-occ[a].n)
+    occBox.innerHTML = keys.length ? '<div style="display:flex;flex-wrap:wrap;gap:8px">'+keys.map(k=>'<div style="border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px"><strong>'+escB(_prenDocNome(k))+'</strong><br><span style="color:var(--text2)">'+occ[k].n+' lezioni \u00b7 '+(Math.round(occ[k].ore*10)/10)+'h</span></div>').join('')+'</div>' : '<div style="color:var(--text2)">Nessuna lezione prossima.</div>'
+  }
+  let rows=_prenCache.slice()
+  if(per==='prossime') rows=rows.filter(l=>new Date(l.fine).getTime()>=now && String(l.stato||'').indexOf('cancellata')<0 && l.stato!=='svolta')
+  else if(per==='oggi') rows=rows.filter(l=>new Date(l.inizio).toDateString()===oggi)
+  else if(per==='storico') rows=rows.filter(l=>l.stato==='svolta' || (new Date(l.fine).getTime()<now && String(l.stato||'').indexOf('cancellata')<0))
+  else if(per==='cancellate') rows=rows.filter(l=>String(l.stato||'').indexOf('cancellata')===0)
+  if(fdoc) rows=rows.filter(l=>String(l.docente_id)===fdoc)
+  if(q) rows=rows.filter(l=>((_prenDocNome(l.docente_id))+' '+(_prenStuNome(l.studente_id))+' '+(l.materia||'')).toLowerCase().includes(q))
+  if(per==='prossime') rows.sort((a,b)=>new Date(a.inizio)-new Date(b.inizio))
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="6" style="color:var(--text2);padding:14px">Nessuna lezione in questa vista.</td></tr>'; return }
+  tb.innerHTML=rows.map(l=>{
+    const canc12=_prenCanc12(l)
+    const flag=canc12?' <span class="badge br" title="Cancellata con meno di 12h di preavviso">\u26a0 &lt;12h</span>':''
+    return '<tr'+(canc12?' style="background:rgba(192,57,43,.05)"':'')+'>'+
+      '<td style="white-space:nowrap;font-size:12px">'+escB(_prenDt(l.inizio))+'</td>'+
+      '<td style="font-size:12px"><strong>'+escB(_prenDocNome(l.docente_id))+'</strong></td>'+
+      '<td style="font-size:12px">'+escB(_prenStuNome(l.studente_id))+'</td>'+
+      '<td style="font-size:12px">'+escB(l.materia||'\u2014')+(l.livello?(' <span style="color:var(--text2)">('+escB(l.livello)+')</span>'):'')+'</td>'+
+      '<td style="font-size:12px">'+_prenPagBadge(l)+'</td>'+
+      '<td style="white-space:nowrap">'+_prenStatoBadge(l)+flag+'</td>'+
+    '</tr>'
+  }).join('')
 }
 
 // ── INCASSI (pagamenti SumUp) ───────────────────────────────
