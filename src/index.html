@@ -6587,10 +6587,17 @@ function renderFattArea(area){
   }).join('')
 }
 async function emettiFattura(id, soloCrea, area){
+  let conto=null
+  try{
+    const p=(_incassiCache||[]).find(x=>String(x.id)===String(id)||String(x._id)===String(id))
+    if(p && String(p.metodo||'').toLowerCase()==='bonifico'){
+      conto = confirm('Bonifico incassato su quale conto?\u000a\u000aOK = Conto FINOM\u000aAnnulla = Conto SUMUP') ? 'finom' : 'sumup'
+    }
+  }catch(e){}
   if(!soloCrea && !confirm('Emettere e INVIARE la fattura elettronica all\u0027Agenzia delle Entrate?\u000a\u000aL\u0027operazione e\u0027 definitiva.')) return
   try{ toast(soloCrea?'Creo la bozza...':'Emetto la fattura...') }catch(e){}
   try{
-    const r=await db.functions.invoke('fic-emetti-fattura',{ body:{ pagamento_id:id, solo_crea:!!soloCrea } })
+    const r=await db.functions.invoke('fic-emetti-fattura',{ body:{ pagamento_id:id, solo_crea:!!soloCrea, conto:conto } })
     const d=r.data||{}
     if(r.error||d.error||d.ok===false){ throw new Error(d.error||(r.error&&r.error.message)||'Errore emissione') }
     try{ toast(soloCrea?('Bozza creata n.'+(d.fattura_numero||'')):('Fattura emessa n.'+(d.fattura_numero||''))) }catch(e){}
