@@ -772,7 +772,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div style="margin-bottom:1rem"><button class="btn btn-sm" onclick="toggleListinoVis()" id="btn-listino-vis">👁 Visibilità categorie nei portali</button></div>
   <div id="listino-vis-panel" class="card" style="display:none;margin-bottom:1rem"></div>
   <input id="listino-search" type="text" oninput="filterList(activeCat)" placeholder="🔍 Cerca prodotto o categoria..." style="width:100%;max-width:420px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:1rem;background:var(--surface);color:var(--text);box-sizing:border-box">
-  <div class="card"><div class="card-hdr"><h3 id="listino-title">Tutti i prodotti</h3><button class="btn btn-p" onclick="openM('m-prodotto')">+ Nuovo prodotto</button></div>
+  <div class="card"><div class="card-hdr"><h3 id="listino-title">Tutti i prodotti</h3><button class="btn btn-p" onclick="nuovoProdotto()">+ Nuovo prodotto</button></div>
     <div class="tbl-wrap"><table>
       <thead><tr><th>Prodotto</th><th>Categoria</th><th>Prezzo cliente</th><th>Costo</th><th>Margine</th><th>Provvigione</th><th>Guadagno Leone</th><th></th></tr></thead>
       <tbody id="tbl-listino"></tbody>
@@ -3075,10 +3075,10 @@ function aggiornaDotLead(){
 }
 function setupRealtime(){
   db.channel('leone-all')
-    .on('postgres_changes',{event:'*',schema:'public',table:'procacciatori'},()=>loadAll())
-    .on('postgres_changes',{event:'*',schema:'public',table:'vendite'},()=>loadAll())
+    .on('postgres_changes',{event:'*',schema:'public',table:'procacciatori'},()=>scheduleLiveRefresh())
+    .on('postgres_changes',{event:'*',schema:'public',table:'vendite'},()=>scheduleLiveRefresh())
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'leads'},(payload)=>{
-      loadAll()
+      scheduleLiveRefresh()
       // Notifica email collaboratore se il prodotto ha email aggiuntiva
       const nuovoLead = payload.new?.data || {}
       toast('🔔 Nuova lead da ' + (nuovoLead.pnome || 'un procacciatore') + (nuovoLead.nome ? ': ' + nuovoLead.nome : ''))
@@ -3097,10 +3097,10 @@ function setupRealtime(){
         }
       }
     })
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'leads'},()=>loadAll())
-    .on('postgres_changes',{event:'*',schema:'public',table:'dipendenti'},()=>loadAll())
-    .on('postgres_changes',{event:'*',schema:'public',table:'buste_paga'},()=>loadAll())
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'contratti_firme'},()=>loadAll())
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'leads'},()=>scheduleLiveRefresh())
+    .on('postgres_changes',{event:'*',schema:'public',table:'dipendenti'},()=>scheduleLiveRefresh())
+    .on('postgres_changes',{event:'*',schema:'public',table:'buste_paga'},()=>scheduleLiveRefresh())
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'contratti_firme'},()=>scheduleLiveRefresh())
     .subscribe()
 }
 
@@ -3720,6 +3720,8 @@ function openM(id){
     document.getElementById('pd-nome').value=''
     document.getElementById('pd-cat-new').value=''
     document.getElementById('pd-gruppo').value=''
+    {const cs=document.getElementById('pd-cat-sel'); if(cs) cs.value=''}
+    {const pf=document.getElementById('pd-piatt'); if(pf) pf.selectedIndex=0}
     document.getElementById('pd-prov').value=''
     document.getElementById('pd-prezzo').value=''
     document.getElementById('pd-costo').value=''
@@ -8242,6 +8244,10 @@ function apriOfferteReali(idx){
   openM('m-offerte-reali')
 }
 function scegliOffDaListino(id){ closeM('m-offerte-reali'); scegliOfferta(id) }
+function nuovoProdotto(){
+  document.getElementById('pd-edit-pid').value=''
+  openM('m-prodotto')
+}
 function editProdotto(idx){
   const p=LISTINO[idx]
   document.getElementById('prod-modal-title').textContent='Modifica prodotto'
