@@ -2545,6 +2545,7 @@ tbody tr:hover td{background:var(--surface2)}
     <input type="hidden" id="pp-id">
     <div class="fr"><div class="fg"><label>Nome prodotto *</label><input id="pp-nome" type="text" placeholder="es. Corso EIPASS 7 moduli"></div></div>
     <div class="fr"><div class="fg"><label>Descrizione</label><input id="pp-desc" type="text" placeholder="Breve descrizione (facoltativa)"></div></div>
+    <div class="fr"><div class="fg"><label>Gruppo <span style="font-size:10px;color:var(--text3)">(facoltativo — i prodotti con lo stesso gruppo si uniscono sui portali: l'utente sceglie il nome nel banner)</span></label><input id="pp-gruppo" type="text" placeholder="es. Corso di Inglese"></div></div>
     <div class="fr">
       <div class="fg"><label>Prezzo pieno (€) *</label><input id="pp-prezzo" type="number" min="0" step="0.01" placeholder="300.00" oninput="_ppPreview()"></div>
       <div class="fg"><label>Provvigione venditore (%)</label><input id="pp-prov" type="number" min="0" max="100" step="0.1" placeholder="20" oninput="_ppPreview()"></div>
@@ -2562,7 +2563,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="fg"><label>Docenti abilitati <span style="font-size:10px;color:var(--text3)">(chi può insegnare/vendere questo corso — la provvigione va a chi vende)</span></label>
       <div id="pp-docenti-list" style="max-height:180px;overflow:auto;border:0.5px solid var(--border);border-radius:8px;padding:8px;background:var(--surface)"></div>
     </div>
-    <div class="mact"><button class="btn" onclick="closeM('m-prodpag')">Annulla</button><button class="btn btn-p" onclick="salvaProdPag()">💾 Salva prodotto</button></div>
+    <div class="mact"><button class="btn" onclick="closeM('m-prodpag')">Annulla</button><button class="btn" onclick="salvaProdPag(true)">➕ Salva e aggiungi altro</button><button class="btn btn-p" onclick="salvaProdPag(false)">💾 Salva</button></div>
   </div>
 </div>
 
@@ -3783,6 +3784,7 @@ function apriProdPag(id){
     document.getElementById('pp-id').value=p.id
     document.getElementById('pp-nome').value=p.nome||''
     document.getElementById('pp-desc').value=p.descrizione||''
+    document.getElementById('pp-gruppo').value=p.gruppo||''
     document.getElementById('pp-prezzo').value=(p.prezzo!=null?p.prezzo:'')
     document.getElementById('pp-prov').value=(p.provvigione_pct!=null?p.provvigione_pct:'')
     document.getElementById('pp-prov-fissa').value=(p.provvigione_fissa!=null?p.provvigione_fissa:'')
@@ -3797,6 +3799,7 @@ function apriProdPag(id){
     document.getElementById('pp-id').value=''
     document.getElementById('pp-nome').value=''
     document.getElementById('pp-desc').value=''
+    document.getElementById('pp-gruppo').value=''
     document.getElementById('pp-prezzo').value=''
     document.getElementById('pp-prov').value=''
     document.getElementById('pp-prov-fissa').value=''
@@ -3823,7 +3826,7 @@ async function _ppRenderDocenti(prodottoId){
     return '<label style="display:flex;align-items:center;gap:8px;padding:4px 2px;font-size:13px;cursor:pointer"><input type="checkbox" class="pp-doc-chk" data-id="'+d._id+'" '+checked+'> '+escB(d.nome||'?')+materie+'</label>'
   }).join('')
 }
-async function salvaProdPag(){
+async function salvaProdPag(continua){
   const nome=(document.getElementById('pp-nome').value||'').trim()
   if(!nome){ toast('Inserisci il nome del prodotto'); return }
   const prezzo=Number(document.getElementById('pp-prezzo').value||0)
@@ -3833,7 +3836,8 @@ async function salvaProdPag(){
   if(document.getElementById('pp-area-dip').checked) aree.push('dip')
   if(document.getElementById('pp-area-doc').checked) aree.push('doc')
   if(document.getElementById('pp-area-studenti').checked) aree.push('studenti')
-  const rec={ nome:nome, descrizione:(document.getElementById('pp-desc').value||'').trim(), prezzo:prezzo, provvigione_pct:Number(document.getElementById('pp-prov').value||0), provvigione_fissa:(document.getElementById('pp-prov-fissa').value!==''?Number(document.getElementById('pp-prov-fissa').value):null), aree:aree, attivo:document.getElementById('pp-attivo').value==='1' }
+  const gruppo=(document.getElementById('pp-gruppo').value||'').trim()
+  const rec={ nome:nome, descrizione:(document.getElementById('pp-desc').value||'').trim(), gruppo:(gruppo||null), prezzo:prezzo, provvigione_pct:Number(document.getElementById('pp-prov').value||0), provvigione_fissa:(document.getElementById('pp-prov-fissa').value!==''?Number(document.getElementById('pp-prov-fissa').value):null), aree:aree, attivo:document.getElementById('pp-attivo').value==='1' }
   const id=document.getElementById('pp-id').value
   try{
     let prodId=id
@@ -3846,7 +3850,17 @@ async function salvaProdPag(){
       await db.from('corsi_docenti').delete().eq('prodotto_id',prodId)
       if(scelti.length){ await db.from('corsi_docenti').insert(scelti.map(docId=>({prodotto_id:prodId, docente_id:docId}))) }
     }catch(e){ console.warn('corsi_docenti:', e) }
-    closeM('m-prodpag'); toast('Prodotto salvato'); caricaProdottiPag()
+    caricaProdottiPag()
+    if(continua){
+      // mantengo tutti i dati, azzero solo nome e id: pronto per la variante successiva
+      document.getElementById('pp-id').value=''
+      document.getElementById('pp-nome').value=''
+      const t=document.getElementById('prodpag-modal-title'); if(t) t.textContent='Nuovo prodotto (stesso gruppo)'
+      toast('Salvato \u2713 aggiungi il prossimo (cambia solo il nome)')
+      const nm=document.getElementById('pp-nome'); if(nm) nm.focus()
+    } else {
+      closeM('m-prodpag'); toast('Prodotto salvato')
+    }
   }catch(e){ console.error('salvaProdPag',e); toast('Errore salvataggio: '+(e.message||e)) }
 }
 async function eliminaProdPag(id){
