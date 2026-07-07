@@ -8151,7 +8151,7 @@ function filterList(cat,silent){
     sf.style.display='flex'
     sf.style.flexWrap='wrap'
     const b=(k,l)=>'<button class="btn btn-sm'+(activeTipoCliente===k?' btn-p':'')+'" style="border-radius:20px" onclick="filterTipoCliente(\''+k+'\')">'+l+'</button>'
-    const piatts=[...new Set([...LISTINO.map(p=>(p.piatt||'').trim()).filter(Boolean),'P.S.','U.D.','T.E.'])]
+    const piatts=['P.S.','U.D.','T.E.']
     const bp=(k,l)=>'<button class="btn btn-sm'+(activePiatt===k?' btn-p':'')+'" style="border-radius:20px" onclick="filterPiatt(\''+k+'\')">'+l+'</button>'
     sf.innerHTML='<span style="font-size:12px;color:var(--text2);margin-right:4px">Cliente:</span>'+b('','Tutti e due')+b('privati','Privati')+b('business','Business')
       +'<span style="width:12px"></span><span style="font-size:12px;color:var(--text2);margin-right:4px">Piattaforma:</span>'+bp('','Tutte')+piatts.map(p=>bp(p,p)).join('')
