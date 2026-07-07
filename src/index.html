@@ -1939,10 +1939,12 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="fg"><label>📊 Margine Leone (% sul valore) <span style="font-size:10px;color:var(--text3)">(es. 1,15 = 1,15% del valore imponibile)</span></label><input id="pd-margine-perc" type="number" min="0" step="0.001" placeholder="es. 1,15" oninput="calcEconomia()"></div>
     </div>
     <div id="pd-econ" style="font-size:13px;color:var(--text2);background:var(--bg);border-radius:8px;padding:10px 12px;margin:2px 0 6px"></div>
+    <div class="fr"><div class="fg"><label>Gruppo <span style="font-size:10px;color:var(--text3)">(facoltativo — i prodotti con lo stesso gruppo si uniscono e si scelgono dal banner sui portali)</span></label><input id="pd-gruppo" type="text" placeholder="es. Corso di Inglese"></div></div>
     <input type="hidden" id="pd-edit-pid" value="">
     <div class="mact">
       <button class="btn" onclick="closeM('m-prodotto')">Annulla</button>
-      <button class="btn btn-p" id="btn-save-prod" onclick="saveProdotto()">Salva</button>
+      <button class="btn" onclick="saveProdotto(true)">➕ Salva e aggiungi altro</button>
+      <button class="btn btn-p" id="btn-save-prod" onclick="saveProdotto(false)">Salva</button>
     </div>
   </div>
 </div>
@@ -3717,6 +3719,7 @@ function openM(id){
     document.getElementById('prod-modal-title').textContent='Nuovo prodotto'
     document.getElementById('pd-nome').value=''
     document.getElementById('pd-cat-new').value=''
+    document.getElementById('pd-gruppo').value=''
     document.getElementById('pd-prov').value=''
     document.getElementById('pd-prezzo').value=''
     document.getElementById('pd-costo').value=''
@@ -8083,7 +8086,9 @@ function renderDipDash(){
 // ── LISTINO ───────────────────────────────────────────────────
 let activeCat=''
 let activeTipoCliente=''
+let activePiatt=''
 function filterTipoCliente(k){ activeTipoCliente=k; filterList(activeCat) }
+function filterPiatt(k){ activePiatt=k; filterList(activeCat) }
 // ── VISIBILITÀ CATEGORIE LISTINO (per area/portale) ───────────
 let _listVisCats=[]
 function _listCatAree(cat){
@@ -8144,8 +8149,12 @@ function filterList(cat,silent){
   const sf=document.getElementById('listino-subfilter')
   if(sf){
     sf.style.display='flex'
+    sf.style.flexWrap='wrap'
     const b=(k,l)=>'<button class="btn btn-sm'+(activeTipoCliente===k?' btn-p':'')+'" style="border-radius:20px" onclick="filterTipoCliente(\''+k+'\')">'+l+'</button>'
+    const piatts=[...new Set([...LISTINO.map(p=>(p.piatt||'').trim()).filter(Boolean),'P.S.','U.D.','T.E.'])]
+    const bp=(k,l)=>'<button class="btn btn-sm'+(activePiatt===k?' btn-p':'')+'" style="border-radius:20px" onclick="filterPiatt(\''+k+'\')">'+l+'</button>'
     sf.innerHTML='<span style="font-size:12px;color:var(--text2);margin-right:4px">Cliente:</span>'+b('','Tutti e due')+b('privati','Privati')+b('business','Business')
+      +'<span style="width:12px"></span><span style="font-size:12px;color:var(--text2);margin-right:4px">Piattaforma:</span>'+bp('','Tutte')+piatts.map(p=>bp(p,p)).join('')
   }
   const q=(document.getElementById('listino-search')?.value||'').toLowerCase().trim()
   const _sezF=(sezioneAttiva||'proc')
@@ -8153,6 +8162,7 @@ function filterList(cat,silent){
   if(activeTipoCliente){
     filtered=filtered.filter(p=>{ const tc=(p.tipoCliente||'entrambi'); return tc===activeTipoCliente || tc==='entrambi' })
   }
+  if(activePiatt){ filtered=filtered.filter(p=>(p.piatt||'').trim()===activePiatt) }
   if(q) filtered=filtered.filter(p=>(p.nome||'').toLowerCase().includes(q)||(p.cat||'').toLowerCase().includes(q))
   document.getElementById('listino-title').textContent=(cat||'Tutti i prodotti')+(q?' · ricerca "'+q+'"':'')
   _liA=0
@@ -8238,6 +8248,7 @@ function editProdotto(idx){
   document.getElementById('pd-nome').value=p.nome
   document.getElementById('pd-cat-new').value=p.cat
   document.getElementById('pd-piatt').value=p.piatt
+  document.getElementById('pd-gruppo').value=p.gruppo||''
   document.getElementById('pd-tipo').value=p.tipo
   document.getElementById('pd-prov').value=p.prov
   document.getElementById('pd-prezzo').value=(p.prezzo!=null?p.prezzo:'')
@@ -8255,7 +8266,7 @@ function deleteProdotto(idx){
   salvaListinoCloud()
   renderListino()
 }
-function saveProdotto(){
+function saveProdotto(continua){
   const nome=document.getElementById('pd-nome').value.trim()
   if(!nome)return alert('Inserisci il nome del prodotto')
   const catNew=document.getElementById('pd-cat-new').value.trim()
@@ -8263,6 +8274,7 @@ function saveProdotto(){
   const cat=catNew||catSel
   if(!cat)return alert('Seleziona o inserisci una categoria')
   const piatt=document.getElementById('pd-piatt').value
+  const gruppo=(document.getElementById('pd-gruppo').value||'').trim()
   const tipo=document.getElementById('pd-tipo').value
   const prov=parseFloat(document.getElementById('pd-prov').value)||0
   const prezzoRaw=document.getElementById('pd-prezzo').value.trim()
@@ -8282,7 +8294,7 @@ function saveProdotto(){
     margine = (prezzo!=null && costo!=null) ? +(prezzo-costo).toFixed(2) : (prev&&prev.margine!=null?prev.margine:null)
     if(margine!=null) guadagno = +(margine-prov).toFixed(2)
   }
-  const obj={pid,nome,cat,piatt,prov,tipo,emailNotifica,tipoCliente,prezzo,costo,margine,guadagno,marginePerc}
+  const obj={pid,nome,cat,piatt,gruppo:(gruppo||null),prov,tipo,emailNotifica,tipoCliente,prezzo,costo,margine,guadagno,marginePerc}
   if(editPid){
     const idx=LISTINO.findIndex(p=>p.pid===editPid)
     if(idx>=0) LISTINO[idx]=obj
@@ -8290,8 +8302,17 @@ function saveProdotto(){
     LISTINO.push(obj)
   }
   salvaListinoCloud()
-  closeM('m-prodotto')
   renderListino()
+  if(continua){
+    // stessi dati, azzero solo nome e id: pronto per la variante successiva
+    document.getElementById('pd-edit-pid').value=''
+    document.getElementById('pd-nome').value=''
+    document.getElementById('prod-modal-title').textContent='Nuovo prodotto (stesso gruppo)'
+    toast('Salvato \u2713 aggiungi il prossimo (cambia solo il nome)')
+    const nm=document.getElementById('pd-nome'); if(nm) nm.focus()
+  } else {
+    closeM('m-prodotto')
+  }
 }
 function fmtP(x){ return (Math.round(x*1000)/1000).toLocaleString('it-IT',{minimumFractionDigits:0,maximumFractionDigits:3})+'%' }
 function toggleTipoFields(){
