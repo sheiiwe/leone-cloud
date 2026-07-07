@@ -795,7 +795,16 @@ tbody tr:hover td{background:var(--surface2)}
 <div class="page" id="page-prodottipag">
   <div class="pg-title">Prodotti &amp; pagamenti</div>
   <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Catalogo dei corsi/servizi vendibili con pagamento SumUp. Per ogni prodotto: prezzo pieno (che paga il cliente), provvigione del venditore e in quali aree è vendibile.</div>
-  <input id="prodpag-search" type="text" oninput="renderProdottiPag()" placeholder="🔍 Cerca prodotto..." style="width:100%;max-width:420px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:1rem;background:var(--surface);color:var(--text);box-sizing:border-box">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:1rem">
+    <input id="prodpag-search" type="text" oninput="renderProdottiPag()" placeholder="🔍 Cerca prodotto..." style="flex:1;min-width:220px;max-width:420px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text);box-sizing:border-box">
+    <select id="prodpag-f-piatt" onchange="renderProdottiPag()" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text)">
+      <option value="">Tutte le piattaforme</option>
+      <option value="UD">UD · Universo Docente</option>
+      <option value="PS">PS</option>
+      <option value="TE">TE</option>
+      <option value="__none">Senza piattaforma</option>
+    </select>
+  </div>
   <div class="card"><div class="card-hdr"><h3>Catalogo prodotti</h3><button class="btn btn-p" onclick="apriProdPag()">+ Nuovo prodotto</button></div>
     <div class="tbl-wrap"><table>
       <thead><tr><th>Prodotto</th><th>Prezzo</th><th>Provvigione</th><th>Aree</th><th>Stato</th><th></th></tr></thead>
@@ -2545,7 +2554,10 @@ tbody tr:hover td{background:var(--surface2)}
     <input type="hidden" id="pp-id">
     <div class="fr"><div class="fg"><label>Nome prodotto *</label><input id="pp-nome" type="text" placeholder="es. Corso EIPASS 7 moduli"></div></div>
     <div class="fr"><div class="fg"><label>Descrizione</label><input id="pp-desc" type="text" placeholder="Breve descrizione (facoltativa)"></div></div>
-    <div class="fr"><div class="fg"><label>Gruppo <span style="font-size:10px;color:var(--text3)">(facoltativo — i prodotti con lo stesso gruppo si uniscono sui portali: l'utente sceglie il nome nel banner)</span></label><input id="pp-gruppo" type="text" placeholder="es. Corso di Inglese"></div></div>
+    <div class="fr">
+      <div class="fg"><label>Gruppo <span style="font-size:10px;color:var(--text3)">(facoltativo — i prodotti con lo stesso gruppo si uniscono sui portali)</span></label><input id="pp-gruppo" type="text" placeholder="es. Corso di Inglese"></div>
+      <div class="fg"><label>Piattaforma</label><select id="pp-piattaforma"><option value="">— Nessuna —</option><option value="UD">UD · Universo Docente</option><option value="PS">PS</option><option value="TE">TE</option></select></div>
+    </div>
     <div class="fr">
       <div class="fg"><label>Prezzo pieno (€) *</label><input id="pp-prezzo" type="number" min="0" step="0.01" placeholder="300.00" oninput="_ppPreview()"></div>
       <div class="fg"><label>Provvigione venditore (%)</label><input id="pp-prov" type="number" min="0" max="100" step="0.1" placeholder="20" oninput="_ppPreview()"></div>
@@ -3761,13 +3773,18 @@ function _eur(n){ return '\u20ac '+Number(n||0).toFixed(2).replace('.',',') }
 function renderProdottiPag(){
   const tb=document.getElementById('tbl-prodpag'); if(!tb) return
   const q=(document.getElementById('prodpag-search')?document.getElementById('prodpag-search').value:'').toLowerCase().trim()
+  const fp=(document.getElementById('prodpag-f-piatt')?document.getElementById('prodpag-f-piatt').value:'')||''
   let rows=_prodPagCache
   if(q) rows=rows.filter(p=>(p.nome||'').toLowerCase().includes(q)||(p.descrizione||'').toLowerCase().includes(q))
-  if(!rows.length){ tb.innerHTML='<tr><td colspan="6" style="color:var(--text2);padding:14px">Nessun prodotto. Premi \u0022+ Nuovo prodotto\u0022.</td></tr>'; return }
+  if(fp==='__none') rows=rows.filter(p=>!(p.piattaforma||'').trim())
+  else if(fp) rows=rows.filter(p=>(p.piattaforma||'').trim()===fp)
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="6" style="color:var(--text2);padding:14px">Nessun prodotto per questo filtro.</td></tr>'; return }
   tb.innerHTML=rows.map(function(p){
     const prov=Number(p.provvigione_pct||0)+'% ('+_eur(Number(p.prezzo||0)*Number(p.provvigione_pct||0)/100)+')'
     const stato=p.attivo?'<span style="color:#117A65;font-weight:600">\u25cf Attivo</span>':'<span style="color:#999">\u25cb Off</span>'
-    return '<tr><td><strong>'+escB(p.nome||'')+'</strong>'+(p.descrizione?'<div style="font-size:12px;color:var(--text2)">'+escB(p.descrizione)+'</div>':'')+'</td><td style="white-space:nowrap">'+_eur(p.prezzo)+'</td><td style="white-space:nowrap">'+prov+'</td><td style="font-size:12px">'+escB(_ppAreeLabel(p.aree))+'</td><td>'+stato+'</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="apriProdPag(\u0027'+p.id+'\u0027)">\u270f\ufe0f</button> <button class="btn btn-sm" onclick="eliminaProdPag(\u0027'+p.id+'\u0027)">\ud83d\uddd1</button></td></tr>'
+    const piatt=(p.piattaforma||'').trim()?'<span style="display:inline-block;font-size:10px;font-weight:700;background:#e9f1fa;color:#185FA5;padding:1px 7px;border-radius:20px;margin-right:6px">'+escB(p.piattaforma)+'</span>':''
+    const grp=(p.gruppo||'').trim()?'<span style="display:inline-block;font-size:10px;background:#eee;color:#555;padding:1px 7px;border-radius:20px">'+escB(p.gruppo)+'</span>':''
+    return '<tr><td>'+piatt+grp+(piatt||grp?'<br>':'')+'<strong>'+escB(p.nome||'')+'</strong>'+(p.descrizione?'<div style="font-size:12px;color:var(--text2)">'+escB(p.descrizione)+'</div>':'')+'</td><td style="white-space:nowrap">'+_eur(p.prezzo)+'</td><td style="white-space:nowrap">'+prov+'</td><td style="font-size:12px">'+escB(_ppAreeLabel(p.aree))+'</td><td>'+stato+'</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="apriProdPag(\u0027'+p.id+'\u0027)">\u270f\ufe0f</button> <button class="btn btn-sm" onclick="eliminaProdPag(\u0027'+p.id+'\u0027)">\ud83d\uddd1</button></td></tr>'
   }).join('')
 }
 function _ppPreview(){
@@ -3785,6 +3802,7 @@ function apriProdPag(id){
     document.getElementById('pp-nome').value=p.nome||''
     document.getElementById('pp-desc').value=p.descrizione||''
     document.getElementById('pp-gruppo').value=p.gruppo||''
+    document.getElementById('pp-piattaforma').value=p.piattaforma||''
     document.getElementById('pp-prezzo').value=(p.prezzo!=null?p.prezzo:'')
     document.getElementById('pp-prov').value=(p.provvigione_pct!=null?p.provvigione_pct:'')
     document.getElementById('pp-prov-fissa').value=(p.provvigione_fissa!=null?p.provvigione_fissa:'')
@@ -3800,6 +3818,7 @@ function apriProdPag(id){
     document.getElementById('pp-nome').value=''
     document.getElementById('pp-desc').value=''
     document.getElementById('pp-gruppo').value=''
+    document.getElementById('pp-piattaforma').value=''
     document.getElementById('pp-prezzo').value=''
     document.getElementById('pp-prov').value=''
     document.getElementById('pp-prov-fissa').value=''
@@ -3837,7 +3856,8 @@ async function salvaProdPag(continua){
   if(document.getElementById('pp-area-doc').checked) aree.push('doc')
   if(document.getElementById('pp-area-studenti').checked) aree.push('studenti')
   const gruppo=(document.getElementById('pp-gruppo').value||'').trim()
-  const rec={ nome:nome, descrizione:(document.getElementById('pp-desc').value||'').trim(), gruppo:(gruppo||null), prezzo:prezzo, provvigione_pct:Number(document.getElementById('pp-prov').value||0), provvigione_fissa:(document.getElementById('pp-prov-fissa').value!==''?Number(document.getElementById('pp-prov-fissa').value):null), aree:aree, attivo:document.getElementById('pp-attivo').value==='1' }
+  const piattaforma=(document.getElementById('pp-piattaforma').value||'').trim()
+  const rec={ nome:nome, descrizione:(document.getElementById('pp-desc').value||'').trim(), gruppo:(gruppo||null), piattaforma:(piattaforma||null), prezzo:prezzo, provvigione_pct:Number(document.getElementById('pp-prov').value||0), provvigione_fissa:(document.getElementById('pp-prov-fissa').value!==''?Number(document.getElementById('pp-prov-fissa').value):null), aree:aree, attivo:document.getElementById('pp-attivo').value==='1' }
   const id=document.getElementById('pp-id').value
   try{
     let prodId=id
