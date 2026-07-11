@@ -37,7 +37,19 @@ function createWindow() {
   })
 }
 
+// ── AVVIO AUTOMATICO ────────────────────────────────────────
+ipcMain.handle('get-auto-launch', () => {
+  try{ return app.getLoginItemSettings().openAtLogin === true }catch(e){ return false }
+})
+ipcMain.handle('set-auto-launch', (event, enabled) => {
+  try{
+    app.setLoginItemSettings({ openAtLogin: !!enabled, openAsHidden: false })
+    return app.getLoginItemSettings().openAtLogin === true
+  }catch(e){ return false }
+})
+
 function createDesktopAlias() {
+
   try {
     const exePath = app.getPath('exe')
     if (!exePath.includes('.app')) return

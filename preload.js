@@ -2,6 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
+  getAutoLaunch: () => ipcRenderer.invoke('get-auto-launch'),
+  setAutoLaunch: (enabled) => ipcRenderer.invoke('set-auto-launch', enabled),
   sendContract: (data) => ipcRenderer.invoke('send-contract', data),
   sendReport:   (data) => ipcRenderer.invoke('send-report', data),
   generatePDF:  (tipo, datiJson) => ipcRenderer.invoke('generate-pdf', { tipo, datiJson }),
@@ -18,5 +20,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
   suonaNotifica: () => ipcRenderer.invoke('suona-notifica'),
   apriFileTmp: (buffer, fileName) => ipcRenderer.invoke('apri-file-tmp', { buffer, fileName }),
   salvaFile: (buffer, fileName) => ipcRenderer.invoke('salva-file', { buffer, fileName }),
-  fetchUrl: (url) => ipcRenderer.invoke('fetch-url', { url }),
 })

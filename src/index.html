@@ -1440,6 +1440,16 @@ tbody tr:hover td{background:var(--surface2)}
       <button onclick="window.electronAPI?.openDevTools?.()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px" title="Apri console sviluppatori">🛠</button>
     </div>
   </div>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-hdr"><h3>💻 Applicazione</h3></div>
+    <div style="padding:4px 14px 14px">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="imp-autolaunch" onchange="toggleAutoLaunch(this.checked)" style="width:auto">
+        <span><strong>Avvia automaticamente all'accensione del Mac</strong><br><span style="font-size:12px;color:var(--text2)">L'app si aprirà da sola quando accendi il computer.</span></span>
+      </label>
+      <div id="imp-autolaunch-msg" style="font-size:12px;color:var(--text2);margin-top:6px"></div>
+    </div>
+  </div>
 
   <!-- ACCORDION CSS -->
   <style>
@@ -3652,7 +3662,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -4291,15 +4301,18 @@ function _stuRenderDocenti(){
     '<input type="text" list="dl-materie" placeholder="Materia" value="'+escB(d.materia||'')+'" oninput="_stuSetMateria('+i+',this.value); _stuRenderDocenti()" style="flex:2;min-width:120px">'+
     '<select onchange="_stuSetDocente('+i+',this.value)" style="flex:2;min-width:140px">'+_docentiOptions(d.docenteId, d.materia, stuLiv)+'</select>'+
     '<input type="number" min="0" step="0.5" placeholder="Ore tot." value="'+(d.oreTot!=null?d.oreTot:'')+'" oninput="_stuSetOreTot('+i+',this.value)" style="flex:1;min-width:80px" title="Ore totali pattuite">'+
+    '<input type="number" min="0" step="0.5" placeholder="Bonus" value="'+(d.oreBonus!=null?d.oreBonus:'')+'" oninput="_stuSetOreBonus('+i+',this.value)" style="flex:1;min-width:70px;background:#fff8e1" title="Ore bonus regalate (es. 20+4)">'+
     '<input type="number" min="0" step="0.5" placeholder="Svolte" value="'+(d.oreFatte!=null?d.oreFatte:'')+'" oninput="_stuSetOreFatte('+i+',this.value)" style="flex:1;min-width:80px" title="Ore gia\u0027 svolte">'+
+    '<span style="font-size:11px;color:#117A65;font-weight:700;white-space:nowrap" title="Ore residue">'+Math.max(0,(Number(d.oreTot)||0)+(Number(d.oreBonus)||0)-(Number(d.oreFatte)||0))+'h res.</span>'+
     '<button type="button" class="btn btn-sm btn-r" onclick="_stuDelDocente('+i+')" title="Rimuovi">\u2715</button>'+
     '</div>').join('')
 }
 function _stuSetDocente(i,v){ if(_stuDocenti[i]) _stuDocenti[i].docenteId=v }
 function _stuSetMateria(i,v){ if(_stuDocenti[i]) _stuDocenti[i].materia=v }
 function _stuSetOreTot(i,v){ if(_stuDocenti[i]) _stuDocenti[i].oreTot=(v===''?null:Number(v)) }
+function _stuSetOreBonus(i,v){ if(_stuDocenti[i]) _stuDocenti[i].oreBonus=(v===''?null:Number(v)) }
 function _stuSetOreFatte(i,v){ if(_stuDocenti[i]) _stuDocenti[i].oreFatte=(v===''?null:Number(v)) }
-function _stuAddDocente(){ _stuDocenti.push({docenteId:'',materia:'',oreTot:null,oreFatte:null}); _stuRenderDocenti() }
+function _stuAddDocente(){ _stuDocenti.push({docenteId:'',materia:'',oreTot:null,oreBonus:null,oreFatte:null}); _stuRenderDocenti() }
 function _stuDelDocente(i){ _stuDocenti.splice(i,1); _stuRenderDocenti() }
 function apriStudente(id){
   _stuMaterie=[]
@@ -4580,11 +4593,11 @@ function _docRenderStudenti(docId){
   if(!docId){ box.innerHTML='<div style="color:var(--text3);padding:6px 0">Salva prima il docente per vedere gli studenti collegati.</div>'; return }
   const legami=[]
   ;(typeof studenti!=='undefined'?studenti:[]).forEach(s=>{
-    ;(s.docenti||[]).forEach(x=>{ if(x&&x.docenteId===docId){ legami.push({stu:s, materia:x.materia||'', oreTot:x.oreTot||0, oreFatte:x.oreFatte||0}) } })
+    ;(s.docenti||[]).forEach(x=>{ if(x&&x.docenteId===docId){ legami.push({stu:s, materia:x.materia||'', oreTot:x.oreTot||0, oreBonus:x.oreBonus||0, oreFatte:x.oreFatte||0}) } })
   })
   if(!legami.length){ box.innerHTML='<div style="color:var(--text3);padding:6px 0">Nessuno studente collegato a questo docente.</div>'; return }
   box.innerHTML='<table class="tbl" style="width:100%;font-size:13px"><thead><tr><th>Studente</th><th>Materia</th><th>Ore tot.</th><th>Svolte</th><th>Residue</th></tr></thead><tbody>'+
-    legami.map(l=>{ const res=Math.max(0,(Number(l.oreTot)||0)-(Number(l.oreFatte)||0)); return '<tr><td>'+escB(l.stu.nome||'')+'</td><td>'+escB(l.materia)+'</td><td>'+(l.oreTot||'\u2014')+'</td><td>'+(l.oreFatte||'\u2014')+'</td><td>'+(res||'\u2014')+'</td></tr>' }).join('')+
+    legami.map(l=>{ const res=Math.max(0,(Number(l.oreTot)||0)+(Number(l.oreBonus)||0)-(Number(l.oreFatte)||0)); const tot=(Number(l.oreTot)||0)+(Number(l.oreBonus)||0); const totLbl=tot?(tot+(l.oreBonus?(' <span style="color:#e65100;font-size:10px">(+'+l.oreBonus+' bonus)</span>'):'')):'\u2014'; return '<tr><td>'+escB(l.stu.nome||'')+'</td><td>'+escB(l.materia)+'</td><td>'+totLbl+'</td><td>'+(l.oreFatte||'\u2014')+'</td><td>'+(res||'\u2014')+'</td></tr>' }).join('')+
     '</tbody></table>'
 }
 async function salvaDocente(){
@@ -8287,6 +8300,18 @@ function togglePdAnnuale(){
   const up=document.getElementById('pd-unit-prezzo'); if(up) up.textContent=on?' /anno':''
   const uc=document.getElementById('pd-unit-costo'); if(uc) uc.textContent=on?' /anno':''
   try{ calcEconomia() }catch(e){}
+}
+async function initAutoLaunch(){
+  const cb=document.getElementById('imp-autolaunch'); if(!cb) return
+  if(!(window.electronAPI&&window.electronAPI.getAutoLaunch)){ cb.disabled=true; const m=document.getElementById('imp-autolaunch-msg'); if(m) m.textContent='Non disponibile in questa versione.'; return }
+  try{ cb.checked=await window.electronAPI.getAutoLaunch() }catch(e){}
+}
+async function toggleAutoLaunch(on){
+  const m=document.getElementById('imp-autolaunch-msg')
+  try{
+    const res=await window.electronAPI.setAutoLaunch(!!on)
+    if(m) m.textContent=res?'\u2705 Avvio automatico attivo.':'Avvio automatico disattivato.'
+  }catch(e){ if(m) m.textContent='Errore: '+((e&&e.message)||e) }
 }
 function nuovoProdotto(){
   document.getElementById('pd-edit-pid').value=''
