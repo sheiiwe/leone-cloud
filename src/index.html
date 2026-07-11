@@ -1932,14 +1932,21 @@ tbody tr:hover td{background:var(--surface2)}
       </div>
     </div>
     <div class="fr" id="pd-fisso-row">
-      <div class="fg"><label>💶 Prezzo pubblico (€) <span style="font-size:10px;color:var(--text3)">(lo paga il cliente — visibile ai procacciatori)</span></label><input id="pd-prezzo" type="number" min="0" step="0.01" placeholder="es. 244" oninput="calcEconomia()"></div>
-      <div class="fg"><label>🏷 Costo (€) <span style="font-size:10px;color:var(--text3)">(quello che paghi tu — solo admin)</span></label><input id="pd-costo" type="number" min="0" step="0.01" placeholder="es. 170.80" oninput="calcEconomia()"></div>
+      <div class="fg"><label>💶 Prezzo pubblico (€)<span id="pd-unit-prezzo" style="color:var(--accent,#F22015);font-weight:700"></span> <span style="font-size:10px;color:var(--text3)">(lo paga il cliente — visibile ai procacciatori)</span></label><input id="pd-prezzo" type="number" min="0" step="0.01" placeholder="es. 244" oninput="calcEconomia()"></div>
+      <div class="fg"><label>🏷 Costo (€)<span id="pd-unit-costo" style="color:var(--accent,#F22015);font-weight:700"></span> <span style="font-size:10px;color:var(--text3)">(quello che paghi tu — solo admin)</span></label><input id="pd-costo" type="number" min="0" step="0.01" placeholder="es. 170.80" oninput="calcEconomia()"></div>
+    </div>
+    <div class="fr" id="pd-annuale-row">
+      <div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox" id="pd-annuale" onchange="togglePdAnnuale()" style="width:auto"> 📅 Pagamento annuale <span style="font-size:10px;color:var(--text3)">(il cliente paga ogni anno, es. lauree)</span></label></div>
+      <div class="fg" id="pd-anni-wrap" style="display:none"><label>Per quanti anni?</label><input id="pd-anni" type="number" min="1" step="1" placeholder="es. 3" oninput="calcEconomia()"></div>
     </div>
     <div class="fr" id="pd-perc-row" style="display:none">
       <div class="fg"><label>📊 Margine Leone (% sul valore) <span style="font-size:10px;color:var(--text3)">(es. 1,15 = 1,15% del valore imponibile)</span></label><input id="pd-margine-perc" type="number" min="0" step="0.001" placeholder="es. 1,15" oninput="calcEconomia()"></div>
     </div>
     <div id="pd-econ" style="font-size:13px;color:var(--text2);background:var(--bg);border-radius:8px;padding:10px 12px;margin:2px 0 6px"></div>
-    <div class="fr"><div class="fg"><label>Gruppo <span style="font-size:10px;color:var(--text3)">(facoltativo — i prodotti con lo stesso gruppo si uniscono e si scelgono dal banner sui portali)</span></label><input id="pd-gruppo" type="text" placeholder="es. Corso di Inglese"></div></div>
+    <div class="fr">
+      <div class="fg"><label>Gruppo <span style="font-size:10px;color:var(--text3)">(facoltativo — i prodotti con lo stesso gruppo si uniscono e si scelgono dal banner sui portali)</span></label><input id="pd-gruppo" type="text" placeholder="es. Corso di Inglese"></div>
+      <div class="fg"><label>Compagnia / Ente <span style="font-size:10px;color:var(--text3)">(fornitore, es. British Institute, EIPASS, CELI)</span></label><input id="pd-compagnia" type="text" placeholder="es. British Institute"></div>
+    </div>
     <input type="hidden" id="pd-edit-pid" value="">
     <div class="mact">
       <button class="btn" onclick="closeM('m-prodotto')">Annulla</button>
@@ -2560,6 +2567,11 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="fg"><label>Gruppo <span style="font-size:10px;color:var(--text3)">(facoltativo — i prodotti con lo stesso gruppo si uniscono sui portali)</span></label><input id="pp-gruppo" type="text" placeholder="es. Corso di Inglese"></div>
       <div class="fg"><label>Piattaforma</label><select id="pp-piattaforma"><option value="">— Nessuna —</option><option value="UD">UD · Universo Docente</option><option value="PS">PS</option><option value="TE">TE</option></select></div>
     </div>
+    <div class="fr">
+      <div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox" id="pp-annuale" onchange="togglePpAnnuale()" style="width:auto"> 📅 Pagamento annuale <span style="font-size:10px;color:var(--text3)">(il cliente paga ogni anno, es. lauree)</span></label></div>
+      <div class="fg" id="pp-anni-wrap" style="display:none"><label>Per quanti anni?</label><input id="pp-anni" type="number" min="1" step="1" placeholder="es. 3"></div>
+    </div>
+    <div class="fr"><div class="fg"><label>Compagnia / Ente <span style="font-size:10px;color:var(--text3)">(fornitore, es. British Institute, EIPASS, CELI)</span></label><input id="pp-compagnia" type="text" placeholder="es. British Institute"></div></div>
     <div class="fr">
       <div class="fg"><label>Prezzo pieno (€) *</label><input id="pp-prezzo" type="number" min="0" step="0.01" placeholder="300.00" oninput="_ppPreview()"></div>
       <div class="fg"><label>Provvigione venditore (%)</label><input id="pp-prov" type="number" min="0" max="100" step="0.1" placeholder="20" oninput="_ppPreview()"></div>
@@ -3720,6 +3732,10 @@ function openM(id){
     document.getElementById('pd-nome').value=''
     document.getElementById('pd-cat-new').value=''
     document.getElementById('pd-gruppo').value=''
+    {const cp=document.getElementById('pd-compagnia'); if(cp) cp.value=''}
+    {const an=document.getElementById('pd-annuale'); if(an) an.checked=false}
+    {const ay=document.getElementById('pd-anni'); if(ay) ay.value=''}
+    try{ togglePdAnnuale() }catch(e){}
     {const cs=document.getElementById('pd-cat-sel'); if(cs) cs.value=''}
     {const pf=document.getElementById('pd-piatt'); if(pf) pf.selectedIndex=0}
     document.getElementById('pd-prov').value=''
@@ -3775,6 +3791,10 @@ async function caricaProdottiPag(){
 }
 function _ppAreeLabel(a){ const m={proc:'Procacciatori',dip:'Dipendenti',doc:'Docenti',studenti:'Studenti'}; return (a||[]).map(x=>m[x]||x).join(', ')||'\u2014' }
 function _eur(n){ return '\u20ac '+Number(n||0).toFixed(2).replace('.',',') }
+function togglePpAnnuale(){
+  const on=document.getElementById('pp-annuale')&&document.getElementById('pp-annuale').checked
+  const w=document.getElementById('pp-anni-wrap'); if(w) w.style.display=on?'block':'none'
+}
 function renderProdottiPag(){
   const tb=document.getElementById('tbl-prodpag'); if(!tb) return
   const q=(document.getElementById('prodpag-search')?document.getElementById('prodpag-search').value:'').toLowerCase().trim()
@@ -3788,8 +3808,10 @@ function renderProdottiPag(){
     const prov=Number(p.provvigione_pct||0)+'% ('+_eur(Number(p.prezzo||0)*Number(p.provvigione_pct||0)/100)+')'
     const stato=p.attivo?'<span style="color:#117A65;font-weight:600">\u25cf Attivo</span>':'<span style="color:#999">\u25cb Off</span>'
     const piatt=(p.piattaforma||'').trim()?'<span style="display:inline-block;font-size:10px;font-weight:700;background:#e9f1fa;color:#185FA5;padding:1px 7px;border-radius:20px;margin-right:6px">'+escB(p.piattaforma)+'</span>':''
+    const comp=(p.compagnia||'').trim()?'<span style="display:inline-block;font-size:10px;font-weight:700;background:#ede7f6;color:#5e35b1;padding:1px 7px;border-radius:20px;margin-right:6px">'+escB(p.compagnia)+'</span>':''
+    const annB=p.annuale?'<span style="display:inline-block;font-size:10px;font-weight:700;background:#fff3e0;color:#e65100;padding:1px 7px;border-radius:20px;margin-right:6px">\ud83d\udcc5 '+(p.anni?('\u00d7 '+p.anni+' anni'):'ad anno')+'</span>':''
     const grp=(p.gruppo||'').trim()?'<span style="display:inline-block;font-size:10px;background:#eee;color:#555;padding:1px 7px;border-radius:20px">'+escB(p.gruppo)+'</span>':''
-    return '<tr><td>'+piatt+grp+(piatt||grp?'<br>':'')+'<strong>'+escB(p.nome||'')+'</strong>'+(p.descrizione?'<div style="font-size:12px;color:var(--text2)">'+escB(p.descrizione)+'</div>':'')+'</td><td style="white-space:nowrap">'+_eur(p.prezzo)+'</td><td style="white-space:nowrap">'+prov+'</td><td style="font-size:12px">'+escB(_ppAreeLabel(p.aree))+'</td><td>'+stato+'</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="apriProdPag(\u0027'+p.id+'\u0027)">\u270f\ufe0f</button> <button class="btn btn-sm" onclick="eliminaProdPag(\u0027'+p.id+'\u0027)">\ud83d\uddd1</button></td></tr>'
+    return '<tr><td>'+piatt+comp+annB+grp+(piatt||comp||annB||grp?'<br>':'')+'<strong>'+escB(p.nome||'')+'</strong>'+(p.descrizione?'<div style="font-size:12px;color:var(--text2)">'+escB(p.descrizione)+'</div>':'')+'</td><td style="white-space:nowrap">'+_eur(p.prezzo)+(p.annuale?'<span style="font-size:10px;color:var(--text2)">/anno</span>':'')+'</td><td style="white-space:nowrap">'+prov+'</td><td style="font-size:12px">'+escB(_ppAreeLabel(p.aree))+'</td><td>'+stato+'</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="apriProdPag(\u0027'+p.id+'\u0027)">\u270f\ufe0f</button> <button class="btn btn-sm" onclick="eliminaProdPag(\u0027'+p.id+'\u0027)">\ud83d\uddd1</button></td></tr>'
   }).join('')
 }
 function _ppPreview(){
@@ -3808,6 +3830,10 @@ function apriProdPag(id){
     document.getElementById('pp-desc').value=p.descrizione||''
     document.getElementById('pp-gruppo').value=p.gruppo||''
     document.getElementById('pp-piattaforma').value=p.piattaforma||''
+    {const a=document.getElementById('pp-annuale'); if(a) a.checked=!!p.annuale}
+    {const y=document.getElementById('pp-anni'); if(y) y.value=(p.anni!=null?p.anni:'')}
+    {const c=document.getElementById('pp-compagnia'); if(c) c.value=p.compagnia||''}
+    togglePpAnnuale()
     document.getElementById('pp-prezzo').value=(p.prezzo!=null?p.prezzo:'')
     document.getElementById('pp-prov').value=(p.provvigione_pct!=null?p.provvigione_pct:'')
     document.getElementById('pp-prov-fissa').value=(p.provvigione_fissa!=null?p.provvigione_fissa:'')
@@ -3824,6 +3850,10 @@ function apriProdPag(id){
     document.getElementById('pp-desc').value=''
     document.getElementById('pp-gruppo').value=''
     document.getElementById('pp-piattaforma').value=''
+    {const a=document.getElementById('pp-annuale'); if(a) a.checked=false}
+    {const y=document.getElementById('pp-anni'); if(y) y.value=''}
+    {const c=document.getElementById('pp-compagnia'); if(c) c.value=''}
+    togglePpAnnuale()
     document.getElementById('pp-prezzo').value=''
     document.getElementById('pp-prov').value=''
     document.getElementById('pp-prov-fissa').value=''
@@ -3862,7 +3892,10 @@ async function salvaProdPag(continua){
   if(document.getElementById('pp-area-studenti').checked) aree.push('studenti')
   const gruppo=(document.getElementById('pp-gruppo').value||'').trim()
   const piattaforma=(document.getElementById('pp-piattaforma').value||'').trim()
-  const rec={ nome:nome, descrizione:(document.getElementById('pp-desc').value||'').trim(), gruppo:(gruppo||null), piattaforma:(piattaforma||null), prezzo:prezzo, provvigione_pct:Number(document.getElementById('pp-prov').value||0), provvigione_fissa:(document.getElementById('pp-prov-fissa').value!==''?Number(document.getElementById('pp-prov-fissa').value):null), aree:aree, attivo:document.getElementById('pp-attivo').value==='1' }
+  const ppAnnuale=!!(document.getElementById('pp-annuale')&&document.getElementById('pp-annuale').checked)
+  const ppAnni=ppAnnuale?(parseInt(document.getElementById('pp-anni').value)||1):null
+  const ppComp=(document.getElementById('pp-compagnia').value||'').trim()
+  const rec={ nome:nome, descrizione:(document.getElementById('pp-desc').value||'').trim(), gruppo:(gruppo||null), piattaforma:(piattaforma||null), annuale:ppAnnuale, anni:ppAnni, compagnia:(ppComp||null), prezzo:prezzo, provvigione_pct:Number(document.getElementById('pp-prov').value||0), provvigione_fissa:(document.getElementById('pp-prov-fissa').value!==''?Number(document.getElementById('pp-prov-fissa').value):null), aree:aree, attivo:document.getElementById('pp-attivo').value==='1' }
   const id=document.getElementById('pp-id').value
   try{
     let prodId=id
@@ -8193,9 +8226,13 @@ function filterList(cat,silent){
       cGuad=p.guadagno!=null&&p.guadagno!==''?'<span style="color:var(--green)">'+fmtE(p.guadagno)+'</span>':dash
     }
     const _m=offerteMatchApp(p)
+    const _annU=p.annuale?' <span style="font-size:9.5px;color:var(--text3)">/anno</span>':''
+    if(p.annuale){ cPrezzo=cPrezzo+_annU; cCosto=cCosto+_annU }
+    const _comp=(p.compagnia||'').trim()?'<span style="display:inline-block;font-size:9.5px;font-weight:700;background:#ede7f6;color:#5e35b1;border-radius:6px;padding:1px 6px;margin-left:6px">'+p.compagnia+'</span>':''
+    const _annB=p.annuale?'<span style="display:inline-block;font-size:9.5px;font-weight:700;background:#fff3e0;color:#e65100;border-radius:6px;padding:1px 6px;margin-left:6px">📅 '+(p.anni?('× '+p.anni+' anni'):'ad anno')+'</span>':''
     let _sel=''
     if(_m.length){ _sel=`<div style="margin-top:4px"><button onclick="apriOfferteReali(${idx})" style="font-size:11px;padding:3px 9px;border:0.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--green);font-weight:600;font-family:inherit;cursor:pointer">🔎 Vedi offerte reali (${_m.length})</button></div>` }
-    return`<tr><td style="font-size:12.5px;vertical-align:top">${p.nome}${_sel}</td><td style="vertical-align:top"><span class="pill">${p.cat}</span></td><td style="font-weight:600;vertical-align:top">${cPrezzo}</td><td style="color:var(--text2);vertical-align:top">${cCosto}</td><td style="vertical-align:top">${cMargine}</td><td style="font-weight:600;vertical-align:top">${cProv}</td><td style="font-weight:700;vertical-align:top">${cGuad}</td><td style="vertical-align:top"><button class="btn btn-sm" onclick="editProdotto(${idx})">✎</button> <button class="btn btn-sm btn-r" onclick="deleteProdotto(${idx})">✕</button></td></tr>`
+    return`<tr><td style="font-size:12.5px;vertical-align:top">${p.nome}${_comp}${_annB}${_sel}</td><td style="vertical-align:top"><span class="pill">${p.cat}</span></td><td style="font-weight:600;vertical-align:top">${cPrezzo}</td><td style="color:var(--text2);vertical-align:top">${cCosto}</td><td style="vertical-align:top">${cMargine}</td><td style="font-weight:600;vertical-align:top">${cProv}</td><td style="font-weight:700;vertical-align:top">${cGuad}</td><td style="vertical-align:top"><button class="btn btn-sm" onclick="editProdotto(${idx})">✎</button> <button class="btn btn-sm btn-r" onclick="deleteProdotto(${idx})">✕</button></td></tr>`
   }).join('')
 }
 let _liA=0
@@ -8244,6 +8281,13 @@ function apriOfferteReali(idx){
   openM('m-offerte-reali')
 }
 function scegliOffDaListino(id){ closeM('m-offerte-reali'); scegliOfferta(id) }
+function togglePdAnnuale(){
+  const on=document.getElementById('pd-annuale')&&document.getElementById('pd-annuale').checked
+  const w=document.getElementById('pd-anni-wrap'); if(w) w.style.display=on?'block':'none'
+  const up=document.getElementById('pd-unit-prezzo'); if(up) up.textContent=on?' /anno':''
+  const uc=document.getElementById('pd-unit-costo'); if(uc) uc.textContent=on?' /anno':''
+  try{ calcEconomia() }catch(e){}
+}
 function nuovoProdotto(){
   document.getElementById('pd-edit-pid').value=''
   openM('m-prodotto')
@@ -8255,6 +8299,10 @@ function editProdotto(idx){
   document.getElementById('pd-cat-new').value=p.cat
   document.getElementById('pd-piatt').value=p.piatt
   document.getElementById('pd-gruppo').value=p.gruppo||''
+  document.getElementById('pd-compagnia').value=p.compagnia||''
+  document.getElementById('pd-annuale').checked=!!p.annuale
+  document.getElementById('pd-anni').value=(p.anni!=null?p.anni:'')
+  togglePdAnnuale()
   document.getElementById('pd-tipo').value=p.tipo
   document.getElementById('pd-prov').value=p.prov
   document.getElementById('pd-prezzo').value=(p.prezzo!=null?p.prezzo:'')
@@ -8281,6 +8329,9 @@ function saveProdotto(continua){
   if(!cat)return alert('Seleziona o inserisci una categoria')
   const piatt=document.getElementById('pd-piatt').value
   const gruppo=(document.getElementById('pd-gruppo').value||'').trim()
+  const compagnia=(document.getElementById('pd-compagnia').value||'').trim()
+  const annuale=!!(document.getElementById('pd-annuale')&&document.getElementById('pd-annuale').checked)
+  const anni=annuale?(parseInt(document.getElementById('pd-anni').value)||1):null
   const tipo=document.getElementById('pd-tipo').value
   const prov=parseFloat(document.getElementById('pd-prov').value)||0
   const prezzoRaw=document.getElementById('pd-prezzo').value.trim()
@@ -8300,7 +8351,7 @@ function saveProdotto(continua){
     margine = (prezzo!=null && costo!=null) ? +(prezzo-costo).toFixed(2) : (prev&&prev.margine!=null?prev.margine:null)
     if(margine!=null) guadagno = +(margine-prov).toFixed(2)
   }
-  const obj={pid,nome,cat,piatt,gruppo:(gruppo||null),prov,tipo,emailNotifica,tipoCliente,prezzo,costo,margine,guadagno,marginePerc}
+  const obj={pid,nome,cat,piatt,gruppo:(gruppo||null),compagnia:(compagnia||null),annuale,anni,prov,tipo,emailNotifica,tipoCliente,prezzo,costo,margine,guadagno,marginePerc}
   if(editPid){
     const idx=LISTINO.findIndex(p=>p.pid===editPid)
     if(idx>=0) LISTINO[idx]=obj
@@ -8348,7 +8399,12 @@ function calcEconomia(){
     return
   }
   const margine=pv-cs, guadagno=margine-prov
-  box.innerHTML='Margine: <b>'+fmtE(margine)+'</b> &nbsp;·&nbsp; Provvigione procacciatore: <b>'+fmtE(prov)+'</b> &nbsp;·&nbsp; Guadagno Leone: <b style="color:var(--green)">'+fmtE(guadagno)+'</b>'
+  const ann=document.getElementById('pd-annuale')&&document.getElementById('pd-annuale').checked
+  const anni=ann?(parseInt(document.getElementById('pd-anni').value)||1):1
+  const pa=ann?' <span style="color:var(--text3)">/anno</span>':''
+  let out='Margine: <b>'+fmtE(margine)+'</b>'+pa+' &nbsp;·&nbsp; Provvigione procacciatore: <b>'+fmtE(prov)+'</b>'+pa+' &nbsp;·&nbsp; Guadagno Leone: <b style="color:var(--green)">'+fmtE(guadagno)+'</b>'+pa
+  if(ann && anni>1){ out+='<div style="margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border)">Totale su <b>'+anni+' anni</b>: il cliente paga <b>'+fmtE(pv*anni)+'</b> · guadagno Leone <b style="color:var(--green)">'+fmtE(guadagno*anni)+'</b></div>' }
+  box.innerHTML=out
 }
 let _listinoRowId=null
 function refreshCats(){ CATS=[...new Set(LISTINO.map(p=>p.cat))] }
