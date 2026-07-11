@@ -288,6 +288,69 @@ ipcMain.handle('installa-aggiornamento', async () => {
   return { ok: true }
 })
 
+// ── AGGIORNAMENTO IMMEDIATO (scarica dentro l'app installata e riavvia subito) ──
+ipcMain.handle('aggiorna-e-riavvia', async () => {
+  const https = require('https')
+  const { app } = require('electron')
+  const appDir = app.getAppPath()   // .../Resources/app  (asar disattivato)
+
+  const FILES = [
+    'src/index.html',
+    'main.js',
+    'preload.js',
+    'ipc-handlers.js',
+    'package.json',
+    'compila_documento.py',
+    'compila_pdf.py',
+    'fill_pdf_form_with_annotations.py',
+  ]
+
+  const scarica = (rel) => new Promise((resolve, reject) => {
+    const req = https.get({
+      hostname: 'raw.githubusercontent.com',
+      path: '/sheiiwe/leone-cloud/main/' + rel,
+      headers: { 'User-Agent': 'leone-cloud', 'Cache-Control': 'no-cache' }
+    }, (res) => {
+      if (res.statusCode === 404) { resolve(null); return }          // file non presente nel repo: lo salto
+      if (res.statusCode !== 200) { reject(new Error(rel + ': HTTP ' + res.statusCode)); return }
+      const chunks = []
+      res.on('data', c => chunks.push(c))
+      res.on('end', () => resolve(Buffer.concat(chunks)))
+    })
+    req.on('error', reject)
+    req.setTimeout(20000, () => { req.destroy(new Error('Timeout su ' + rel)) })
+  })
+
+  try {
+    // 1) scarico TUTTO in memoria (se qualcosa fallisce non tocco l'app installata)
+    const scaricati = []
+    for (const rel of FILES) {
+      const buf = await scarica(rel)
+      if (buf && buf.length) scaricati.push({ rel, buf })
+    }
+    if (!scaricati.length) throw new Error('Nessun file scaricato')
+
+    // 2) verifico di poter scrivere dentro l'app
+    const provaPath = path.join(appDir, '.perm_test')
+    try { fs.writeFileSync(provaPath, 'ok'); fs.unlinkSync(provaPath) }
+    catch (e) { throw new Error('Non ho i permessi per aggiornare l\u0027app in ' + appDir) }
+
+    // 3) backup + scrittura
+    for (const f of scaricati) {
+      const dest = path.join(appDir, f.rel)
+      fs.mkdirSync(path.dirname(dest), { recursive: true })
+      if (fs.existsSync(dest)) { try { fs.copyFileSync(dest, dest + '.bak') } catch (e) {} }
+      fs.writeFileSync(dest, f.buf)
+    }
+
+    // 4) riavvio IMMEDIATO
+    setTimeout(() => { app.relaunch(); app.exit(0) }, 400)
+    return { ok: true, aggiornati: scaricati.map(f => f.rel) }
+  } catch (e) {
+    return { ok: false, errore: e.message }
+  }
+})
+
 // ── AGGIORNAMENTO RAPIDO (solo src/index.html e script Python) ──
 ipcMain.handle('aggiornamento-rapido', async () => {
   const { exec } = require('child_process')

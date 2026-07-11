@@ -10407,39 +10407,34 @@ function toast(msg){
 }
 
 async function controllaAggiornamenti(){
-  const btn = event.currentTarget || event.target
-  btn.textContent = '⏳ Controllo...'
-  btn.disabled = true
+  const btn = (typeof event!=='undefined' && (event.currentTarget||event.target)) || null
+  const setB=(t)=>{ if(btn) btn.textContent=t }
+  const disB=(v)=>{ if(btn) btn.disabled=v }
+  setB('\u23f3 Controllo...'); disB(true)
   try {
     const result = await window.electronAPI?.controllaAggiornamenti?.()
     if(result?.aggiornamento){
-      if(confirm(`🆕 Nuova versione disponibile: v${result.versione}\n\nL'aggiornamento viene installato in pochi secondi senza riavviare!\n\nProcedere?`)){
-        btn.textContent = '⬇️ Aggiornamento...'
-        const r = await window.electronAPI?.aggiornamentoRapido?.()
-        if(r?.ok){
-          btn.textContent = `✅ Download v${result.versione} completato!`
-          alert(`✅ Aggiornamento v${result.versione} scaricato!\n\nL'app si sta reinstallando in background.\nSi riavvierà automaticamente tra circa 2 minuti.\n\nPuoi continuare a lavorare nel frattempo.`)
-          btn.disabled = false
-          btn.textContent = '🔄 Controlla aggiornamenti'
-        } else {
-          alert('❌ Errore: ' + (r?.errore || 'sconosciuto'))
-          btn.textContent = '🔄 Controlla aggiornamenti'
-          btn.disabled = false
-        }
+      const ok = confirm('\ud83c\udd95 Nuova versione disponibile: v'+result.versione+'\n\n(hai la v'+(result.locale||'?')+')\n\nL\u0027app si aggiorna e si RIAVVIA SUBITO.\nSalva quello che stai facendo prima di procedere.\n\nProcedere ora?')
+      if(!ok){ setB('\ud83d\udd04 Controlla aggiornamenti'); disB(false); return }
+      setB('\u2b07\ufe0f Scarico e installo...')
+      const r = await window.electronAPI?.aggiornaERiavvia?.()
+      if(r?.ok){
+        setB('\u2705 Riavvio...')
+        // l'app si chiude e riparte da sola: nessun messaggio di attesa
       } else {
-        btn.textContent = '🔄 Controlla aggiornamenti'
-        btn.disabled = false
+        alert('\u274c Aggiornamento non riuscito:\n'+(r?.errore || 'errore sconosciuto')+'\n\nSe il problema persiste, reinstalla l\u0027app manualmente.')
+        setB('\ud83d\udd04 Controlla aggiornamenti'); disB(false)
       }
     } else if(result?.errore){
-      btn.textContent = '❌ Errore connessione'
-      setTimeout(()=>{ btn.textContent='🔄 Controlla aggiornamenti'; btn.disabled=false }, 3000)
+      setB('\u274c Errore connessione')
+      setTimeout(()=>{ setB('\ud83d\udd04 Controlla aggiornamenti'); disB(false) }, 3000)
     } else {
-      btn.textContent = '✅ Sei aggiornato!'
-      setTimeout(()=>{ btn.textContent='🔄 Controlla aggiornamenti'; btn.disabled=false }, 3000)
+      setB('\u2705 Sei aggiornato!')
+      setTimeout(()=>{ setB('\ud83d\udd04 Controlla aggiornamenti'); disB(false) }, 3000)
     }
   } catch(e){
-    btn.textContent = '❌ Errore'
-    setTimeout(()=>{ btn.textContent='🔄 Controlla aggiornamenti'; btn.disabled=false }, 3000)
+    setB('\u274c Errore')
+    setTimeout(()=>{ setB('\ud83d\udd04 Controlla aggiornamenti'); disB(false) }, 3000)
   }
 }
 
@@ -11897,6 +11892,20 @@ window.electronAPI?.getVersion?.().then(v => {
   const el = document.getElementById('app-version')
   if(el && v) el.textContent = 'v' + v
 })
+
+// Controllo aggiornamenti automatico all'avvio (silenzioso se sei aggiornato)
+setTimeout(async () => {
+  try{
+    const r = await window.electronAPI?.controllaAggiornamenti?.()
+    if(r && r.aggiornamento){
+      const ok = confirm('\ud83c\udd95 \u00c8 disponibile la versione v'+r.versione+' (hai la v'+(r.locale||'?')+').\n\nVuoi aggiornare ora? L\u0027app si riavvia subito.')
+      if(ok){
+        const res = await window.electronAPI?.aggiornaERiavvia?.()
+        if(res && !res.ok) alert('\u274c Aggiornamento non riuscito:\n'+(res.errore||'errore sconosciuto'))
+      }
+    }
+  }catch(e){}
+}, 4000)
 
 function avviaApp(){
 caricaListino()

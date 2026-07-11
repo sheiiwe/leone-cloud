@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   controllaAggiornamenti: () => ipcRenderer.invoke('controlla-aggiornamenti'),
   installaAggiornamento: () => ipcRenderer.invoke('installa-aggiornamento'),
   aggiornamentoRapido: () => ipcRenderer.invoke('aggiornamento-rapido'),
+  aggiornaERiavvia: () => ipcRenderer.invoke('aggiorna-e-riavvia'),
   inviaEmailCollaboratore: (dati) => ipcRenderer.invoke('invia-email-collaboratore', dati),
   getVersion: () => ipcRenderer.invoke('get-version'),
   sendMail: (dati) => ipcRenderer.invoke('sendMail', dati),

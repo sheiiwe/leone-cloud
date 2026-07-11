@@ -1,6 +1,6 @@
 {
   "name": "leone-consulting",
-  "version": "1.9.228",
+  "version": "1.9.229",
   "description": "Gestionale — Leone Consulting di Leonardo Angelucci",
   "main": "main.js",
   "scripts": {
@@ -57,7 +57,7 @@
       "assets/templates/**",
       "assets/fields/**"
     ],
-    "asar": true,
+    "asar": false,
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
