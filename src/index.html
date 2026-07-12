@@ -2741,11 +2741,11 @@ async function loadAll(){
   try{
     const [rP,rV,rL,rD,rB,rC,rDoc,rStu,rCD]=await Promise.all([
       db.from('procacciatori').select('*').order('created_at'),
-      db.from('vendite').select('*').order('created_at'),
-      db.from('leads').select('*').order('created_at'),
+      db.from('vendite').select('*').order('created_at',{ascending:false}),
+      db.from('leads').select('*').order('created_at',{ascending:false}),
       db.from('dipendenti').select('*').order('created_at'),
       db.from('buste_paga').select('*').order('created_at'),
-      db.from('contratti_firme').select('*').order('created_at'),
+      db.from('contratti_firme').select('*').order('created_at',{ascending:false}),
       db.from('docenti').select('*').order('created_at'),
       db.from('studenti').select('*').order('created_at'),
       db.from('compensi_docenti').select('*').order('created_at'),
@@ -4111,6 +4111,31 @@ async function eliminaCand(id){
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
 
+
+// Legge una data in QUALSIASI formato usato nell'app e la trasforma in un numero
+// confrontabile. Serve perche\u0027 le date italiane (12/07/2026) confrontate come
+// TESTO si ordinano per giorno: il 30 giugno finiva sopra il 12 luglio.
+function _ts(v){
+  if(!v) return 0
+  if(v instanceof Date) return v.getTime()
+  const s=String(v).trim()
+  // 12/07/2026  oppure  12/07/2026 21:35  oppure  12-07-2026
+  const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[ ,T]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/)
+  if(m){
+    return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0), +(m[6]||0)).getTime()
+  }
+  const t=Date.parse(s)          // ISO: 2026-07-12T18:30:00Z
+  return isNaN(t) ? 0 : t
+}
+// dal piu\u0027 recente al piu\u0027 vecchio
+function _perData(campi){
+  return function(a,b){
+    const va=campi.map(c=>_ts(a&&a[c])).find(x=>x>0)||0
+    const vb=campi.map(c=>_ts(b&&b[c])).find(x=>x>0)||0
+    return vb-va
+  }
+}
+
 // ── NAVIGAZIONE ───────────────────────────────────────────────
 function sp(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
@@ -4682,7 +4707,7 @@ function renderProvvDoc(){
   const box=document.getElementById('provv-doc-lista'); if(!box) return
   const q=(document.getElementById('cd-search')?.value||'').trim().toLowerCase()
   const fd=document.getElementById('cd-f-docente')?.value||''
-  let list=compensiDoc.concat(_provvDocIncassi()).sort((a,b)=>(b.data||'').localeCompare(a.data||''))
+  let list=compensiDoc.concat(_provvDocIncassi()).sort(_perData(['data']))
   if(fd) list=list.filter(c=>c.docenteId===fd)
   if(q) list=list.filter(c=>((c.docenteNome||'')+' '+(c.studenteNome||'')+' '+(c.materia||'')).toLowerCase().includes(q))
   const tInc=list.reduce((s,c)=>s+(+c.importo||0),0), tDoc=list.reduce((s,c)=>s+(+c.compDocente||0),0), tAz=list.reduce((s,c)=>s+(+c.compAzienda||0),0)
@@ -7214,7 +7239,7 @@ function renderCFArea(sez){
   let ct=contratti.filter(c=>c.sezione===sez && c.statoFirma==='Firmato')
   const _q=(document.getElementById('cf-search-'+sez)&&document.getElementById('cf-search-'+sez).value||'').trim().toLowerCase()
   if(_q) ct=ct.filter(c=>((c.nomeDestinatario||'')+' '+(c.emailDestinatario||'')+' '+(c.tipoContratto||'')).toLowerCase().includes(_q))
-  ct=ct.slice().sort((a,b)=>((b.dataFirma||'')+'').localeCompare((a.dataFirma||'')+''))
+  ct=ct.slice().sort(_perData(['dataFirma','timestampFirma','created_at']))
   if(!ct.length){ tb.innerHTML='<tr><td colspan="4" class="empty">'+(_q?'Nessun risultato per la ricerca':'Nessun contratto firmato')+'</td></tr>'; return }
   tb.innerHTML=ct.map(c=>`<tr><td><strong style="font-weight:600">${c.nomeDestinatario||''}</strong><br><span style="font-size:11px;color:var(--text2)">${c.emailDestinatario||''}</span></td><td style="font-size:12px">${c.tipoContratto||''}</td><td style="color:var(--text2)">${c.dataFirma||'\u2014'}</td><td class="acts">${c.pdfFirmatoPath?`<button class="btn btn-sm btn-p" onclick="apriPdfFirmato('${c._id}')" title="Apri PDF firmato">\ud83d\udcc4 PDF</button>`:`<button class="btn btn-sm" onclick="generaEApriPdfFirmato('${c._id}')" title="Genera il PDF firmato">\ud83d\udcc4 Genera PDF</button>`}${(c.documentiCaricati&&Object.keys(c.documentiCaricati).length)?`<button class="btn btn-sm" onclick="apriAllegatiFirma('${c._id}')" title="Documenti del firmatario">\ud83d\udcce Doc.</button>`:''}</td></tr>`).join('')
 }
@@ -7224,7 +7249,7 @@ function renderFattArea(area){
   let rows=(_incassiCache||[]).filter(p=>p.stato==='paid' && p.area===area)
   const _q=(document.getElementById('fatt-search-'+area)&&document.getElementById('fatt-search-'+area).value||'').trim().toLowerCase()
   if(_q) rows=rows.filter(p=>((p.cliente_nome||'')+' '+(p.prodotto_nome||'')+' '+(p.fattura_numero||'')+' '+(p.venditore_nome||'')).toLowerCase().includes(_q))
-  rows=rows.slice().sort((a,b)=>((b.paid_at||b.created_at||'')+'').localeCompare((a.paid_at||a.created_at||'')+''))
+  rows=rows.slice().sort(_perData(['paid_at','created_at']))
   if(!rows.length){ tb.innerHTML='<tr><td colspan="6" class="empty">'+(_q?'Nessun risultato per la ricerca':'Nessun incasso da fatturare')+'</td></tr>'; return }
   tb.innerHTML=rows.map(p=>{
     const emessa=p.fattura_stato==='emessa'
@@ -7266,7 +7291,7 @@ function renderNCArea(area){
   let rows=(_incassiCache||[]).filter(p=>p.area===area && p.nota_credito_fic_id)
   const _q=(document.getElementById('nc-search-'+area)&&document.getElementById('nc-search-'+area).value||'').trim().toLowerCase()
   if(_q) rows=rows.filter(p=>((p.cliente_nome||'')+' '+(p.prodotto_nome||'')+' '+(p.fattura_numero||'')+' '+(p.nota_credito_numero||'')).toLowerCase().includes(_q))
-  rows=rows.slice().sort((a,b)=>((b.paid_at||b.created_at||'')+'').localeCompare((a.paid_at||a.created_at||'')+''))
+  rows=rows.slice().sort(_perData(['paid_at','created_at']))
   if(!rows.length){ tb.innerHTML='<tr><td colspan="6" class="empty">'+(_q?'Nessun risultato':'Nessuna nota di credito. Le crei dalla sezione Fatture, sulla riga di una fattura emessa.')+'</td></tr>'; return }
   tb.innerHTML=rows.map(p=>{
     const chi=p.cliente_nome||(p.uso_personale?'(uso personale)':'—')
