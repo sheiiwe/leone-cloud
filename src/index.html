@@ -237,6 +237,14 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="sub2">Gestionale amministrativo</div>
   </div>
 
+  <!-- RICERCA GLOBALE -->
+  <div class="gr-wrap" style="position:relative;padding:0 14px 10px">
+    <input id="gr-input" type="text" placeholder="&#128269; Cerca ovunque&#8230;  &#8984;K" autocomplete="off"
+      oninput="grCerca()" onfocus="grCerca()" onkeydown="grTasti(event)"
+      style="width:100%;padding:8px 11px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:inherit;font-size:12.5px;outline:none">
+    <div id="gr-res" style="display:none;position:absolute;left:14px;right:14px;top:100%;z-index:9999;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.28);max-height:60vh;overflow-y:auto;padding:5px"></div>
+  </div>
+
   <!-- SELETTORE AREA (popup) -->
   <div class="area-select" id="area-select">
     <div class="area-trigger" onclick="toggleAreaMenu(event)">
@@ -3675,6 +3683,219 @@ document.addEventListener('click', e => {
   if(notifPanelOpen && !document.getElementById('bell-wrap').contains(e.target) && !document.getElementById('notif-panel').contains(e.target)){
     notifPanelOpen = false
     document.getElementById('notif-panel').style.display = 'none'
+  }
+})
+
+
+// ══════════════════════════════════════════════════════════════
+//  RICERCA GLOBALE
+//  Una casella sola: trova le stanze di TUTTE le aree e te le apre,
+//  piu' le persone gia' caricate. Scorciatoia: Cmd+K
+// ══════════════════════════════════════════════════════════════
+
+// Ogni stanza ha delle "parole d'appoggio": cosi\u0027 la trovi anche se la
+// chiami come ti viene, non come l'abbiamo chiamata noi.
+const STANZE = [
+  // ---- PROCACCIATORI
+  {a:'proc', id:'dashboard',              n:'Dashboard',              g:'Generale',    k:'riepilogo home statistiche numeri'},
+  {a:'proc', id:'cand-proc',              n:'Candidature',            g:'Generale',    k:'candidati curriculum cv lavora con noi assunzioni colloqui'},
+  {a:'proc', id:'proc',                   n:'Procacciatori',          g:'Generale',    k:'agenti venditori rete anagrafica collaboratori'},
+  {a:'proc', id:'vendite',                n:'Vendite',                g:'Attivit\u00e0',    k:'contratti venduti fatturato ordini'},
+  {a:'proc', id:'lead',                   n:'Lead',                   g:'Attivit\u00e0',    k:'contatti clienti potenziali richieste nominativi'},
+  {a:'proc', id:'cestino',                n:'Cestino',                g:'Attivit\u00e0',    k:'eliminati cancellati recupera'},
+  {a:'proc', id:'provv',                  n:'Provvigioni',            g:'Provvigioni', k:'compensi guadagni pagare quanto devo percentuali'},
+  {a:'proc', id:'rete',                   n:'Reti commerciali',       g:'Provvigioni', k:'squadre gruppi capo area struttura'},
+  {a:'proc', id:'contratti-firmati-proc', n:'Contratti firmati',      g:'Contratti',   k:'firmati pdf archivio documenti firmati'},
+  {a:'proc', id:'fatture-proc',           n:'Fatture',                g:'Contratti',   k:'fattura fatturazione elettronica sdi emesse'},
+  {a:'proc', id:'nc-proc',                n:'Note di credito',        g:'Contratti',   k:'nota credito storno rimborso annulla fattura'},
+  {a:'proc', id:'contratti',              n:'Contratti & Firme',      g:'Contratti',   k:'firma firmare invia contratto da firmare sollecito'},
+  {a:'proc', id:'listino',                n:'Listino prodotti',       g:'Listino',     k:'prezzi catalogo corsi servizi'},
+  {a:'proc', id:'offerte',                n:'Offerte luce/gas/telefonia', g:'Listino', k:'energia commodities telco fornitori bollette luce gas'},
+  {a:'proc', id:'prodottipag',            n:'Prodotti & pagamenti',   g:'Listino',     k:'prodotto pagamento sumup paypal provvigione prezzo'},
+  {a:'proc', id:'avvisi',                 n:'Avvisi',                 g:'Notifiche',   k:'notifiche allerte messaggi'},
+  {a:'proc', id:'email-mkt',              n:'Email marketing',        g:'Strumenti',   k:'campagne newsletter brevo invii massivi'},
+  {a:'proc', id:'documenti',              n:'Documenti',              g:'Strumenti',   k:'file archivio pdf modelli template caricare'},
+  {a:'proc', id:'invio-doc',              n:'Invio documenti',        g:'Strumenti',   k:'manda spedisci email allegato'},
+  {a:'proc', id:'cedolini',               n:'Cedolini',               g:'Strumenti',   k:'cedolino provvigioni mensili prospetto compensi ritenuta'},
+  {a:'proc', id:'doc-comm',               n:'Documenti commerciali',  g:'Strumenti',   k:'brochure materiale presentazioni volantini'},
+  {a:'proc', id:'portale-link',           n:'Portale procacciatori',  g:'Strumenti',   k:'accessi credenziali link portale password invito'},
+  {a:'proc', id:'bacheca',                n:'Bacheca',                g:'Strumenti',   k:'comunicazioni annunci avvisi rete'},
+  {a:'proc', id:'proposte',               n:'Proposte',               g:'Strumenti',   k:'preventivi proposta cliente'},
+  {a:'proc', id:'bonus',                  n:'Bonus porta cliente',    g:'Strumenti',   k:'premi incentivi segnalazione'},
+  {a:'proc', id:'impostazioni',           n:'Impostazioni',           g:'Sistema',     k:'configurazione iban dati azienda email smtp aggiornamenti accessi portale campi documenti editor coordinate versione partita iva sdi logo'},
+
+  // ---- DOCENTI
+  {a:'doc', id:'docenti',                 n:'Docenti',                g:'Generale',    k:'insegnanti tutor professori anagrafica'},
+  {a:'doc', id:'cand-doc',                n:'Candidature',            g:'Generale',    k:'candidati curriculum cv lavora con noi colloqui insegnanti'},
+  {a:'doc', id:'studenti',                n:'Studenti',               g:'Generale',    k:'allievi ragazzi alunni ripetizioni ore pacchetti'},
+  {a:'doc', id:'calendario',              n:'Calendario',             g:'Generale',    k:'lezioni disponibilita orari agenda'},
+  {a:'doc', id:'prenotazioni',            n:'Prenotazioni',           g:'Generale',    k:'lezioni prenotate richieste da approvare spostamenti'},
+  {a:'doc', id:'provv-doc',               n:'Provvigioni docenti',    g:'Compensi',    k:'compensi guadagni quanto devo pagare docenti'},
+  {a:'doc', id:'incassi',                 n:'Incassi',                g:'Compensi',    k:'contanti bonifico da confermare pagamenti ricevuti'},
+  {a:'doc', id:'contratti-doc',           n:'Contratti & Firme',      g:'Contratti',   k:'firma firmare invia contratto docente'},
+  {a:'doc', id:'contratti-firmati-doc',   n:'Contratti firmati',      g:'Contratti',   k:'firmati pdf archivio'},
+  {a:'doc', id:'fatture-doc',             n:'Fatture',                g:'Contratti',   k:'fattura fatturazione elettronica emesse'},
+  {a:'doc', id:'nc-doc',                  n:'Note di credito',        g:'Contratti',   k:'nota credito storno rimborso'},
+  {a:'doc', id:'proposte-docenti',        n:'Proposte docenti',       g:'Contratti',   k:'preventivi proposta'},
+  {a:'doc', id:'cedolini',                n:'Cedolini docenti',       g:'Strumenti',   k:'cedolino compensi mensili prospetto'},
+  {a:'doc', id:'invio-doc-area',          n:'Invio documenti',        g:'Strumenti',   k:'manda spedisci email allegato'},
+
+  // ---- DIPENDENTI
+  {a:'dip', id:'dip-dash',                n:'Dashboard dipendenti',   g:'Generale',    k:'riepilogo home'},
+  {a:'dip', id:'cand-dip',                n:'Candidature',            g:'Generale',    k:'candidati curriculum cv lavora con noi colloqui'},
+  {a:'dip', id:'dipendenti',              n:'Dipendenti',             g:'Generale',    k:'personale staff dipendente anagrafica assunti'},
+  {a:'dip', id:'buste',                   n:'Buste paga',             g:'Paghe',       k:'busta paga cedolino stipendio salario mensile lul'},
+  {a:'dip', id:'contratti-dip',           n:'Contratti & Firme',      g:'Contratti',   k:'firma firmare contratto dipendente assunzione'},
+  {a:'dip', id:'contratti-firmati-dip',   n:'Contratti firmati',      g:'Contratti',   k:'firmati pdf archivio'},
+  {a:'dip', id:'fatture-dip',             n:'Fatture',                g:'Contratti',   k:'fattura elettronica emesse'},
+  {a:'dip', id:'nc-dip',                  n:'Note di credito',        g:'Contratti',   k:'nota credito storno'},
+]
+
+const _AREA_LAB = {proc:'Procacciatori', doc:'Docenti', dip:'Dipendenti'}
+let _grSel = -1, _grVoci = []
+
+// via accenti e maiuscole: "citta" trova "citt\u00e0", "Buste" trova "buste"
+function _grNorm(t){
+  return String(t||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ').trim()
+}
+
+function grCerca(){
+  const inp=document.getElementById('gr-input'), box=document.getElementById('gr-res')
+  if(!inp||!box) return
+  const q=_grNorm(inp.value)
+  if(q.length<2){ box.style.display='none'; _grVoci=[]; _grSel=-1; return }
+  const parole=q.split(' ').filter(Boolean)
+  const trova=(testo)=>{ const t=_grNorm(testo); return parole.every(p=>t.indexOf(p)>=0) }
+
+  // ---- 1) le stanze
+  // Il NOME VERO vale piu\u0027 delle parole d'appoggio: scrivendo "contratti"
+  // devi trovare "Contratti & Firme", non "Vendite" perche\u0027 tra i suoi
+  // sinonimi c'era "contratti venduti".
+  const punteggio=function(x){
+    const nome=_grNorm(x.n), grup=_grNorm(x.g), kw=_grNorm(x.k)
+    let p=0
+    parole.forEach(function(w){
+      if(nome.indexOf(w)===0) p+=100          // il nome comincia cosi\u0027
+      else if(nome.indexOf(w)>=0) p+=70       // il nome lo contiene
+      else if(grup.indexOf(w)>=0) p+=25       // e\u0027 il gruppo del menu
+      else if(kw.indexOf(w)>=0) p+=10         // solo una parola d'appoggio
+    })
+    return p
+  }
+  const stanze=STANZE
+    .filter(x=>trova(x.n+' '+x.k+' '+x.g+' '+_AREA_LAB[x.a]))
+    .map(x=>({x, p:punteggio(x)}))
+    .sort((a,b)=>b.p-a.p)
+    .slice(0,10)
+    .map(o=>o.x)
+
+  // ---- 2) le persone gia\u0027 caricate in memoria
+  const persone=[]
+  const agg=(lista, tipo, area, pagina, nomeF, sottoF)=>{
+    if(!Array.isArray(lista)) return
+    lista.forEach(function(x){
+      if(persone.length>=8) return
+      const nome=nomeF(x); if(!nome || !trova(nome+' '+(sottoF?sottoF(x):''))) return
+      persone.push({ nome, tipo, area, pagina, sotto:(sottoF?sottoF(x):'') })
+    })
+  }
+  try{ agg(typeof procs!=='undefined'?procs:null, 'Procacciatore','proc','proc', p=>p&&p.nome, p=>(p&&p.email)||'') }catch(e){}
+  try{ agg(typeof docenti!=='undefined'?docenti:null, 'Docente','doc','docenti', d=>d&&d.nome, d=>(d&&d.email)||'') }catch(e){}
+  try{ agg(typeof studenti!=='undefined'?studenti:null, 'Studente','doc','studenti', st=>st&&st.nome, st=>(st&&st.email)||'') }catch(e){}
+  try{ agg(typeof dipendenti!=='undefined'?dipendenti:null, 'Dipendente','dip','dipendenti', d=>d&&d.nome, d=>(d&&d.email)||'') }catch(e){}
+  try{ agg(typeof leads!=='undefined'?leads:null, 'Lead','proc','lead', l=>l&&l.nome, l=>(l&&(l.tel||l.email))||'') }catch(e){}
+  try{ agg(typeof _CAND!=='undefined'?_CAND:null, 'Candidato', null, null, c=>c&&c.nome, c=>(c&&c.email)||'') }catch(e){}
+
+  _grVoci=[]
+  let html=''
+
+  if(stanze.length){
+    html+='<div style="font-size:9.5px;font-weight:700;letter-spacing:.6px;color:var(--text3);padding:7px 10px 4px">VAI A\u2026</div>'
+    stanze.forEach(function(x){
+      const i=_grVoci.length
+      _grVoci.push({tipo:'stanza', a:x.a, id:x.id})
+      const altra=(typeof sezioneAttiva!=='undefined' && sezioneAttiva!==x.a)
+      html+='<div class="gr-v" data-i="'+i+'" onclick="grApri('+i+')" '
+        +'style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:12.5px">'
+        +'<span style="opacity:.6">\u2192</span>'
+        +'<span style="flex:1;min-width:0"><strong>'+escB(x.n)+'</strong>'
+        +'<span style="color:var(--text3);font-size:11px"> \u00b7 '+escB(x.g)+'</span></span>'
+        +(altra?('<span style="font-size:9.5px;font-weight:700;color:var(--accent);background:var(--surface2);padding:1px 6px;border-radius:10px;white-space:nowrap">'+escB(_AREA_LAB[x.a])+'</span>'):'')
+        +'</div>'
+    })
+  }
+
+  if(persone.length){
+    html+='<div style="font-size:9.5px;font-weight:700;letter-spacing:.6px;color:var(--text3);padding:9px 10px 4px;border-top:0.5px solid var(--border);margin-top:3px">PERSONE</div>'
+    persone.forEach(function(p){
+      const i=_grVoci.length
+      _grVoci.push({tipo:'persona', a:p.area, id:p.pagina})
+      html+='<div class="gr-v" data-i="'+i+'" '+(p.pagina?('onclick="grApri('+i+')"'):'')+' '
+        +'style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;font-size:12.5px;'+(p.pagina?'cursor:pointer':'opacity:.75')+'">'
+        +'<span style="opacity:.6">\u25cf</span>'
+        +'<span style="flex:1;min-width:0"><strong>'+escB(p.nome)+'</strong>'
+        +(p.sotto?('<span style="color:var(--text3);font-size:11px"> \u00b7 '+escB(p.sotto)+'</span>'):'')+'</span>'
+        +'<span style="font-size:9.5px;font-weight:700;color:var(--text3);white-space:nowrap">'+escB(p.tipo)+'</span>'
+        +'</div>'
+    })
+  }
+
+  if(!html) html='<div style="padding:12px 10px;font-size:12.5px;color:var(--text3)">Non trovo nulla per \u201c'+escB(inp.value)+'\u201d</div>'
+
+  box.innerHTML=html
+  box.style.display='block'
+  _grSel=-1
+}
+
+function _grEvidenzia(){
+  document.querySelectorAll('#gr-res .gr-v').forEach(function(el,i){
+    el.style.background = (i===_grSel) ? 'var(--surface2)' : 'transparent'
+  })
+  const att=document.querySelector('#gr-res .gr-v[data-i="'+_grSel+'"]')
+  if(att && att.scrollIntoView) att.scrollIntoView({block:'nearest'})
+}
+
+function grTasti(e){
+  const box=document.getElementById('gr-res')
+  if(!box || box.style.display==='none') return
+  if(e.key==='ArrowDown'){ e.preventDefault(); _grSel=Math.min(_grSel+1, _grVoci.length-1); _grEvidenzia() }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); _grSel=Math.max(_grSel-1, 0); _grEvidenzia() }
+  else if(e.key==='Enter'){ e.preventDefault(); grApri(_grSel<0?0:_grSel) }
+  else if(e.key==='Escape'){ grChiudi() }
+}
+
+function grChiudi(){
+  const box=document.getElementById('gr-res'), inp=document.getElementById('gr-input')
+  if(box) box.style.display='none'
+  if(inp){ inp.value=''; inp.blur() }
+  _grSel=-1; _grVoci=[]
+}
+
+// Apre la stanza. Se sta in un'altra macroarea, ci sposta anche.
+function grApri(i){
+  const v=_grVoci[i]; if(!v || !v.id) return
+  grChiudi()
+  try{ if(typeof sezioneAttiva!=='undefined' && sezioneAttiva!==v.a) switchSezione(v.a) }catch(e){}
+  setTimeout(function(){
+    let el=null
+    try{ el=document.querySelector('#nav-'+v.a+' .nav-item[onclick*="sp(\u0027'+v.id+'\u0027"]') }catch(e){}
+    try{ sp(v.id, el) }catch(e){ console.error('ricerca:', e) }
+  }, 40)
+}
+
+// chiude cliccando fuori
+document.addEventListener('click', function(e){
+  const w=document.querySelector('.gr-wrap')
+  if(w && !w.contains(e.target)){ const b=document.getElementById('gr-res'); if(b) b.style.display='none' }
+})
+// Cmd+K (o Ctrl+K)
+document.addEventListener('keydown', function(e){
+  if((e.metaKey||e.ctrlKey) && (e.key==='k'||e.key==='K')){
+    e.preventDefault()
+    const i=document.getElementById('gr-input')
+    if(i){ i.focus(); i.select() }
   }
 })
 
