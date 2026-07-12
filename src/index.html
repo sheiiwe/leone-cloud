@@ -257,6 +257,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item active" onclick="sp('dashboard',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard
     </div>
+    <div class="nav-item" onclick="sp('cand-proc',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Candidature<span id="nav-dot-cand-proc" style="display:none;margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px"></span>
+    </div>
     <div class="nav-item" onclick="sp('proc',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Procacciatori
     </div>
@@ -356,6 +359,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('docenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Docenti
     </div>
+    <div class="nav-item" onclick="sp('cand-doc',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Candidature<span id="nav-dot-cand-doc" style="display:none;margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px"></span>
+    </div>
     <div class="nav-item" onclick="sp('studenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>Studenti
     </div>
@@ -441,6 +447,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-sec">Generale</div>
     <div class="nav-item" onclick="sp('dip-dash',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard
+    </div>
+    <div class="nav-item" onclick="sp('cand-dip',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Candidature<span id="nav-dot-cand-dip" style="display:none;margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px"></span>
     </div>
     <div class="nav-item" onclick="sp('dipendenti',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Dipendenti
@@ -584,6 +593,58 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="tbl-wrap"><table>
       <thead><tr><th>Contatto</th><th>Azienda</th><th>Procacciatore</th><th>Interesse</th><th>Data</th><th>Stato</th><th></th></tr></thead>
       <tbody id="tbl-lead"><tr><td colspan="7" class="empty">Caricamento...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+
+<!-- CANDIDATURE PROC -->
+<div class="page" id="page-cand-proc">
+  <div class="pg-title">Candidature · Procacciatori</div>
+  <div class="search-row">
+    <input type="text" id="cand-search-proc" placeholder="&#128269; Cerca nome, email, citt&agrave;..." oninput="renderCandidature('proc')">
+    <button class="btn btn-sm" onclick="caricaCandidature(true)">&#8635; Aggiorna</button>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="cand-filtri-proc"></div>
+  <div class="card">
+    <div class="card-hdr"><h3 id="cand-tit-proc">Candidature ricevute</h3></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Candidato</th><th>Zona</th><th>Esperienza</th><th>Arrivata</th><th>Stato</th><th></th></tr></thead>
+      <tbody id="tbl-cand-proc"><tr><td colspan="6" class="empty">Caricamento...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- CANDIDATURE DOC -->
+<div class="page" id="page-cand-doc">
+  <div class="pg-title">Candidature · Docenti</div>
+  <div class="search-row">
+    <input type="text" id="cand-search-doc" placeholder="&#128269; Cerca nome, email, citt&agrave;..." oninput="renderCandidature('doc')">
+    <button class="btn btn-sm" onclick="caricaCandidature(true)">&#8635; Aggiorna</button>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="cand-filtri-doc"></div>
+  <div class="card">
+    <div class="card-hdr"><h3 id="cand-tit-doc">Candidature ricevute</h3></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Candidato</th><th>Zona</th><th>Esperienza</th><th>Arrivata</th><th>Stato</th><th></th></tr></thead>
+      <tbody id="tbl-cand-doc"><tr><td colspan="6" class="empty">Caricamento...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- CANDIDATURE DIP -->
+<div class="page" id="page-cand-dip">
+  <div class="pg-title">Candidature · Dipendenti</div>
+  <div class="search-row">
+    <input type="text" id="cand-search-dip" placeholder="&#128269; Cerca nome, email, citt&agrave;..." oninput="renderCandidature('dip')">
+    <button class="btn btn-sm" onclick="caricaCandidature(true)">&#8635; Aggiorna</button>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="cand-filtri-dip"></div>
+  <div class="card">
+    <div class="card-hdr"><h3 id="cand-tit-dip">Candidature ricevute</h3></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Candidato</th><th>Zona</th><th>Esperienza</th><th>Arrivata</th><th>Stato</th><th></th></tr></thead>
+      <tbody id="tbl-cand-dip"><tr><td colspan="6" class="empty">Caricamento...</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -3653,6 +3714,176 @@ document.addEventListener('click',function(e){
   if(sel && !sel.contains(e.target)){ const am=document.getElementById('area-menu'); if(am) am.classList.remove('open'); sel.classList.remove('open') }
 })
 
+
+// ══════════════════════════════════════════════════════════════
+//  CANDIDATURE ("Lavora con noi")
+//  Ogni macroarea vede solo le sue: i procacciatori i procacciatori,
+//  i docenti i docenti, i dipendenti i dipendenti.
+// ══════════════════════════════════════════════════════════════
+let _CAND = []
+const _CAND_FILTRO = { proc:'aperte', doc:'aperte', dip:'aperte' }
+
+const CAND_STATI = [
+  { id:'nuova',      lab:'Nuova',      col:'#c0392b' },
+  { id:'contattato', lab:'Contattato', col:'#b9770e' },
+  { id:'colloquio',  lab:'Colloquio',  col:'#1f618d' },
+  { id:'assunto',    lab:'Preso',      col:'#1e8449' },
+  { id:'scartato',   lab:'Scartato',   col:'#7f8c8d' },
+]
+function _candStato(id){ return CAND_STATI.find(x=>x.id===id) || CAND_STATI[0] }
+function _candBadge(id){
+  const s=_candStato(id)
+  return '<span style="font-size:10px;font-weight:700;color:'+s.col+';background:'+s.col+'22;padding:2px 8px;border-radius:20px;white-space:nowrap">'+s.lab.toUpperCase()+'</span>'
+}
+function _candQuando(iso){
+  if(!iso) return '\u2014'
+  const d=new Date(iso), gg=Math.floor((Date.now()-d.getTime())/86400000)
+  const data=d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'})
+  if(gg<=0) return 'oggi'
+  if(gg===1) return 'ieri'
+  if(gg<=7) return gg+' giorni fa'
+  return data
+}
+
+async function caricaCandidature(forza){
+  if(!db) return
+  if(_CAND.length && !forza){ ['proc','doc','dip'].forEach(a=>renderCandidature(a)); return }
+  try{
+    const r = await db.from('candidature').select('*').order('created_at',{ascending:false}).limit(500)
+    if(r.error) throw r.error
+    _CAND = r.data || []
+  }catch(e){
+    _CAND = []
+    console.error('candidature:', e)
+  }
+  ;['proc','doc','dip'].forEach(a=>renderCandidature(a))
+  _candAggiornaPallini()
+}
+
+// pallino rosso sul menu: quante nuove, per area
+function _candAggiornaPallini(){
+  ;['proc','doc','dip'].forEach(function(a){
+    const n=(_CAND||[]).filter(c=>c.ruolo===a && c.stato==='nuova').length
+    const el=document.getElementById('nav-dot-cand-'+a)
+    if(el){ el.textContent=n; el.style.display=n?'inline-block':'none' }
+  })
+}
+
+function setCandFiltro(area, f){ _CAND_FILTRO[area]=f; renderCandidature(area) }
+
+function renderCandidature(area){
+  const tb=document.getElementById('tbl-cand-'+area); if(!tb) return
+  const q=((document.getElementById('cand-search-'+area)||{}).value||'').toLowerCase().trim()
+  const tutte=(_CAND||[]).filter(c=>c.ruolo===area)
+
+  // filtri: Aperte (tutto tranne preso/scartato), poi uno per stato, poi Tutte
+  const fb=document.getElementById('cand-filtri-'+area)
+  if(fb){
+    const conta=function(f){
+      if(f==='aperte') return tutte.filter(c=>c.stato!=='assunto'&&c.stato!=='scartato').length
+      if(f==='tutte') return tutte.length
+      return tutte.filter(c=>c.stato===f).length
+    }
+    const voci=[{id:'aperte',lab:'Aperte'}].concat(CAND_STATI.map(s=>({id:s.id,lab:s.lab}))).concat([{id:'tutte',lab:'Tutte'}])
+    fb.innerHTML=voci.map(function(v){
+      const on=_CAND_FILTRO[area]===v.id
+      return '<button class="btn btn-sm'+(on?' btn-p':'')+'" onclick="setCandFiltro(\''+area+'\',\''+v.id+'\')">'+v.lab+' ('+conta(v.id)+')</button>'
+    }).join('')
+  }
+
+  let ll=tutte
+  if(q){
+    ll=ll.filter(c=>((c.nome||'')+' '+(c.email||'')+' '+(c.citta||'')+' '+(c.tel||'')).toLowerCase().includes(q))
+  } else {
+    const f=_CAND_FILTRO[area]
+    if(f==='aperte') ll=ll.filter(c=>c.stato!=='assunto'&&c.stato!=='scartato')
+    else if(f!=='tutte') ll=ll.filter(c=>c.stato===f)
+  }
+
+  const tit=document.getElementById('cand-tit-'+area)
+  if(tit) tit.textContent = ll.length ? (ll.length===1?'1 candidatura':ll.length+' candidature') : 'Candidature ricevute'
+
+  if(!ll.length){
+    tb.innerHTML='<tr><td colspan="6" class="empty">'+(q?'Nessun risultato per la ricerca':'Nessuna candidatura in questa vista')+'</td></tr>'
+    return
+  }
+
+  tb.innerHTML=ll.map(function(c){
+    const tel=(c.tel||'').replace(/\s/g,'')
+    const zona=[c.citta,c.provincia].filter(Boolean).join(' ')
+    const sel='<select onchange="cambiaStatoCand(\''+c.id+'\',this.value)" style="font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);padding:3px 5px">'
+      + CAND_STATI.map(s=>'<option value="'+s.id+'"'+(c.stato===s.id?' selected':'')+'>'+s.lab+'</option>').join('')
+      + '</select>'
+    return '<tr>'
+      + '<td><strong>'+escB(c.nome||'\u2014')+'</strong>'
+        + '<div style="font-size:11px;color:var(--text2);margin-top:2px">'
+          + (c.email?('\u2709 <a href="mailto:'+escB(c.email)+'" style="color:var(--accent)">'+escB(c.email)+'</a>'):'')
+          + (c.tel?(' \u00b7 \ud83d\udcde <a href="tel:'+escB(tel)+'" style="color:var(--accent)">'+escB(c.tel)+'</a>'):'')
+        + '</div>'
+        + (c.messaggio?('<div style="font-size:11px;color:var(--text2);margin-top:3px;max-width:380px;white-space:pre-wrap">'+escB(String(c.messaggio).slice(0,220))+(String(c.messaggio).length>220?'\u2026':'')+'</div>'):'')
+        + (c.note_admin?('<div style="font-size:11px;color:#b9770e;margin-top:3px">\ud83d\udcdd '+escB(c.note_admin)+'</div>'):'')
+      + '</td>'
+      + '<td style="color:var(--text2)">'+escB(zona||'\u2014')+'</td>'
+      + '<td><span class="pill">'+escB(c.esperienza||'\u2014')+'</span></td>'
+      + '<td style="color:var(--text2)">'+escB(_candQuando(c.created_at))+'</td>'
+      + '<td>'+_candBadge(c.stato)+'<div style="margin-top:4px">'+sel+'</div></td>'
+      + '<td class="acts">'
+        + (c.cv_path?('<button class="btn btn-sm btn-p" onclick="apriCV(\''+c.id+'\')" title="Apri il curriculum">\ud83d\udcc4 CV</button>'):'')
+        + '<button class="btn btn-sm" onclick="notaCand(\''+c.id+'\')" title="Aggiungi una nota">\ud83d\udcdd</button>'
+        + '<button class="btn btn-sm btn-r" onclick="eliminaCand(\''+c.id+'\')" title="Elimina">\ud83d\uddd1</button>'
+      + '</td>'
+    + '</tr>'
+  }).join('')
+}
+
+// Il CV sta in uno spazio PRIVATO: si apre con un link temporaneo (1 ora),
+// non con un indirizzo pubblico che chiunque potrebbe indovinare.
+async function apriCV(id){
+  const c=(_CAND||[]).find(x=>x.id===id); if(!c||!c.cv_path) return
+  try{
+    const r=await db.storage.from('candidature').createSignedUrl(c.cv_path, 3600)
+    if(r.error||!r.data||!r.data.signedUrl) throw (r.error||new Error('link non creato'))
+    window.open(r.data.signedUrl,'_blank')
+  }catch(e){ alert('Non riesco ad aprire il CV: '+((e&&e.message)||e)) }
+}
+
+async function cambiaStatoCand(id, stato){
+  try{
+    const r=await db.from('candidature').update({ stato }).eq('id',id)
+    if(r.error) throw r.error
+    const c=(_CAND||[]).find(x=>x.id===id); if(c) c.stato=stato
+    ;['proc','doc','dip'].forEach(a=>renderCandidature(a))
+    _candAggiornaPallini()
+    try{ toast('Stato aggiornato: '+_candStato(stato).lab) }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+async function notaCand(id){
+  const c=(_CAND||[]).find(x=>x.id===id); if(!c) return
+  const t=prompt('Nota su '+(c.nome||'questo candidato')+':', c.note_admin||'')
+  if(t===null) return
+  try{
+    const r=await db.from('candidature').update({ note_admin:t.trim()||null }).eq('id',id)
+    if(r.error) throw r.error
+    c.note_admin=t.trim()||null
+    ;['proc','doc','dip'].forEach(a=>renderCandidature(a))
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+async function eliminaCand(id){
+  const c=(_CAND||[]).find(x=>x.id===id); if(!c) return
+  if(!confirm('Eliminare la candidatura di '+(c.nome||'questa persona')+'? Verr\u00e0 cancellato anche il suo CV.')) return
+  try{
+    if(c.cv_path){ try{ await db.storage.from('candidature').remove([c.cv_path]) }catch(e){} }
+    const r=await db.from('candidature').delete().eq('id',id)
+    if(r.error) throw r.error
+    _CAND=(_CAND||[]).filter(x=>x.id!==id)
+    ;['proc','doc','dip'].forEach(a=>renderCandidature(a))
+    _candAggiornaPallini()
+    try{ toast('Candidatura eliminata') }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
 // ── NAVIGAZIONE ───────────────────────────────────────────────
 function sp(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
@@ -3662,7 +3893,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -3670,7 +3901,7 @@ function sp(id,el){
 let _rtChannel=null, _rtTimer=null
 function avviaRealtime(){
   if(_rtChannel || !db) return
-  const tabelle=['contratti_firme','vendite','procacciatori','leads','portale_accessi','dipendenti']
+  const tabelle=['contratti_firme','vendite','procacciatori','leads','portale_accessi','dipendenti','candidature']
   _rtChannel=db.channel('live-gestionale')
   tabelle.forEach(t=>{
     _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:t}, ()=>scheduleLiveRefresh())
