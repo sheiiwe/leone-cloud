@@ -2665,10 +2665,10 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="fg"><label>Prezzo pieno (€) *</label>
         <input id="pp-prezzo" type="number" min="0" step="0.01" placeholder="300.00" oninput="_ppPreview()">
         <input id="pp-iva" type="hidden" value="0">
-        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-          <button type="button" id="pp-iva-btn" class="btn btn-sm" onclick="_ppToggleIva()">&#43; Aggiungi IVA 22%</button>
-          <span id="pp-iva-nota" style="font-size:11.5px;color:var(--text2)"></span>
-        </div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:400;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="pp-iva-chk" onchange="_ppToggleIva()"> Il cliente paga <strong>+ IVA 22%</strong>
+        </label>
+        <div id="pp-iva-nota" style="font-size:11.5px;color:var(--text2);margin-top:3px"></div>
       </div>
       <div class="fg"><label>Provvigione venditore (%)</label><input id="pp-prov" type="number" min="0" max="100" step="0.1" placeholder="20" oninput="_ppPreview()"></div>
       <div class="fg"><label>Oppure provvigione fissa (€)</label><input id="pp-prov-fissa" type="number" min="0" step="0.01" placeholder="es. 40" oninput="_ppPreview()"></div>
@@ -4431,7 +4431,7 @@ function renderProdottiPag(){
   else if(fp) rows=rows.filter(p=>(p.piattaforma||'').trim()===fp)
   if(!rows.length){ tb.innerHTML='<tr><td colspan="6" style="color:var(--text2);padding:14px">Nessun prodotto per questo filtro.</td></tr>'; return }
   tb.innerHTML=rows.map(function(p){
-    const prov=Number(p.provvigione_pct||0)+'% ('+_eur(Number(p.prezzo||0)*Number(p.provvigione_pct||0)/100)+')'
+    const prov=Number(p.provvigione_pct||0)+'% ('+_eur(_baseProv(p)*Number(p.provvigione_pct||0)/100)+')'+(Number(p.iva||0)>0?' <span style="font-size:10px;color:var(--text3)">+IVA</span>':'')
     const stato=p.attivo?'<span style="color:#117A65;font-weight:600">\u25cf Attivo</span>':'<span style="color:#999">\u25cb Off</span>'
     const piatt=(p.piattaforma||'').trim()?'<span style="display:inline-block;font-size:10px;font-weight:700;background:#e9f1fa;color:#185FA5;padding:1px 7px;border-radius:20px;margin-right:6px">'+escB(p.piattaforma)+'</span>':''
     const comp=(p.compagnia||'').trim()?'<span style="display:inline-block;font-size:10px;font-weight:700;background:#ede7f6;color:#5e35b1;padding:1px 7px;border-radius:20px;margin-right:6px">'+escB(p.compagnia)+'</span>':''
@@ -4452,54 +4452,48 @@ const IVA_STD = 22
 function _ppIvaCorrente(){ return Number((document.getElementById('pp-iva')||{}).value||0) }
 
 function _ppToggleIva(){
-  const inP = document.getElementById('pp-prezzo')
-  const inI = document.getElementById('pp-iva')
-  if(!inP || !inI) return
-  const prezzo = Number(inP.value||0)
-  if(!(prezzo>0)){ toast('Prima inserisci il prezzo'); return }
-  const iva = _ppIvaCorrente()
-
-  if(iva > 0){
-    // tolgo l'IVA: torno all'imponibile
-    inP.value = (prezzo / (1 + iva/100)).toFixed(2)
-    inI.value = 0
-  } else {
-    // aggiungo l'IVA del fornitore
-    inP.value = (prezzo * (1 + IVA_STD/100)).toFixed(2)
-    inI.value = IVA_STD
-  }
+  const chk=document.getElementById('pp-iva-chk'), inI=document.getElementById('pp-iva')
+  if(!chk||!inI) return
+  inI.value = chk.checked ? IVA_STD : 0
   _ppPreview()
 }
 
 function _ppAggiornaIvaUI(){
-  const btn = document.getElementById('pp-iva-btn')
-  const nota = document.getElementById('pp-iva-nota')
-  const iva = _ppIvaCorrente()
-  const prezzo = Number((document.getElementById('pp-prezzo')||{}).value||0)
-  if(!btn || !nota) return
-  if(iva > 0){
-    const imponibile = prezzo / (1 + iva/100)
-    btn.innerHTML = '\u2212 Togli IVA ' + iva + '%'
-    btn.classList.add('btn-p')
-    nota.innerHTML = 'Netto fornitore <strong>' + _eur(imponibile) + '</strong> + IVA <strong>' + _eur(prezzo - imponibile) + '</strong>'
-  } else {
-    btn.innerHTML = '\u002b Aggiungi IVA ' + IVA_STD + '%'
-    btn.classList.remove('btn-p')
-    nota.textContent = 'Usalo se il fornitore ti addebita l\u0027IVA sopra al suo prezzo.'
-  }
+  const nota=document.getElementById('pp-iva-nota'); if(!nota) return
+  const iva=_ppIvaCorrente(), pz=Number((document.getElementById('pp-prezzo')||{}).value||0)
+  nota.innerHTML = iva>0
+    ? 'Il cliente paga <strong>'+_eur(pz*(1+iva/100))+'</strong> \u00b7 di cui <strong>'+_eur(pz*iva/100)+'</strong> di IVA che giri al fornitore'
+    : 'Spunta solo i prodotti su cui il fornitore ti addebita l\u0027IVA.'
 }
 
+// IVA sul prodotto.
+//   prezzo = la BASE che decidi tu (e su cui si calcolano le provvigioni)
+//   iva    = 0 oppure 22
+//   Il cliente paga:  prezzo + 22%   -- solo se la spunta e\u0027 attiva.
+//
+// L'IVA non tocca le provvigioni: quei soldi li giri al fornitore, non sono ricavo.
+function _ivaPct(p){ return Number((p&&p.iva)||0) }
+function _totaleCliente(p){
+  const pz=Number((p&&p.prezzo)||0)
+  return pz * (1 + _ivaPct(p)/100)
+}
+function _baseProv(p){ return Number((p&&p.prezzo)||0) }   // la provvigione sta sulla base
+
 function _ppPreview(){
-  const pr=Number((document.getElementById('pp-prezzo')||{}).value||0)
-  const pc=Number((document.getElementById('pp-prov')||{}).value||0)
-  const el=document.getElementById('pp-preview')
+  const pz=Number((document.getElementById('pp-prezzo')||{}).value||0)
   const iva=_ppIvaCorrente()
-  let txt='Il cliente paga <strong>'+_eur(pr)+'</strong> \u00b7 il venditore guadagna <strong>'+_eur(pr*pc/100)+'</strong>'
-  if(iva>0){
-    const imp=pr/(1+iva/100)
-    txt+='<div style="margin-top:4px;color:var(--text2);font-size:11.5px">Di cui <strong>'+_eur(pr-imp)+'</strong> di IVA che giri al fornitore \u00b7 a te restano <strong>'+_eur(imp)+'</strong> lordi</div>'
+  const pc=Number((document.getElementById('pp-prov')||{}).value||0)
+  const pf=(document.getElementById('pp-prov-fissa')||{}).value
+  const hasFissa=(pf!==''&&pf!=null&&Number(pf)>0)
+  const prov=hasFissa?Number(pf):(pz*pc/100)
+  const tot=pz*(1+iva/100)
+
+  const el=document.getElementById('pp-preview')
+  if(el){
+    let t='Il cliente paga <strong>'+_eur(tot)+'</strong> \u00b7 il venditore guadagna <strong>'+_eur(prov)+'</strong>'
+    if(iva>0) t+='<div style="margin-top:4px;color:var(--text2);font-size:11.5px">Di cui <strong>'+_eur(tot-pz)+'</strong> di IVA che giri al fornitore \u00b7 la provvigione resta sui <strong>'+_eur(pz)+'</strong></div>'
+    el.innerHTML=t
   }
-  if(el) el.innerHTML=txt
   _ppAggiornaIvaUI()
 }
 function apriProdPag(id){
@@ -4518,6 +4512,7 @@ function apriProdPag(id){
     togglePpAnnuale()
     document.getElementById('pp-prezzo').value=(p.prezzo!=null?p.prezzo:'')
     document.getElementById('pp-iva').value=(p.iva!=null?p.iva:0)
+    {const k=document.getElementById('pp-iva-chk'); if(k) k.checked=Number(p.iva||0)>0}
     document.getElementById('pp-prov').value=(p.provvigione_pct!=null?p.provvigione_pct:'')
     document.getElementById('pp-prov-fissa').value=(p.provvigione_fissa!=null?p.provvigione_fissa:'')
     const a=p.aree||[]
@@ -4539,6 +4534,7 @@ function apriProdPag(id){
     togglePpAnnuale()
     document.getElementById('pp-prezzo').value=''
     document.getElementById('pp-iva').value=0
+    {const k=document.getElementById('pp-iva-chk'); if(k) k.checked=false}
     document.getElementById('pp-prov').value=''
     document.getElementById('pp-prov-fissa').value=''
     document.getElementById('pp-area-proc').checked=true
@@ -4791,9 +4787,9 @@ function _contPreview(){
   if(!p){ if(el) el.textContent='Seleziona un prodotto'; return }
   const prezzo=Number(p.prezzo||0), pct=Number(p.provvigione_pct||0)
   const _pf=p.provvigione_fissa, _hf=(_pf!=null&&_pf!==''&&Number(_pf)>0)
-  const provFull=_hf?(Math.round(Number(_pf)*100)/100):(Math.round(prezzo*pct/100*100)/100)
-  let imp=prezzo, prov=provFull
-  if(uso){ imp=Math.round((prezzo-provFull)*100)/100; prov=0 }
+  const provFull=_hf?(Math.round(Number(_pf)*100)/100):(Math.round(_baseProv(p)*pct/100*100)/100)
+  let imp=Math.round(_totaleCliente(p)*100)/100, prov=provFull
+  if(uso){ imp=Math.round((_totaleCliente(p)-provFull)*100)/100; prov=0 }
   if(el) el.innerHTML='Incasso <strong>'+_eur(imp)+'</strong> \u00b7 provvigione <strong>'+_eur(prov)+'</strong> \u00b7 netto azienda <strong>'+_eur(imp-prov)+'</strong>'
 }
 function apriContanti(){
@@ -4813,9 +4809,9 @@ async function salvaContanti(){
   const p=(_prodPagCache||[]).find(function(x){return x.id===pid}); if(!p){ toast('Prodotto non valido'); return }
   const prezzo=Number(p.prezzo||0), pct=Number(p.provvigione_pct||0)
   const _pf=p.provvigione_fissa, _hf=(_pf!=null&&_pf!==''&&Number(_pf)>0)
-  const provFull=_hf?(Math.round(Number(_pf)*100)/100):(Math.round(prezzo*pct/100*100)/100)
-  let imp=prezzo, prov=provFull
-  if(uso){ imp=Math.round((prezzo-provFull)*100)/100; prov=0 }
+  const provFull=_hf?(Math.round(Number(_pf)*100)/100):(Math.round(_baseProv(p)*pct/100*100)/100)
+  let imp=Math.round(_totaleCliente(p)*100)/100, prov=provFull
+  if(uso){ imp=Math.round((_totaleCliente(p)-provFull)*100)/100; prov=0 }
   if(!(imp>0)){ toast('Importo non valido'); return }
   const metodo=(document.getElementById('cont-metodo')||{}).value||'contanti'
   let ref=''; try{ ref=crypto.randomUUID() }catch(e){ ref='cash-'+Date.now()+'-'+Math.random().toString(16).slice(2) }
