@@ -4102,12 +4102,14 @@ async function cambiaStatoCand(id, stato){
 
 async function notaCand(id){
   const c=(_CAND||[]).find(x=>x.id===id); if(!c) return
-  const t=prompt('Nota su '+(c.nome||'questo candidato')+':', c.note_admin||'')
-  if(t===null) return
+  const r=await chiediCampi('Nota su '+(c.nome||'questo candidato'), [
+    {id:'nota', label:'Nota interna (la vedi solo tu)', valore:c.note_admin||'', multi:true},
+  ])
+  if(!r) return
   try{
-    const r=await db.from('candidature').update({ note_admin:t.trim()||null }).eq('id',id)
-    if(r.error) throw r.error
-    c.note_admin=t.trim()||null
+    const q=await db.from('candidature').update({ note_admin:r.nota||null }).eq('id',id)
+    if(q.error) throw q.error
+    c.note_admin=r.nota||null
     ;['proc','doc','dip'].forEach(a=>renderCandidature(a))
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
@@ -4202,7 +4204,7 @@ function renderPiattaforme(){
     return
   }
   tb.innerHTML = _PIATT.map(function(p){
-    const usati = (typeof listino!=='undefined'?listino:[]).filter(x=>String((x&&x.piatt)||'').trim()===p.codice).length
+    const usati = (typeof LISTINO!=='undefined'?LISTINO:[]).filter(x=>String((x&&x.piatt)||'').trim()===p.codice).length
     return '<tr>'
       + '<td><strong>'+escB(p.codice)+'</strong></td>'
       + '<td>'+escB(p.nome)+'<div style="font-size:11px;color:var(--text2)">'+usati+' prodott'+(usati===1?'o':'i')+'</div></td>'
@@ -4236,15 +4238,18 @@ async function nuovaPiattaforma(){
 }
 
 async function rinominaPiattaforma(cod){
-  const p = (_PIATT||[]).find(x=>x.codice===cod); if(!p) return
-  const nome = prompt('Nome della piattaforma '+cod+':', p.nome||'')
-  if(nome===null) return
-  const ente = prompt('Ente (facoltativo):', p.ente||'')
-  if(ente===null) return
+  const p=(_PIATT||[]).find(x=>x.codice===cod); if(!p) return
+  const r=await chiediCampi('Modifica '+cod, [
+    {id:'nome', label:'Nome della piattaforma', valore:p.nome||''},
+    {id:'ente', label:'Ente (facoltativo)',     valore:p.ente||''},
+  ])
+  if(!r) return
+  if(!r.nome){ toast('Il nome non pu\u00f2 restare vuoto'); return }
   try{
-    const r = await db.from('piattaforme').update({ nome:nome.trim()||p.nome, ente:ente.trim()||null }).eq('codice',cod)
-    if(r.error) throw r.error
-    await caricaPiattaforme(); renderPiattaforme(); renderProdottiPag()
+    const q=await db.from('piattaforme').update({ nome:r.nome, ente:r.ente||null }).eq('codice',cod)
+    if(q.error) throw q.error
+    await caricaPiattaforme(); renderPiattaforme()
+    try{ toast('Piattaforma aggiornata') }catch(e){}
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
 
@@ -4259,7 +4264,7 @@ async function attivaPiattaforma(cod, on){
 // Non si cancella una piattaforma che ha prodotti attaccati: resterebbero
 // orfani, con un codice che non significa piu\u0027 niente.
 async function eliminaPiattaforma(cod){
-  const usati = (typeof listino!=='undefined'?listino:[]).filter(x=>String((x&&x.piatt)||'').trim()===cod).length
+  const usati = (typeof LISTINO!=='undefined'?LISTINO:[]).filter(x=>String((x&&x.piatt)||'').trim()===cod).length
   if(usati){
     alert('Non posso eliminare '+cod+': ci sono '+usati+' prodott'+(usati===1?'o':'i')+' collegati.\n\nSpostali su un\u0027altra piattaforma, oppure disattivala: sparisce dalle tendine ma i prodotti restano a posto.')
     return
@@ -4273,6 +4278,52 @@ async function eliminaPiattaforma(cod){
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
 
+
+// In Electron la prompt() del browser E\u0027 DISABILITATA: non apre niente e non
+// segnala errore. Quindi me ne faccio una vera.
+// chiediCampi('Titolo', [{id,label,valore,multi}]) -> Promise(valori | null)
+function chiediCampi(titolo, campi){
+  return new Promise(function(risolvi){
+    const vecchia=document.getElementById('mm-chiedi'); if(vecchia) vecchia.remove()
+    const d=document.createElement('div'); d.id='mm-chiedi'
+    d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px'
+
+    const corpo=campi.map(function(c){
+      const val=String(c.valore==null?'':c.valore).replace(/"/g,'&quot;')
+      const campo = c.multi
+        ? '<textarea id="mmc-'+c.id+'" rows="4" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:inherit;font-size:14px;resize:vertical">'+escB(c.valore||'')+'</textarea>'
+        : '<input id="mmc-'+c.id+'" value="'+val+'" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:inherit;font-size:14px">'
+      return '<div style="margin-bottom:12px"><label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px">'+escB(c.label)+'</label>'+campo+'</div>'
+    }).join('')
+
+    d.innerHTML='<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden">'
+      +'<div style="padding:15px 18px;border-bottom:0.5px solid var(--border);font-weight:700;font-size:15px">'+escB(titolo)+'</div>'
+      +'<div style="padding:18px">'+corpo+'</div>'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:0.5px solid var(--border);background:var(--surface2)">'
+      +'<button class="btn btn-sm" id="mmc-no">Annulla</button>'
+      +'<button class="btn btn-sm btn-p" id="mmc-si">Salva</button>'
+      +'</div></div>'
+
+    document.body.appendChild(d)
+    const chiudi=function(esito){ d.remove(); risolvi(esito) }
+    d.addEventListener('click', function(e){ if(e.target===d) chiudi(null) })
+    document.getElementById('mmc-no').onclick=function(){ chiudi(null) }
+    document.getElementById('mmc-si').onclick=function(){
+      const out={}
+      campi.forEach(function(c){
+        const el=document.getElementById('mmc-'+c.id)
+        out[c.id]=el?String(el.value||'').trim():''
+      })
+      chiudi(out)
+    }
+    d.addEventListener('keydown', function(e){
+      if(e.key==='Escape'){ chiudi(null) }
+      if(e.key==='Enter' && !campi.some(c=>c.multi)){ e.preventDefault(); document.getElementById('mmc-si').click() }
+    })
+    setTimeout(function(){ const p=document.getElementById('mmc-'+campi[0].id); if(p){ p.focus(); p.select&&p.select() } }, 40)
+  })
+}
+
 // ── NAVIGAZIONE ───────────────────────────────────────────────
 function sp(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
@@ -4282,7 +4333,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ caricaPiattaforme().then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
