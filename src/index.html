@@ -870,7 +870,6 @@ tbody tr:hover td{background:var(--surface2)}
     <select id="prodpag-f-piatt" onchange="renderProdottiPag()" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);color:var(--text)">
       <option value="">Tutte le piattaforme</option>
     </select>
-    <button class="btn btn-sm" onclick="apriPiattaforme()" title="Aggiungi o rinomina le piattaforme">&#127970; Piattaforme</button>
   </div>
   <div class="card"><div class="card-hdr"><h3>Catalogo prodotti</h3><button class="btn btn-p" onclick="apriProdPag()">+ Nuovo prodotto</button></div>
     <div class="tbl-wrap"><table>
@@ -1507,6 +1506,28 @@ tbody tr:hover td{background:var(--surface2)}
       <button onclick="window.electronAPI?.openDevTools?.()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px" title="Apri console sviluppatori">🛠</button>
     </div>
   </div>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-hdr"><h3>&#127970; Piattaforme</h3></div>
+    <div style="padding:4px 14px 14px">
+      <p style="color:var(--text2);font-size:13px;margin:0 0 12px">
+        Gli enti con cui lavori (Universo Docente, FormaCenter&hellip;). Ogni prodotto del listino pu&ograve; essere assegnato a una piattaforma, e da l&igrave; si filtra.
+      </p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Codice</th><th>Nome</th><th>Ente</th><th>Attiva</th><th></th></tr></thead>
+        <tbody id="tbl-piatt"><tr><td colspan="5" class="empty">Caricamento...</td></tr></tbody>
+      </table></div>
+      <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px">
+        <div style="font-weight:600;font-size:13px;margin-bottom:9px">Aggiungi una piattaforma</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="np-cod"  placeholder="Codice (es. FC)" maxlength="6" style="width:120px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px;text-transform:uppercase">
+          <input id="np-nome" placeholder="Nome (es. FormaCenter)" style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px">
+          <input id="np-ente" placeholder="Ente (facoltativo)" style="flex:1;min-width:140px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px">
+          <button class="btn btn-p btn-sm" onclick="nuovaPiattaforma()">Aggiungi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="card" style="margin-bottom:1rem">
     <div class="card-hdr"><h3>💻 Applicazione</h3></div>
     <div style="padding:4px 14px 14px">
@@ -4169,14 +4190,6 @@ function _piattRiempiTendine(){
   }
 }
 
-function apriPiattaforme(){
-  const m = document.getElementById('modal-piatt'); if(!m) return
-  m.style.display = 'flex'
-  renderPiattaforme()
-}
-function chiudiPiattaforme(){
-  const m = document.getElementById('modal-piatt'); if(m) m.style.display = 'none'
-}
 
 function renderPiattaforme(){
   const tb = document.getElementById('tbl-piatt'); if(!tb) return
@@ -4265,7 +4278,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={prodottipag:()=>{caricaPiattaforme();renderProdottiPag&&renderProdottiPag()},'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={impostazioni:()=>{caricaPiattaforme().then(renderPiattaforme)},prodottipag:()=>{caricaPiattaforme();renderProdottiPag&&renderProdottiPag()},'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:caricaProdottiPag,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -12747,33 +12760,5 @@ async function migraProprietario(){
       <span>&#8593;&#8595; scorri</span><span>&#8629; apri</span><span style="margin-left:auto">&#8984;K ricerca globale</span>
     </div>
   </div>
-</div>
-<!-- PIATTAFORME -->
-<div id="modal-piatt" class="modal" style="display:none">
-  <div class="modal-box" style="max-width:640px">
-    <div class="modal-hdr">
-      <h3>&#127970; Piattaforme</h3>
-      <button class="modal-x" onclick="chiudiPiattaforme()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p style="color:var(--text2);font-size:13px;margin:0 0 14px">
-        Gli enti con cui lavori (Universo Docente, FormaCenter&hellip;). Ogni prodotto pu&ograve; essere assegnato a una piattaforma.
-      </p>
-      <div class="tbl-wrap"><table>
-        <thead><tr><th>Codice</th><th>Nome</th><th>Ente</th><th>Attiva</th><th></th></tr></thead>
-        <tbody id="tbl-piatt"></tbody>
-      </table></div>
-      <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px">
-        <div style="font-weight:600;font-size:13px;margin-bottom:9px">Aggiungi una piattaforma</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input id="np-cod"  placeholder="Codice (es. FC)" maxlength="6" style="width:120px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px;text-transform:uppercase">
-          <input id="np-nome" placeholder="Nome (es. FormaCenter)" style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px">
-          <input id="np-ente" placeholder="Ente (facoltativo)" style="flex:1;min-width:140px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px">
-          <button class="btn btn-p btn-sm" onclick="nuovaPiattaforma()">Aggiungi</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-</body>
+</div></body>
 </html>
