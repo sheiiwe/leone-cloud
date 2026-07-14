@@ -1497,24 +1497,25 @@ tbody tr:hover td{background:var(--surface2)}
       <button onclick="window.electronAPI?.openDevTools?.()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px" title="Apri console sviluppatori">🛠</button>
     </div>
   </div>
-  <div class="card" style="margin-bottom:1rem">
-    <div class="card-hdr"><h3>&#127970; Piattaforme</h3></div>
-    <div style="padding:4px 14px 14px">
-      <p style="color:var(--text2);font-size:13px;margin:0 0 12px">
-        Gli enti con cui lavori (Universo Docente, FormaCenter&hellip;). Ogni prodotto del listino pu&ograve; essere assegnato a una piattaforma, e da l&igrave; si filtra.
-      </p>
-      <div class="tbl-wrap"><table>
-        <thead><tr><th>Codice</th><th>Nome</th><th>Ente</th><th>Attiva</th><th></th></tr></thead>
-        <tbody id="tbl-piatt"><tr><td colspan="5" class="empty">Caricamento...</td></tr></tbody>
-      </table></div>
-      <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px">
-        <div style="font-weight:600;font-size:13px;margin-bottom:9px">Aggiungi una piattaforma</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input id="np-cod"  placeholder="Codice (es. FC)" maxlength="6" style="width:120px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px;text-transform:uppercase">
-          <input id="np-nome" placeholder="Nome (es. FormaCenter)" style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px">
-          <input id="np-ente" placeholder="Ente (facoltativo)" style="flex:1;min-width:140px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px">
-          <button class="btn btn-p btn-sm" onclick="nuovaPiattaforma()">Aggiungi</button>
-        </div>
+  <div class="acc-hdr" onclick="toggleAcc('acc-piatt',this)">
+    <h3>🏢 Piattaforme</h3>
+    <span class="acc-arrow">▼</span>
+  </div>
+  <div class="acc-body" id="acc-piatt">
+    <p style="color:var(--text2);font-size:13px;margin:0 0 12px">
+      Gli enti con cui lavori. Ogni prodotto del listino ne ha una, e da lì si filtra.
+    </p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Codice</th><th>Nome</th><th>Ente</th><th>Attiva</th><th></th></tr></thead>
+      <tbody id="tbl-piatt"><tr><td colspan="5" class="empty">Caricamento...</td></tr></tbody>
+    </table></div>
+    <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px">
+      <div style="font-weight:600;font-size:13px;margin-bottom:9px">Aggiungi una piattaforma</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="np-cod"  placeholder="Codice (es. F.C.)" maxlength="8" style="width:130px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px">
+        <input id="np-nome" placeholder="Nome (es. FormaCenter)" style="flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px">
+        <input id="np-ente" placeholder="Ente (facoltativo)" style="flex:1;min-width:140px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:13px">
+        <button class="btn btn-p btn-sm" onclick="nuovaPiattaforma()">Aggiungi</button>
       </div>
     </div>
   </div>
@@ -2002,11 +2003,7 @@ tbody tr:hover td{background:var(--surface2)}
         <select id="pd-tipo-cliente"><option value="entrambi">Entrambi (privati e business)</option><option value="privati">Solo privati</option><option value="business">Solo business</option></select>
       </div>
       <div class="fg"><label>Piattaforma</label>
-        <select id="pd-piatt">
-          <option value="P.S.">P.S.</option>
-          <option value="U.D.">U.D.</option>
-          <option value="T.E.">T.E.</option>
-        </select>
+        <select id="pd-piatt"></select>
       </div>
     </div>
     <div class="fr">
@@ -4188,6 +4185,13 @@ function _piattRiempiTendine(){
     sel.innerHTML = '<option value="">\u2014 Nessuna \u2014</option>' + voci
     sel.value = scelto
   }
+  // la tendina del LISTINO (campo "piatt"): usa solo il codice
+  const li = document.getElementById('pd-piatt')
+  if(li){
+    const scelto = li.value
+    li.innerHTML = attive.map(p=>'<option value="'+escB(p.codice)+'">'+escB(p.codice)+' \u00b7 '+escB(p.nome)+'</option>').join('')
+    li.value = scelto
+  }
 }
 
 
@@ -4198,7 +4202,7 @@ function renderPiattaforme(){
     return
   }
   tb.innerHTML = _PIATT.map(function(p){
-    const usati = (_prodPagCache||[]).filter(x=>(x.piattaforma||'')===p.codice).length
+    const usati = (typeof listino!=='undefined'?listino:[]).filter(x=>String((x&&x.piatt)||'').trim()===p.codice).length
     return '<tr>'
       + '<td><strong>'+escB(p.codice)+'</strong></td>'
       + '<td>'+escB(p.nome)+'<div style="font-size:11px;color:var(--text2)">'+usati+' prodott'+(usati===1?'o':'i')+'</div></td>'
@@ -4255,7 +4259,7 @@ async function attivaPiattaforma(cod, on){
 // Non si cancella una piattaforma che ha prodotti attaccati: resterebbero
 // orfani, con un codice che non significa piu\u0027 niente.
 async function eliminaPiattaforma(cod){
-  const usati = (_prodPagCache||[]).filter(x=>(x.piattaforma||'')===cod).length
+  const usati = (typeof listino!=='undefined'?listino:[]).filter(x=>String((x&&x.piatt)||'').trim()===cod).length
   if(usati){
     alert('Non posso eliminare '+cod+': ci sono '+usati+' prodott'+(usati===1?'o':'i')+' collegati.\n\nSpostali su un\u0027altra piattaforma, oppure disattivala: sparisce dalle tendine ma i prodotti restano a posto.')
     return
@@ -4278,7 +4282,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:renderListino,offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ caricaPiattaforme().then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ caricaPiattaforme().then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
@@ -8869,7 +8873,7 @@ function filterList(cat,silent){
     sf.style.display='flex'
     sf.style.flexWrap='wrap'
     const b=(k,l)=>'<button class="btn btn-sm'+(activeTipoCliente===k?' btn-p':'')+'" style="border-radius:20px" onclick="filterTipoCliente(\''+k+'\')">'+l+'</button>'
-    const piatts=['P.S.','U.D.','T.E.']
+    const piatts=(_PIATT||[]).filter(x=>x.attiva!==false).map(x=>x.codice)
     const bp=(k,l)=>'<button class="btn btn-sm'+(activePiatt===k?' btn-p':'')+'" style="border-radius:20px" onclick="filterPiatt(\''+k+'\')">'+l+'</button>'
     sf.innerHTML='<span style="font-size:12px;color:var(--text2);margin-right:4px">Cliente:</span>'+b('','Tutti e due')+b('privati','Privati')+b('business','Business')
       +'<span style="width:12px"></span><span style="font-size:12px;color:var(--text2);margin-right:4px">Piattaforma:</span>'+bp('','Tutte')+piatts.map(p=>bp(p,p)).join('')
