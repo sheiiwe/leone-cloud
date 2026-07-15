@@ -4373,7 +4373,7 @@ function renderCorsiPagine(){
       : (c.prezzo ? 'Acquisto '+_eur(c.iva?c.prezzo*1.22:c.prezzo) : '<span style="color:var(--text2)">Solo info</span>')
     return '<tr>'
       +'<td><strong>'+escB(c.titolo)+'</strong>'+(c.attiva?'':' <span style="font-size:10px;color:var(--text3)">(nascosta)</span>')+'</td>'
-      +'<td style="font-size:12.5px;color:var(--text2)">'+escB(c.categoria||'—')+'</td>'
+      +'<td style="font-size:12.5px;color:var(--text2)">'+escB(c.categoria||'—')+(c.piattaforma?' <span style="font-size:10px;color:var(--accent);font-weight:600">·'+escB(c.piattaforma)+'</span>':'')+'</td>'
       +'<td>'+(c.prezzo?_eur(c.prezzo):'—')+(Number(c.iva)?' <span style="font-size:10px;color:var(--text3)">+IVA</span>':'')+'</td>'
       +'<td style="font-size:12.5px">'+tipo+'</td>'
       +'<td><a href="https://'+url+'" target="_blank" style="font-size:11.5px;color:var(--accent)">'+escB(c.slug)+' ↗</a></td>'
@@ -4394,9 +4394,11 @@ function apriCorsoPag(slug){
     {id:'sottotitolo', label:'Sottotitolo (la frase sotto il titolo)', valore:c.sottotitolo||'', multi:true},
     {id:'categoria', label:'Categoria (es. Certificazione informatica)', valore:c.categoria||''},
     {id:'ente', label:'Ente (es. Universo Docente)', valore:c.ente||''},
+    {id:'piattaforma', tipo:'select', label:'Piattaforma (solo per te, non si vede online)',
+      opzioni:[{v:'',t:'— Nessuna —'}].concat((_PIATT||[]).map(x=>({v:x.codice,t:x.codice+' · '+x.nome}))), valore:c.piattaforma||''},
     {id:'prezzo', label:'Prezzo in € — lascia vuoto per "solo informazioni"', valore:c.prezzo!=null?c.prezzo:''},
-    {id:'iva', label:'Il cliente paga +IVA 22%? (si/no)', valore:Number(c.iva)?'si':'no'},
-    {id:'solo_info', label:'Solo informazioni, niente acquisto? (si/no) — per le lauree', valore:c.solo_info?'si':'no'},
+    {id:'iva', tipo:'check', label:'Il cliente paga + IVA 22%', valore:!!Number(c.iva)},
+    {id:'solo_info', tipo:'check', label:'Solo informazioni, niente acquisto (per le lauree universitarie)', valore:!!c.solo_info},
     {id:'descrizione', label:'Descrizione (il blocco lungo)', valore:c.descrizione||'', multi:true},
     {id:'a_chi', label:'A chi è rivolto', valore:c.a_chi||'', multi:true},
     {id:'hero_punti', label:'Punti in cima — uno per riga', valore:(c.hero_punti||[]).map(x=>x.t).join('\n'), multi:true},
@@ -4404,7 +4406,7 @@ function apriCorsoPag(slug){
     {id:'faq', label:'FAQ — una per riga, formato:  Domanda ? Risposta', valore:(c.faq||[]).map(x=>(x.q||'')+' ? '+(x.a||'')).join('\n'), multi:true},
     {id:'citta', label:'Città (per il SEO locale)', valore:c.citta||'Velletri'},
     {id:'zona', label:'Zona (per il SEO locale)', valore:c.zona||'Castelli Romani e provincia di Roma'},
-    {id:'attiva', label:'Pagina pubblicata? (si/no)', valore:(c.attiva===false)?'no':'si'},
+    {id:'attiva', tipo:'check', label:'Pagina pubblicata (visibile online)', valore:(c.attiva!==false)},
   ]).then(function(r){
     if(!r) return
     salvaCorsoPag(slug, r)
@@ -4430,6 +4432,7 @@ async function salvaCorsoPag(slugVecchio, r){
     sottotitolo:(r.sottotitolo||'').trim()||null,
     categoria:(r.categoria||'').trim()||null,
     ente:(r.ente||'').trim()||null,
+    piattaforma:(r.piattaforma||'').trim().toUpperCase()||null,
     prezzo: r.prezzo!==''&&r.prezzo!=null ? Number(r.prezzo) : null,
     iva: /^s/i.test(r.iva||''),
     solo_info: /^s/i.test(r.solo_info||''),
@@ -4474,9 +4477,28 @@ function chiediCampiLunga(titolo, campi){
     const corpo=campi.map(function(c){
       const val=String(c.valore==null?'':c.valore).replace(/"/g,'&quot;')
       const dis=c.bloccato?' disabled style="opacity:.6"':''
+      const inputStyle='width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:inherit;font-size:13.5px'
+
+      // SPUNTA sì/no
+      if(c.tipo==='check'){
+        const on = (c.valore===true || /^s|^y|^1|^v/i.test(String(c.valore||'')))
+        return '<label style="display:flex;align-items:center;gap:9px;margin-bottom:11px;cursor:pointer">'
+          +'<input type="checkbox" id="mmc-'+c.id+'" '+(on?'checked':'')+' style="width:18px;height:18px;flex:0 0 auto;accent-color:var(--accent)">'
+          +'<span style="font-size:13px;color:var(--text)">'+escB(c.label)+'</span></label>'
+      }
+      // MENU a tendina
+      if(c.tipo==='select'){
+        const opts=(c.opzioni||[]).map(function(o){
+          const v=(typeof o==='object')?o.v:o, t=(typeof o==='object')?o.t:o
+          return '<option value="'+String(v).replace(/"/g,'&quot;')+'"'+(String(c.valore||'')===String(v)?' selected':'')+'>'+escB(t)+'</option>'
+        }).join('')
+        return '<div style="margin-bottom:11px"><label style="display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:4px">'+escB(c.label)+'</label>'
+          +'<select id="mmc-'+c.id+'" style="'+inputStyle+'">'+opts+'</select></div>'
+      }
+      // testo lungo / testo
       const campo = c.multi
-        ? '<textarea id="mmc-'+c.id+'" rows="3" style="width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:inherit;font-size:13.5px;resize:vertical">'+escB(c.valore||'')+'</textarea>'
-        : '<input id="mmc-'+c.id+'" value="'+val+'"'+dis+' style="width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:inherit;font-size:13.5px">'
+        ? '<textarea id="mmc-'+c.id+'" rows="3" style="'+inputStyle+';resize:vertical">'+escB(c.valore||'')+'</textarea>'
+        : '<input id="mmc-'+c.id+'" value="'+val+'"'+dis+' style="'+inputStyle+'">'
       return '<div style="margin-bottom:11px"><label style="display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:4px">'+escB(c.label)+'</label>'+campo+'</div>'
     }).join('')
     d.innerHTML='<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;max-width:560px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden;margin:auto">'
@@ -4489,7 +4511,12 @@ function chiediCampiLunga(titolo, campi){
     d.addEventListener('click', function(e){ if(e.target===d) chiudi(null) })
     document.getElementById('mmc-no').onclick=function(){ chiudi(null) }
     document.getElementById('mmc-si').onclick=function(){
-      const out={}; campi.forEach(function(c){ const el=document.getElementById('mmc-'+c.id); out[c.id]=el?String(el.value||'').trim():'' }); chiudi(out)
+      const out={}; campi.forEach(function(c){
+        const el=document.getElementById('mmc-'+c.id)
+        if(!el){ out[c.id]=''; return }
+        if(c.tipo==='check') out[c.id]= el.checked ? 'si' : 'no'
+        else out[c.id]=String(el.value||'').trim()
+      }); chiudi(out)
     }
   })
 }
