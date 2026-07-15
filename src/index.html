@@ -303,6 +303,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('prodottipag',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Prodotti &amp; pagamenti
     </div>
+    <div class="nav-item" onclick="sp('corsipagine',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Pagine corso
+    </div>
     <div class="nav-sec">Notifiche</div>
     <div class="nav-item" onclick="sp('avvisi',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Avvisi<span id="nav-dot-avvisi" style="display:none;width:9px;height:9px;border-radius:50%;background:#e63946;margin-left:auto;box-shadow:0 0 0 2px rgba(230,57,70,.25)"></span>
@@ -853,6 +856,19 @@ tbody tr:hover td{background:var(--surface2)}
 </div>
 
 <!-- DOCUMENTI -->
+<div class="page" id="page-corsipagine">
+  <div class="pg-title">Pagine corso</div>
+  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Le pagine pubbliche dei corsi, su <strong>corsi.leoneconsultingitalia.it</strong>. Compila qui i dati: la pagina esce da sola, sempre con la stessa grafica.</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+    <button class="btn btn-p btn-sm" onclick="apriCorsoPag()">＋ Nuova pagina corso</button>
+    <span id="cp-count" style="font-size:13px;color:var(--text2)"></span>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Corso</th><th>Categoria</th><th>Prezzo</th><th>Tipo</th><th>Link</th><th></th></tr></thead>
+    <tbody id="tbl-corsipagine"><tr><td colspan="6" class="empty">Caricamento…</td></tr></tbody>
+  </table></div>
+</div>
+
 <div class="page" id="page-prodottipag">
   <div class="pg-title">Prodotti &amp; pagamenti</div>
   <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Catalogo dei corsi/servizi vendibili con pagamento SumUp. Per ogni prodotto: prezzo pieno (che paga il cliente), provvigione del venditore e in quali aree è vendibile.</div>
@@ -4324,6 +4340,154 @@ function chiediCampi(titolo, campi){
   })
 }
 
+
+// ══════════════════════════════════════════════════════════════
+//  PAGINE CORSO  (corsi.leoneconsultingitalia.it/<slug>)
+//  Compili i dati qui, la pagina pubblica esce da sola dallo stampo.
+// ══════════════════════════════════════════════════════════════
+let _CORSIPAG = []
+
+async function caricaCorsiPagine(){
+  try{
+    const r = await db.from('corsi_pagine').select('*').order('ordine')
+    if(r.error) throw r.error
+    _CORSIPAG = r.data || []
+  }catch(e){ _CORSIPAG=[]; console.error('corsi_pagine:', e) }
+  renderCorsiPagine()
+}
+
+function renderCorsiPagine(){
+  const tb = document.getElementById('tbl-corsipagine'); if(!tb) return
+  const cnt = document.getElementById('cp-count')
+  if(cnt) cnt.textContent = _CORSIPAG.length ? (_CORSIPAG.length+' pagin'+(_CORSIPAG.length===1?'a':'e')) : ''
+  if(!_CORSIPAG.length){ tb.innerHTML='<tr><td colspan="6" class="empty">Nessuna pagina. Creane una col pulsante qui sopra.</td></tr>'; return }
+  tb.innerHTML = _CORSIPAG.map(function(c){
+    const url = 'corsi.leoneconsultingitalia.it/'+c.slug
+    const tipo = c.solo_info ? '<span style="color:var(--text2)">Solo info</span>'
+      : (c.prezzo ? 'Acquisto '+_eur(c.iva?c.prezzo*1.22:c.prezzo) : '<span style="color:var(--text2)">Solo info</span>')
+    return '<tr>'
+      +'<td><strong>'+escB(c.titolo)+'</strong>'+(c.attiva?'':' <span style="font-size:10px;color:var(--text3)">(nascosta)</span>')+'</td>'
+      +'<td style="font-size:12.5px;color:var(--text2)">'+escB(c.categoria||'—')+'</td>'
+      +'<td>'+(c.prezzo?_eur(c.prezzo):'—')+(Number(c.iva)?' <span style="font-size:10px;color:var(--text3)">+IVA</span>':'')+'</td>'
+      +'<td style="font-size:12.5px">'+tipo+'</td>'
+      +'<td><a href="https://'+url+'" target="_blank" style="font-size:11.5px;color:var(--accent)">'+escB(c.slug)+' ↗</a></td>'
+      +'<td class="acts">'
+        +'<button class="btn btn-sm" onclick="apriCorsoPag(\''+c.slug+'\')">✏️</button>'
+        +'<button class="btn btn-sm btn-r" onclick="eliminaCorsoPag(\''+c.slug+'\')">🗑</button>'
+      +'</td></tr>'
+  }).join('')
+}
+
+// apri: senza slug = nuovo; con slug = modifica
+function apriCorsoPag(slug){
+  const c = slug ? (_CORSIPAG.find(x=>x.slug===slug)||{}) : {}
+  const J = a => JSON.stringify(a||[])
+  chiediCampiLunga('Pagina corso', [
+    {id:'slug',   label:'Indirizzo (slug) — finisce nell\u0027URL, es. digcomp', valore:c.slug||'', bloccato:!!slug},
+    {id:'titolo', label:'Titolo del corso', valore:c.titolo||''},
+    {id:'sottotitolo', label:'Sottotitolo (la frase sotto il titolo)', valore:c.sottotitolo||'', multi:true},
+    {id:'categoria', label:'Categoria (es. Certificazione informatica)', valore:c.categoria||''},
+    {id:'ente', label:'Ente (es. Universo Docente)', valore:c.ente||''},
+    {id:'prezzo', label:'Prezzo in € — lascia vuoto per "solo informazioni"', valore:c.prezzo!=null?c.prezzo:''},
+    {id:'iva', label:'Il cliente paga +IVA 22%? (si/no)', valore:Number(c.iva)?'si':'no'},
+    {id:'solo_info', label:'Solo informazioni, niente acquisto? (si/no) — per le lauree', valore:c.solo_info?'si':'no'},
+    {id:'descrizione', label:'Descrizione (il blocco lungo)', valore:c.descrizione||'', multi:true},
+    {id:'a_chi', label:'A chi è rivolto', valore:c.a_chi||'', multi:true},
+    {id:'hero_punti', label:'Punti in cima — uno per riga', valore:(c.hero_punti||[]).map(x=>x.t).join('\n'), multi:true},
+    {id:'contenuti', label:'Contenuti/aree — una per riga, formato:  Titolo | descrizione', valore:(c.contenuti||[]).map(x=>(x.h||'')+' | '+(x.p||'')).join('\n'), multi:true},
+    {id:'faq', label:'FAQ — una per riga, formato:  Domanda ? Risposta', valore:(c.faq||[]).map(x=>(x.q||'')+' ? '+(x.a||'')).join('\n'), multi:true},
+    {id:'citta', label:'Città (per il SEO locale)', valore:c.citta||'Velletri'},
+    {id:'zona', label:'Zona (per il SEO locale)', valore:c.zona||'Castelli Romani e provincia di Roma'},
+    {id:'attiva', label:'Pagina pubblicata? (si/no)', valore:(c.attiva===false)?'no':'si'},
+  ]).then(function(r){
+    if(!r) return
+    salvaCorsoPag(slug, r)
+  })
+}
+
+async function salvaCorsoPag(slugVecchio, r){
+  const s = (r.slug||'').trim().toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-|-$/g,'')
+  if(!s){ alert('Serve lo slug (l\u0027indirizzo).'); return }
+  if(!(r.titolo||'').trim()){ alert('Serve il titolo.'); return }
+
+  const punti = (r.hero_punti||'').split('\n').map(x=>x.trim()).filter(Boolean).map(t=>({t}))
+  const contenuti = (r.contenuti||'').split('\n').map(x=>x.trim()).filter(Boolean).map(function(riga,i){
+    const p = riga.split('|'); return {n:String(i+1).padStart(2,'0'), h:(p[0]||'').trim(), p:(p[1]||'').trim()}
+  })
+  const faq = (r.faq||'').split('\n').map(x=>x.trim()).filter(Boolean).map(function(riga){
+    const p = riga.split('?'); return {q:(p[0]||'').trim(), a:p.slice(1).join('?').trim()}
+  })
+
+  const rec = {
+    slug:s,
+    titolo:(r.titolo||'').trim(),
+    sottotitolo:(r.sottotitolo||'').trim()||null,
+    categoria:(r.categoria||'').trim()||null,
+    ente:(r.ente||'').trim()||null,
+    prezzo: r.prezzo!==''&&r.prezzo!=null ? Number(r.prezzo) : null,
+    iva: /^s/i.test(r.iva||''),
+    solo_info: /^s/i.test(r.solo_info||''),
+    descrizione:(r.descrizione||'').trim()||null,
+    a_chi:(r.a_chi||'').trim()||null,
+    hero_punti:punti,
+    contenuti:contenuti,
+    faq:faq,
+    citta:(r.citta||'').trim()||'Velletri',
+    zona:(r.zona||'').trim()||'Castelli Romani e provincia di Roma',
+    attiva: !/^n/i.test(r.attiva||''),
+    aggiornata_il: new Date().toISOString(),
+  }
+
+  try{
+    let q
+    if(slugVecchio){ q = await db.from('corsi_pagine').update(rec).eq('slug', slugVecchio) }
+    else { q = await db.from('corsi_pagine').insert(rec) }
+    if(q.error) throw q.error
+    await caricaCorsiPagine()
+    try{ toast('Pagina salvata. Ricordati di ripubblicare per vederla online.') }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+async function eliminaCorsoPag(slug){
+  const c = _CORSIPAG.find(x=>x.slug===slug); if(!c) return
+  if(!confirm('Eliminare la pagina "'+(c.titolo||slug)+'"?\n\nLa pagina online resterà finché non ripubblichi la cartella corsi.')) return
+  try{
+    const q = await db.from('corsi_pagine').delete().eq('slug', slug)
+    if(q.error) throw q.error
+    await caricaCorsiPagine()
+    try{ toast('Pagina eliminata') }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+// variante di chiediCampi con textarea più alte, campo bloccabile
+function chiediCampiLunga(titolo, campi){
+  return new Promise(function(risolvi){
+    const vecchia=document.getElementById('mm-chiedi'); if(vecchia) vecchia.remove()
+    const d=document.createElement('div'); d.id='mm-chiedi'
+    d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:4vh 18px;overflow-y:auto'
+    const corpo=campi.map(function(c){
+      const val=String(c.valore==null?'':c.valore).replace(/"/g,'&quot;')
+      const dis=c.bloccato?' disabled style="opacity:.6"':''
+      const campo = c.multi
+        ? '<textarea id="mmc-'+c.id+'" rows="3" style="width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:inherit;font-size:13.5px;resize:vertical">'+escB(c.valore||'')+'</textarea>'
+        : '<input id="mmc-'+c.id+'" value="'+val+'"'+dis+' style="width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:inherit;font-size:13.5px">'
+      return '<div style="margin-bottom:11px"><label style="display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:4px">'+escB(c.label)+'</label>'+campo+'</div>'
+    }).join('')
+    d.innerHTML='<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;max-width:560px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden;margin:auto">'
+      +'<div style="padding:15px 18px;border-bottom:0.5px solid var(--border);font-weight:700;font-size:15px">'+escB(titolo)+'</div>'
+      +'<div style="padding:18px;max-height:70vh;overflow-y:auto">'+corpo+'</div>'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:0.5px solid var(--border);background:var(--surface2)">'
+      +'<button class="btn btn-sm" id="mmc-no">Annulla</button><button class="btn btn-sm btn-p" id="mmc-si">Salva</button></div></div>'
+    document.body.appendChild(d)
+    const chiudi=function(e){ d.remove(); risolvi(e) }
+    d.addEventListener('click', function(e){ if(e.target===d) chiudi(null) })
+    document.getElementById('mmc-no').onclick=function(){ chiudi(null) }
+    document.getElementById('mmc-si').onclick=function(){
+      const out={}; campi.forEach(function(c){ const el=document.getElementById('mmc-'+c.id); out[c.id]=el?String(el.value||'').trim():'' }); chiudi(out)
+    }
+  })
+}
+
 // ── NAVIGAZIONE ───────────────────────────────────────────────
 function sp(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
@@ -4333,7 +4497,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:caricaCorsiPagine,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
