@@ -869,10 +869,46 @@ tbody tr:hover td{background:var(--surface2)}
     <button class="btn btn-p btn-sm" onclick="apriCorsoPag()">＋ Nuova pagina corso</button>
     <span id="cp-count" style="font-size:13px;color:var(--text2)"></span>
   </div>
+  <div id="cp-bulkbar" style="display:none;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:10px 12px;background:rgba(0,0,0,.03);border:1px solid var(--line);border-radius:10px">
+    <strong id="cp-bulk-n" style="font-size:13px"></strong>
+    <button class="btn btn-sm" onclick="cpBulk('attiva')">Attiva</button>
+    <button class="btn btn-sm" onclick="cpBulk('disattiva')">Disattiva</button>
+    <button class="btn btn-sm" onclick="cpBulk('iva-on')">+IVA</button>
+    <button class="btn btn-sm" onclick="cpBulk('iva-off')">−IVA</button>
+    <button class="btn btn-sm" onclick="cpBulk('soloinfo')">Solo info</button>
+    <button class="btn btn-sm" onclick="cpBulk('acquisto')">Acquistabile</button>
+    <button class="btn btn-sm" onclick="cpBulkCampo('categoria')">Categoria…</button>
+    <button class="btn btn-sm" onclick="cpBulkCampo('ente')">Ente…</button>
+    <button class="btn btn-sm" onclick="cpBulkCampo('piattaforma')">Piattaforma…</button>
+    <button class="btn btn-sm btn-r" onclick="cpBulkElimina()">Elimina</button>
+    <button class="btn btn-sm" style="margin-left:auto" onclick="cpDeselTutti()">Deseleziona</button>
+  </div>
   <div class="tbl-wrap"><table>
-    <thead><tr><th>Corso</th><th>Categoria</th><th>Prezzo</th><th>Tipo</th><th>Link</th><th></th></tr></thead>
-    <tbody id="tbl-corsipagine"><tr><td colspan="6" class="empty">Caricamento…</td></tr></tbody>
+    <thead><tr><th style="width:30px"><input type="checkbox" id="cp-selall" onclick="cpSelAll(this.checked)" title="Seleziona tutte"></th><th>Corso</th><th>Categoria</th><th>Prezzo</th><th>Tipo</th><th>Link</th><th></th></tr></thead>
+    <tbody id="tbl-corsipagine"><tr><td colspan="7" class="empty">Caricamento…</td></tr></tbody>
   </table></div>
+
+  <div style="margin-top:24px;border-top:1px solid var(--line);padding-top:16px">
+    <div style="font-weight:600;font-size:13px;margin-bottom:10px">⚙️ Gestisci le tendine (categorie ed enti)</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div style="flex:1;min-width:250px">
+        <div style="font-weight:600;font-size:12.5px;color:var(--text2);margin-bottom:6px">🗂️ Categorie</div>
+        <div id="cp-categ-list"></div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <input id="cp-categ-new" placeholder="Nuova categoria" style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px" onkeydown="if(event.key==='Enter')nuovaCategoria()">
+          <button class="btn btn-p btn-sm" onclick="nuovaCategoria()">Aggiungi</button>
+        </div>
+      </div>
+      <div style="flex:1;min-width:250px">
+        <div style="font-weight:600;font-size:12.5px;color:var(--text2);margin-bottom:6px">🏢 Enti / Università</div>
+        <div id="cp-enti-list"></div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <input id="cp-ente-new" placeholder="Nuovo ente / università" style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px" onkeydown="if(event.key==='Enter')nuovoEnte()">
+          <button class="btn btn-p btn-sm" onclick="nuovoEnte()">Aggiungi</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="page" id="page-prodottipag">
@@ -4391,12 +4427,13 @@ function renderCorsiPagine(){
   const tb = document.getElementById('tbl-corsipagine'); if(!tb) return
   const cnt = document.getElementById('cp-count')
   if(cnt) cnt.textContent = _CORSIPAG.length ? (_CORSIPAG.length+' pagin'+(_CORSIPAG.length===1?'a':'e')) : ''
-  if(!_CORSIPAG.length){ tb.innerHTML='<tr><td colspan="6" class="empty">Nessuna pagina. Creane una col pulsante qui sopra.</td></tr>'; return }
+  if(!_CORSIPAG.length){ tb.innerHTML='<tr><td colspan="7" class="empty">Nessuna pagina. Creane una col pulsante qui sopra.</td></tr>'; cpBarUpd(); return }
   tb.innerHTML = _CORSIPAG.map(function(c){
     const url = 'corsi.leoneconsultingitalia.it/'+c.slug
     const tipo = c.solo_info ? '<span style="color:var(--text2)">Solo info</span>'
       : (c.prezzo ? 'Acquisto '+_eur(c.iva?c.prezzo*1.22:c.prezzo) : '<span style="color:var(--text2)">Solo info</span>')
     return '<tr>'
+      +'<td><input type="checkbox" class="cp-chk" '+(_cpSel.has(c.slug)?'checked':'')+' onclick="cpToggle(\''+c.slug+'\',this.checked)"></td>'
       +'<td><strong>'+escB(c.titolo)+'</strong>'+(c.attiva?'':' <span style="font-size:10px;color:var(--text3)">(nascosta)</span>')+'</td>'
       +'<td style="font-size:12.5px;color:var(--text2)">'+escB(c.categoria||'—')+(c.piattaforma?' <span style="font-size:10px;color:var(--accent);font-weight:600">·'+escB(c.piattaforma)+'</span>':'')+'</td>'
       +'<td>'+(c.prezzo?_eur(c.prezzo):'—')+(Number(c.iva)?' <span style="font-size:10px;color:var(--text3)">+IVA</span>':'')+'</td>'
@@ -4407,6 +4444,98 @@ function renderCorsiPagine(){
         +'<button class="btn btn-sm btn-r" onclick="eliminaCorsoPag(\''+c.slug+'\')">🗑</button>'
       +'</td></tr>'
   }).join('')
+  const sa=document.getElementById('cp-selall'); if(sa) sa.checked = _CORSIPAG.length>0 && _CORSIPAG.every(c=>_cpSel.has(c.slug))
+  cpBarUpd()
+}
+
+// --- Selezione multipla e azioni in blocco (Pagine corso) ---
+let _cpSel = new Set()
+function cpBarUpd(){
+  const bar=document.getElementById('cp-bulkbar'), n=document.getElementById('cp-bulk-n'); if(!bar) return
+  if(_cpSel.size){ bar.style.display='flex'; if(n) n.textContent=_cpSel.size+' selezionat'+(_cpSel.size===1?'a':'e') }
+  else bar.style.display='none'
+}
+function cpToggle(slug,on){ if(on)_cpSel.add(slug); else _cpSel.delete(slug); const sa=document.getElementById('cp-selall'); if(sa) sa.checked=_CORSIPAG.length>0&&_CORSIPAG.every(c=>_cpSel.has(c.slug)); cpBarUpd() }
+function cpSelAll(on){ _cpSel.clear(); if(on)(_CORSIPAG||[]).forEach(c=>_cpSel.add(c.slug)); renderCorsiPagine() }
+function cpDeselTutti(){ _cpSel.clear(); renderCorsiPagine() }
+async function _cpBulkUpdate(patch){
+  const slugs=[..._cpSel]; if(!slugs.length){ alert('Seleziona almeno una pagina.'); return }
+  try{
+    const q=await db.from('corsi_pagine').update(patch).in('slug',slugs)
+    if(q.error) throw q.error
+    _cpSel.clear(); await caricaCorsiPagine()
+    try{ toast(slugs.length+' pagine aggiornate. Ripubblica per vederle online.') }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+async function cpBulk(a){
+  if(!_cpSel.size){ alert('Seleziona almeno una pagina.'); return }
+  let patch=null
+  if(a==='attiva')patch={attiva:true}
+  else if(a==='disattiva')patch={attiva:false}
+  else if(a==='iva-on')patch={iva:true}
+  else if(a==='iva-off')patch={iva:false}
+  else if(a==='soloinfo')patch={solo_info:true}
+  else if(a==='acquisto')patch={solo_info:false}
+  if(patch) await _cpBulkUpdate(patch)
+}
+async function cpBulkCampo(campo){
+  if(!_cpSel.size){ alert('Seleziona almeno una pagina.'); return }
+  let opz=[], label='', libero=true
+  if(campo==='categoria'){ opz=(_CATEG||[]).filter(x=>x.attiva!==false).map(x=>x.nome); label='Categoria' }
+  else if(campo==='ente'){ opz=(_ENTI||[]).filter(x=>x.attiva!==false).map(x=>x.nome); label='Ente / Università' }
+  else if(campo==='piattaforma'){ opz=(_PIATT||[]).filter(x=>x.attiva!==false).map(x=>x.codice); label='Piattaforma'; libero=false }
+  const n=_cpSel.size
+  const r=await chiediCampiLunga('Cambia '+label+' su '+n+' pagin'+(n===1?'a':'e'),[
+    {id:'v', tipo:'select', libero:libero, label:label+' (vuoto = togli)', opzioni:opz, valore:''}
+  ])
+  if(!r) return
+  const val=(r.v||'').trim()
+  const patch={}; patch[campo]= val || null
+  if(val && campo==='categoria') await _ricordaCategoriaEnte(val,'')
+  if(val && campo==='ente') await _ricordaCategoriaEnte('',val)
+  await _cpBulkUpdate(patch)
+}
+async function cpBulkElimina(){
+  const slugs=[..._cpSel]; if(!slugs.length){ alert('Seleziona almeno una pagina.'); return }
+  if(!confirm('Eliminare '+slugs.length+' pagin'+(slugs.length===1?'a':'e')+'?\n\nL\u0027azione non si pu\u00f2 annullare. Le pagine online spariranno alla prossima ripubblicazione.')) return
+  try{
+    const q=await db.from('corsi_pagine').delete().in('slug',slugs)
+    if(q.error) throw q.error
+    _cpSel.clear(); await caricaCorsiPagine()
+    try{ toast(slugs.length+' pagine eliminate') }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+// --- Gestione tendine: categorie ed enti (aggiungi/elimina) ---
+function renderCategEnti(){
+  const cl=document.getElementById('cp-categ-list')
+  if(cl){ cl.innerHTML=(_CATEG||[]).length ? _CATEG.map(x=>'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span style="flex:1;font-size:13px">'+escB(x.nome)+'</span><button class="btn btn-sm btn-r" onclick="eliminaCategoria(\''+x.id+'\')">🗑</button></div>').join('') : '<div class="empty" style="font-size:12px">Nessuna categoria.</div>' }
+  const el=document.getElementById('cp-enti-list')
+  if(el){ el.innerHTML=(_ENTI||[]).length ? _ENTI.map(x=>'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span style="flex:1;font-size:13px">'+escB(x.nome)+'</span><button class="btn btn-sm btn-r" onclick="eliminaEnte(\''+x.id+'\')">🗑</button></div>').join('') : '<div class="empty" style="font-size:12px">Nessun ente.</div>' }
+}
+async function nuovaCategoria(){
+  const inp=document.getElementById('cp-categ-new'); const nome=(inp&&inp.value||'').trim(); if(!nome) return
+  if((_CATEG||[]).some(x=>(x.nome||'')===nome)){ alert('Esiste gi\u00e0.'); return }
+  try{ const ord=(_CATEG||[]).reduce((m,x)=>Math.max(m,x.ordine||0),0)+10; const q=await db.from('corsi_categorie').insert({nome,ordine:ord}); if(q.error) throw q.error; if(inp)inp.value=''; await caricaCategorie(); renderCategEnti(); try{toast('Categoria aggiunta')}catch(e){} }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+async function eliminaCategoria(id){
+  const c=(_CATEG||[]).find(x=>String(x.id)===String(id)); if(!c) return
+  const usati=(_CORSIPAG||[]).filter(x=>(x.categoria||'')===c.nome).length
+  if(usati){ if(!confirm('La categoria \"'+c.nome+'\" \u00e8 usata da '+usati+' pagin'+(usati===1?'a':'e')+'. Eliminandola dalla tendina quelle pagine restano (con la scritta attuale). Procedo?')) return }
+  else if(!confirm('Eliminare la categoria \"'+c.nome+'\"?')) return
+  try{ const q=await db.from('corsi_categorie').delete().eq('id',c.id); if(q.error) throw q.error; await caricaCategorie(); renderCategEnti(); try{toast('Categoria eliminata')}catch(e){} }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+async function nuovoEnte(){
+  const inp=document.getElementById('cp-ente-new'); const nome=(inp&&inp.value||'').trim(); if(!nome) return
+  if((_ENTI||[]).some(x=>(x.nome||'')===nome)){ alert('Esiste gi\u00e0.'); return }
+  try{ const ord=(_ENTI||[]).reduce((m,x)=>Math.max(m,x.ordine||0),0)+10; const q=await db.from('corsi_enti').insert({nome,ordine:ord}); if(q.error) throw q.error; if(inp)inp.value=''; await caricaEnti(); renderCategEnti(); try{toast('Ente aggiunto')}catch(e){} }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+async function eliminaEnte(id){
+  const c=(_ENTI||[]).find(x=>String(x.id)===String(id)); if(!c) return
+  const usati=(_CORSIPAG||[]).filter(x=>(x.ente||'')===c.nome).length
+  if(usati){ if(!confirm('L\u0027ente \"'+c.nome+'\" \u00e8 usato da '+usati+' pagin'+(usati===1?'a':'e')+'. Eliminandolo dalla tendina quelle pagine restano (con la scritta attuale). Procedo?')) return }
+  else if(!confirm('Eliminare l\u0027ente \"'+c.nome+'\"?')) return
+  try{ const q=await db.from('corsi_enti').delete().eq('id',c.id); if(q.error) throw q.error; await caricaEnti(); renderCategEnti(); try{toast('Ente eliminato')}catch(e){} }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
 
 // apri: senza slug = nuovo; con slug = modifica
@@ -4571,7 +4700,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();caricaCategorie();caricaEnti();caricaCorsiPagine()},incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();Promise.all([caricaCategorie(),caricaEnti()]).then(renderCategEnti);caricaCorsiPagine()},incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
