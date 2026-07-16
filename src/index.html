@@ -4192,6 +4192,31 @@ async function caricaPiattaforme(){
   _piattRiempiTendine()
 }
 
+// Categorie ed enti: liste gestibili (selezionabili e a cui si aggiunge al volo)
+let _CATEG = []
+async function caricaCategorie(){
+  try{ const r = await db.from('corsi_categorie').select('*').order('ordine'); if(r.error) throw r.error; _CATEG = r.data || [] }
+  catch(e){ _CATEG = []; console.error('categorie:', e) }
+}
+let _ENTI = []
+async function caricaEnti(){
+  try{ const r = await db.from('corsi_enti').select('*').order('ordine'); if(r.error) throw r.error; _ENTI = r.data || [] }
+  catch(e){ _ENTI = []; console.error('enti:', e) }
+}
+// Se salvo una categoria/ente nuovo, lo ricordo nella lista per riusarlo la prossima volta
+async function _ricordaCategoriaEnte(categoria, ente){
+  try{
+    if(categoria && !(_CATEG||[]).some(x=>(x.nome||'')===categoria)){
+      const ord=(_CATEG||[]).reduce((m,x)=>Math.max(m,x.ordine||0),0)+10
+      await db.from('corsi_categorie').insert({nome:categoria, ordine:ord}); await caricaCategorie()
+    }
+    if(ente && !(_ENTI||[]).some(x=>(x.nome||'')===ente)){
+      const ord=(_ENTI||[]).reduce((m,x)=>Math.max(m,x.ordine||0),0)+10
+      await db.from('corsi_enti').insert({nome:ente, ordine:ord}); await caricaEnti()
+    }
+  }catch(e){ console.error('ricorda cat/ente:', e) }
+}
+
 // riempio filtro e tendina del prodotto con quello che c'e\u0027 davvero
 function _piattRiempiTendine(){
   const attive = (_PIATT||[]).filter(p=>p.attiva!==false)
@@ -4392,8 +4417,10 @@ function apriCorsoPag(slug){
     {id:'slug',   label:'Indirizzo (slug) — finisce nell\u0027URL, es. digcomp', valore:c.slug||'', bloccato:!!slug},
     {id:'titolo', label:'Titolo del corso', valore:c.titolo||''},
     {id:'sottotitolo', label:'Sottotitolo (la frase sotto il titolo)', valore:c.sottotitolo||'', multi:true},
-    {id:'categoria', label:'Categoria (es. Certificazione informatica)', valore:c.categoria||''},
-    {id:'ente', label:'Ente (es. Universo Docente)', valore:c.ente||''},
+    {id:'categoria', tipo:'select', libero:true, label:'Categoria (scegli o aggiungi)',
+      opzioni:(_CATEG||[]).filter(x=>x.attiva!==false).map(x=>x.nome), valore:c.categoria||''},
+    {id:'ente', tipo:'select', libero:true, label:'Ente / Università (scegli o aggiungi)',
+      opzioni:(_ENTI||[]).filter(x=>x.attiva!==false).map(x=>x.nome), valore:c.ente||''},
     {id:'piattaforma', tipo:'select', label:'Piattaforma (solo per te, non si vede online)',
       opzioni:[{v:'',t:'— Nessuna —'}].concat((_PIATT||[]).map(x=>({v:x.codice,t:x.codice+' · '+x.nome}))), valore:c.piattaforma||''},
     {id:'prezzo', label:'Prezzo in € — lascia vuoto per "solo informazioni"', valore:c.prezzo!=null?c.prezzo:''},
@@ -4404,8 +4431,10 @@ function apriCorsoPag(slug){
     {id:'hero_punti', label:'Punti in cima — uno per riga', valore:(c.hero_punti||[]).map(x=>x.t).join('\n'), multi:true},
     {id:'contenuti', label:'Contenuti/aree — una per riga, formato:  Titolo | descrizione', valore:(c.contenuti||[]).map(x=>(x.h||'')+' | '+(x.p||'')).join('\n'), multi:true},
     {id:'faq', label:'FAQ — una per riga, formato:  Domanda ? Risposta', valore:(c.faq||[]).map(x=>(x.q||'')+' ? '+(x.a||'')).join('\n'), multi:true},
-    {id:'citta', label:'Città (per il SEO locale)', valore:c.citta||'Velletri'},
-    {id:'zona', label:'Zona (per il SEO locale)', valore:c.zona||'Castelli Romani e provincia di Roma'},
+    {id:'citta', tipo:'select', libero:true, label:'Città (per il SEO locale)',
+      opzioni:['Velletri','Lariano','Genzano di Roma','Nemi','Ariccia','Albano Laziale','Lanuvio','Aprilia','Cisterna di Latina','Roma'], valore:c.citta||'Velletri'},
+    {id:'zona', tipo:'select', libero:true, label:'Zona (per il SEO locale)',
+      opzioni:['Castelli Romani e provincia di Roma','Castelli Romani','provincia di Roma','Roma sud e Castelli Romani','provincia di Latina'], valore:c.zona||'Castelli Romani e provincia di Roma'},
     {id:'attiva', tipo:'check', label:'Pagina pubblicata (visibile online)', valore:(c.attiva!==false)},
   ]).then(function(r){
     if(!r) return
@@ -4452,6 +4481,7 @@ async function salvaCorsoPag(slugVecchio, r){
     if(slugVecchio){ q = await db.from('corsi_pagine').update(rec).eq('slug', slugVecchio) }
     else { q = await db.from('corsi_pagine').insert(rec) }
     if(q.error) throw q.error
+    await _ricordaCategoriaEnte(rec.categoria, rec.ente)
     await caricaCorsiPagine()
     try{ toast('Pagina salvata. Ricordati di ripubblicare per vederla online.') }catch(e){}
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
@@ -4488,12 +4518,18 @@ function chiediCampiLunga(titolo, campi){
       }
       // MENU a tendina
       if(c.tipo==='select'){
+        const listaV=(c.opzioni||[]).map(o=>(typeof o==='object')?o.v:o)
+        const nonInLista = c.libero && c.valore && listaV.indexOf(String(c.valore))<0
         const opts=(c.opzioni||[]).map(function(o){
           const v=(typeof o==='object')?o.v:o, t=(typeof o==='object')?o.t:o
           return '<option value="'+String(v).replace(/"/g,'&quot;')+'"'+(String(c.valore||'')===String(v)?' selected':'')+'>'+escB(t)+'</option>'
         }).join('')
+        const optAltro = c.libero ? '<option value="__altro__"'+(nonInLista?' selected':'')+'>\u2795 Altro (scrivi)\u2026</option>' : ''
+        const box = c.libero
+          ? '<input id="mmc-'+c.id+'-x" placeholder="Scrivi qui" value="'+(nonInLista?String(c.valore).replace(/"/g,'&quot;'):'')+'" style="'+inputStyle+';margin-top:6px;display:'+(nonInLista?'block':'none')+'" oninput="document.getElementById(\''+'mmc-'+c.id+'\').setAttribute(\'data-libero\',this.value)">'
+          : ''
         return '<div style="margin-bottom:11px"><label style="display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:4px">'+escB(c.label)+'</label>'
-          +'<select id="mmc-'+c.id+'" style="'+inputStyle+'">'+opts+'</select></div>'
+          +'<select id="mmc-'+c.id+'" style="'+inputStyle+'" onchange="{var x=document.getElementById(\''+'mmc-'+c.id+'-x\'); if(x) x.style.display=(this.value===\'__altro__\')?\'block\':\'none\'}">'+opts+optAltro+'</select>'+box+'</div>'
       }
       // testo lungo / testo
       const campo = c.multi
@@ -4514,8 +4550,13 @@ function chiediCampiLunga(titolo, campi){
       const out={}; campi.forEach(function(c){
         const el=document.getElementById('mmc-'+c.id)
         if(!el){ out[c.id]=''; return }
-        if(c.tipo==='check') out[c.id]= el.checked ? 'si' : 'no'
-        else out[c.id]=String(el.value||'').trim()
+        if(c.tipo==='check'){ out[c.id]= el.checked ? 'si' : 'no'; return }
+        if(c.tipo==='select' && el.value==='__altro__'){
+          const x=document.getElementById('mmc-'+c.id+'-x')
+          out[c.id]= x ? String(x.value||'').trim() : ''
+          return
+        }
+        out[c.id]=String(el.value||'').trim()
       }); chiudi(out)
     }
   })
@@ -4530,7 +4571,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:caricaCorsiPagine,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();caricaCategorie();caricaEnti();caricaCorsiPagine()},incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
