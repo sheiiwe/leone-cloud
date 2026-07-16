@@ -880,6 +880,8 @@ tbody tr:hover td{background:var(--surface2)}
     <button class="btn btn-sm" onclick="cpBulkCampo('categoria')">Categoria…</button>
     <button class="btn btn-sm" onclick="cpBulkCampo('ente')">Ente…</button>
     <button class="btn btn-sm" onclick="cpBulkCampo('piattaforma')">Piattaforma…</button>
+    <button class="btn btn-sm" onclick="cpBulkOfferta()">🔥 Offerta…</button>
+    <button class="btn btn-sm" onclick="cpBulkTogliOfferta()">Togli offerta</button>
     <button class="btn btn-sm btn-r" onclick="cpBulkElimina()">Elimina</button>
     <button class="btn btn-sm" style="margin-left:auto" onclick="cpDeselTutti()">Deseleziona</button>
   </div>
@@ -4506,6 +4508,25 @@ async function cpBulkCampo(campo){
   if(val && campo==='categoria') await _ricordaCategoriaEnte(val,'')
   if(val && campo==='ente') await _ricordaCategoriaEnte('',val)
   await _cpBulkUpdate(patch)
+}
+async function cpBulkOfferta(){
+  if(!_cpSel.size){ alert('Seleziona almeno una pagina.'); return }
+  const n=_cpSel.size
+  const r=await chiediCampiLunga('Metti in offerta '+n+' pagin'+(n===1?'a':'e'),[
+    {id:'prezzo', label:'Prezzo in offerta (€)', valore:''},
+    {id:'scade', label:'Scade il\u2026 \u2014 gg/mm/aaaa oo:mm', valore:''}
+  ])
+  if(!r) return
+  const prezzo = r.prezzo!==''&&r.prezzo!=null ? Number(r.prezzo) : 0
+  const iso = _parseScadenza(r.scade)
+  if(!(prezzo>0)){ alert('Inserisci un prezzo offerta valido.'); return }
+  if(!iso){ alert('Inserisci una scadenza valida, formato gg/mm/aaaa oo:mm.'); return }
+  await _cpBulkUpdate({prezzo_offerta:prezzo, offerta_scade:iso})
+}
+async function cpBulkTogliOfferta(){
+  if(!_cpSel.size){ alert('Seleziona almeno una pagina.'); return }
+  if(!confirm('Togliere l\u0027offerta da '+_cpSel.size+' pagin'+(_cpSel.size===1?'a':'e')+'?')) return
+  await _cpBulkUpdate({prezzo_offerta:null, offerta_scade:null})
 }
 async function cpBulkElimina(){
   const slugs=[..._cpSel]; if(!slugs.length){ alert('Seleziona almeno una pagina.'); return }
