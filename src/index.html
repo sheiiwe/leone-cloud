@@ -4448,7 +4448,7 @@ function renderCorsiPagine(){
       +'<td><input type="checkbox" class="cp-chk" '+(_cpSel.has(c.slug)?'checked':'')+' onclick="cpToggle(\''+c.slug+'\',this.checked)"></td>'
       +'<td><strong>'+escB(c.titolo)+'</strong>'+(c.attiva?'':' <span style="font-size:10px;color:var(--text3)">(nascosta)</span>')+'</td>'
       +'<td style="font-size:12.5px;color:var(--text2)">'+escB(c.categoria||'—')+(c.piattaforma?' <span style="font-size:10px;color:var(--accent);font-weight:600">·'+escB(c.piattaforma)+'</span>':'')+'</td>'
-      +'<td>'+(c.prezzo?_eur(c.prezzo):'—')+(Number(c.iva)?' <span style="font-size:10px;color:var(--text3)">+IVA</span>':'')+'</td>'
+      +'<td>'+(c.prezzo?_eur(c.prezzo):'—')+(Number(c.iva)?' <span style="font-size:10px;color:var(--text3)">+IVA</span>':'')+(_offAttiva(c)?' <span style="font-size:10px;color:#C51E26;font-weight:700">🔥 '+_eur(c.prezzo_offerta)+'</span>':'')+'</td>'
       +'<td style="font-size:12.5px">'+tipo+'</td>'
       +'<td><a href="https://'+url+'" target="_blank" style="font-size:11.5px;color:var(--accent)">'+escB(c.slug)+' ↗</a></td>'
       +'<td class="acts">'
@@ -4550,6 +4550,25 @@ async function eliminaEnte(id){
   try{ const q=await db.from('corsi_enti').delete().eq('id',c.id); if(q.error) throw q.error; await caricaEnti(); renderCategEnti(); try{toast('Ente eliminato')}catch(e){} }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
 
+// Offerta a tempo: formattazione data <-> ISO e verifica attiva
+function _fmtScadenza(iso){
+  if(!iso) return ''
+  try{ const d=new Date(iso); if(isNaN(d.getTime())) return ''
+    const p=n=>String(n).padStart(2,'0')
+    return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())
+  }catch(e){ return '' }
+}
+function _parseScadenza(txt){
+  txt=(txt||'').trim(); if(!txt) return null
+  const m=txt.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})(?:[ ,]+(\d{1,2})[:.](\d{2}))?$/)
+  if(!m) return null
+  const g=+m[1], mese=+m[2], anno=+m[3], oo=m[4]!=null?+m[4]:23, mm=m[5]!=null?+m[5]:59
+  const d=new Date(anno, mese-1, g, oo, mm, 0)
+  if(isNaN(d.getTime())) return null
+  return d.toISOString()
+}
+function _offAttiva(c){ return Number((c&&c.prezzo_offerta)||0)>0 && c && c.offerta_scade && (new Date(c.offerta_scade).getTime()>Date.now()) }
+
 // apri: senza slug = nuovo; con slug = modifica
 function apriCorsoPag(slug){
   const c = slug ? (_CORSIPAG.find(x=>x.slug===slug)||{}) : {}
@@ -4567,6 +4586,8 @@ function apriCorsoPag(slug){
     {id:'prezzo', label:'Prezzo in € — lascia vuoto per "solo informazioni"', valore:c.prezzo!=null?c.prezzo:''},
     {id:'iva', tipo:'check', label:'Il cliente paga + IVA 22%', valore:!!Number(c.iva)},
     {id:'solo_info', tipo:'check', label:'Solo informazioni, niente acquisto (per le lauree universitarie)', valore:!!c.solo_info},
+    {id:'prezzo_offerta', label:'\uD83D\uDD25 Prezzo in OFFERTA (€) — vuoto = nessuna offerta', valore:c.prezzo_offerta!=null?c.prezzo_offerta:''},
+    {id:'offerta_scade', label:'L\u0027offerta scade il… — formato gg/mm/aaaa oo:mm (vuoto = nessuna scadenza)', valore:_fmtScadenza(c.offerta_scade)},
     {id:'descrizione', label:'Descrizione (il blocco lungo)', valore:c.descrizione||'', multi:true},
     {id:'a_chi', label:'A chi è rivolto', valore:c.a_chi||'', multi:true},
     {id:'hero_punti', label:'Punti in cima — uno per riga', valore:(c.hero_punti||[]).map(x=>x.t).join('\n'), multi:true},
@@ -4604,6 +4625,8 @@ async function salvaCorsoPag(slugVecchio, r){
     ente:(r.ente||'').trim()||null,
     piattaforma:(r.piattaforma||'').trim().toUpperCase()||null,
     prezzo: r.prezzo!==''&&r.prezzo!=null ? Number(r.prezzo) : null,
+    prezzo_offerta: r.prezzo_offerta!==''&&r.prezzo_offerta!=null ? Number(r.prezzo_offerta) : null,
+    offerta_scade: _parseScadenza(r.offerta_scade),
     iva: /^s/i.test(r.iva||''),
     solo_info: /^s/i.test(r.solo_info||''),
     descrizione:(r.descrizione||'').trim()||null,
