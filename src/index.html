@@ -920,10 +920,22 @@ tbody tr:hover td{background:var(--surface2)}
       <option value="">Tutte le piattaforme</option>
     </select>
   </div>
+  <div id="pp-bulkbar" style="display:none;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:10px 12px;background:rgba(0,0,0,.03);border:1px solid var(--border);border-radius:10px">
+    <strong id="pp-bulk-n" style="font-size:13px"></strong>
+    <button class="btn btn-sm" onclick="ppBulk('attiva')">Attiva</button>
+    <button class="btn btn-sm" onclick="ppBulk('disattiva')">Disattiva</button>
+    <button class="btn btn-sm" onclick="ppBulk('iva-on')">+IVA</button>
+    <button class="btn btn-sm" onclick="ppBulk('iva-off')">−IVA</button>
+    <button class="btn btn-sm" onclick="ppBulkCampo('piattaforma')">Piattaforma…</button>
+    <button class="btn btn-sm" onclick="ppBulkCampo('compagnia')">Compagnia…</button>
+    <button class="btn btn-sm" onclick="ppBulkCampo('gruppo')">Gruppo…</button>
+    <button class="btn btn-sm btn-r" onclick="ppBulkElimina()">Elimina</button>
+    <button class="btn btn-sm" style="margin-left:auto" onclick="ppDeselTutti()">Deseleziona</button>
+  </div>
   <div class="card"><div class="card-hdr"><h3>Catalogo prodotti</h3><button class="btn btn-p" onclick="apriProdPag()">+ Nuovo prodotto</button></div>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>Prodotto</th><th>Prezzo</th><th>Provvigione</th><th>Aree</th><th>Stato</th><th></th></tr></thead>
-      <tbody id="tbl-prodpag"><tr><td colspan="6" style="color:var(--text2);padding:14px">Caricamento...</td></tr></tbody>
+      <thead><tr><th style="width:30px"><input type="checkbox" id="pp-selall" onclick="ppSelAll(this.checked)" title="Seleziona tutti"></th><th>Prodotto</th><th>Prezzo</th><th>Provvigione</th><th>Aree</th><th>Stato</th><th></th></tr></thead>
+      <tbody id="tbl-prodpag"><tr><td colspan="7" style="color:var(--text2);padding:14px">Caricamento...</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -4851,7 +4863,8 @@ function renderProdottiPag(){
   if(q) rows=rows.filter(p=>(p.nome||'').toLowerCase().includes(q)||(p.descrizione||'').toLowerCase().includes(q))
   if(fp==='__none') rows=rows.filter(p=>!(p.piattaforma||'').trim())
   else if(fp) rows=rows.filter(p=>(p.piattaforma||'').trim()===fp)
-  if(!rows.length){ tb.innerHTML='<tr><td colspan="6" style="color:var(--text2);padding:14px">Nessun prodotto per questo filtro.</td></tr>'; return }
+  _ppShown = rows.map(function(p){return p.id})
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="7" style="color:var(--text2);padding:14px">Nessun prodotto per questo filtro.</td></tr>'; ppBarUpd(); return }
   tb.innerHTML=rows.map(function(p){
     const prov=Number(p.provvigione_pct||0)+'% ('+_eur(_baseProv(p)*Number(p.provvigione_pct||0)/100)+')'+(Number(p.iva||0)>0?' <span style="font-size:10px;color:var(--text3)">+IVA</span>':'')
     const stato=p.attivo?'<span style="color:#117A65;font-weight:600">\u25cf Attivo</span>':'<span style="color:#999">\u25cb Off</span>'
@@ -4859,8 +4872,64 @@ function renderProdottiPag(){
     const comp=(p.compagnia||'').trim()?'<span style="display:inline-block;font-size:10px;font-weight:700;background:#ede7f6;color:#5e35b1;padding:1px 7px;border-radius:20px;margin-right:6px">'+escB(p.compagnia)+'</span>':''
     const annB=p.annuale?'<span style="display:inline-block;font-size:10px;font-weight:700;background:#fff3e0;color:#e65100;padding:1px 7px;border-radius:20px;margin-right:6px">\ud83d\udcc5 '+(p.anni?('\u00d7 '+p.anni+' anni'):'ad anno')+'</span>':''
     const grp=(p.gruppo||'').trim()?'<span style="display:inline-block;font-size:10px;background:#eee;color:#555;padding:1px 7px;border-radius:20px">'+escB(p.gruppo)+'</span>':''
-    return '<tr><td>'+piatt+comp+annB+grp+(piatt||comp||annB||grp?'<br>':'')+'<strong>'+escB(p.nome||'')+'</strong>'+(p.descrizione?'<div style="font-size:12px;color:var(--text2)">'+escB(p.descrizione)+'</div>':'')+'</td><td style="white-space:nowrap">'+_eur(p.prezzo)+(p.annuale?'<span style="font-size:10px;color:var(--text2)">/anno</span>':'')+'</td><td style="white-space:nowrap">'+prov+'</td><td style="font-size:12px">'+escB(_ppAreeLabel(p.aree))+'</td><td>'+stato+'</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="apriProdPag(\u0027'+p.id+'\u0027)">\u270f\ufe0f</button> <button class="btn btn-sm" onclick="eliminaProdPag(\u0027'+p.id+'\u0027)">\ud83d\uddd1</button></td></tr>'
+    return '<tr><td><input type="checkbox" class="pp-chk" '+(_ppSel.has(p.id)?'checked':'')+' onclick="ppToggle(\''+p.id+'\',this.checked)"></td><td>'+piatt+comp+annB+grp+(piatt||comp||annB||grp?'<br>':'')+'<strong>'+escB(p.nome||'')+'</strong>'+(p.descrizione?'<div style="font-size:12px;color:var(--text2)">'+escB(p.descrizione)+'</div>':'')+'</td><td style="white-space:nowrap">'+_eur(p.prezzo)+(p.annuale?'<span style="font-size:10px;color:var(--text2)">/anno</span>':'')+'</td><td style="white-space:nowrap">'+prov+'</td><td style="font-size:12px">'+escB(_ppAreeLabel(p.aree))+'</td><td>'+stato+'</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="apriProdPag(\u0027'+p.id+'\u0027)">\u270f\ufe0f</button> <button class="btn btn-sm" onclick="eliminaProdPag(\u0027'+p.id+'\u0027)">\ud83d\uddd1</button></td></tr>'
   }).join('')
+  const sa=document.getElementById('pp-selall'); if(sa) sa.checked = _ppShown.length>0 && _ppShown.every(function(id){return _ppSel.has(id)})
+  ppBarUpd()
+}
+// --- Selezione multipla e azioni in blocco (Prodotti & pagamenti) ---
+let _ppSel = new Set(), _ppShown = []
+function ppBarUpd(){
+  const bar=document.getElementById('pp-bulkbar'), n=document.getElementById('pp-bulk-n'); if(!bar) return
+  if(_ppSel.size){ bar.style.display='flex'; if(n) n.textContent=_ppSel.size+' selezionat'+(_ppSel.size===1?'o':'i') }
+  else bar.style.display='none'
+}
+function ppToggle(id,on){ if(on)_ppSel.add(id); else _ppSel.delete(id); const sa=document.getElementById('pp-selall'); if(sa) sa.checked=_ppShown.length>0&&_ppShown.every(function(x){return _ppSel.has(x)}); ppBarUpd() }
+function ppSelAll(on){ if(on)(_ppShown||[]).forEach(function(id){_ppSel.add(id)}); else (_ppShown||[]).forEach(function(id){_ppSel.delete(id)}); renderProdottiPag() }
+function ppDeselTutti(){ _ppSel.clear(); renderProdottiPag() }
+async function _ppBulkUpdate(patch){
+  const ids=[..._ppSel]; if(!ids.length){ alert('Seleziona almeno un prodotto.'); return }
+  try{
+    const r=await db.from('prodotti_pagamento').update(patch).in('id',ids)
+    if(r.error) throw r.error
+    _ppSel.clear(); await caricaProdottiPag()
+    try{ toast(ids.length+' prodotti aggiornati') }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+async function ppBulk(a){
+  if(!_ppSel.size){ alert('Seleziona almeno un prodotto.'); return }
+  let patch=null
+  if(a==='attiva')patch={attivo:true}
+  else if(a==='disattiva')patch={attivo:false}
+  else if(a==='iva-on')patch={iva:22}
+  else if(a==='iva-off')patch={iva:0}
+  if(patch) await _ppBulkUpdate(patch)
+}
+async function ppBulkCampo(campo){
+  if(!_ppSel.size){ alert('Seleziona almeno un prodotto.'); return }
+  const n=_ppSel.size
+  let campoDef
+  if(campo==='piattaforma'){
+    campoDef={id:'v', tipo:'select', libero:false, label:'Piattaforma (vuoto = togli)', opzioni:(_PIATT||[]).filter(x=>x.attiva!==false).map(x=>x.codice), valore:''}
+  } else {
+    const lab = campo==='compagnia' ? 'Compagnia / Ente' : 'Gruppo'
+    campoDef={id:'v', label:lab+' (vuoto = togli)', valore:''}
+  }
+  const r=await chiediCampiLunga('Cambia '+campo+' su '+n+' prodott'+(n===1?'o':'i'),[campoDef])
+  if(!r) return
+  const val=(r.v||'').trim()
+  const patch={}; patch[campo]= val || null
+  await _ppBulkUpdate(patch)
+}
+async function ppBulkElimina(){
+  const ids=[..._ppSel]; if(!ids.length){ alert('Seleziona almeno un prodotto.'); return }
+  if(!confirm('Eliminare '+ids.length+' prodott'+(ids.length===1?'o':'i')+'?\n\nL\u0027azione non si pu\u00f2 annullare.')) return
+  try{
+    const r=await db.from('prodotti_pagamento').delete().in('id',ids)
+    if(r.error) throw r.error
+    _ppSel.clear(); await caricaProdottiPag()
+    try{ toast(ids.length+' prodotti eliminati') }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
 // ══════════════════════════════════════════════════════════════
 //  IVA DEL FORNITORE
