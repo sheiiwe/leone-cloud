@@ -311,6 +311,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('corsipagine',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Pagine corso
     </div>
+    <div class="nav-item" onclick="sp('tessere',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.5 16.5c.6-1.6 2-2.4 3.5-2.4s2.9.8 3.5 2.4"/><path d="M14.5 10h5M14.5 13.5h5"/></svg>Tesserini
+    </div>
     <div class="nav-item" onclick="sp('email-mkt',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Email marketing
     </div>
@@ -408,6 +411,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('corsipagine',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Pagine corso
     </div>
+    <div class="nav-item" onclick="sp('tessere',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.5 16.5c.6-1.6 2-2.4 3.5-2.4s2.9.8 3.5 2.4"/><path d="M14.5 10h5M14.5 13.5h5"/></svg>Tesserini
+    </div>
     <div class="nav-item" onclick="sp('email-mkt',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Email marketing
     </div>
@@ -493,6 +499,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-sec">Strumenti</div>
     <div class="nav-item" onclick="sp('corsipagine',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Pagine corso
+    </div>
+    <div class="nav-item" onclick="sp('tessere',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.5 16.5c.6-1.6 2-2.4 3.5-2.4s2.9.8 3.5 2.4"/><path d="M14.5 10h5M14.5 13.5h5"/></svg>Tesserini
     </div>
     <div class="nav-item" onclick="sp('email-mkt',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Email marketing
@@ -859,6 +868,21 @@ tbody tr:hover td{background:var(--surface2)}
     <input id="off-search" type="text" placeholder="🔍 Cerca offerta (nome, fornitore, categoria...)" oninput="renderOfferte()" style="width:100%;padding:9px 12px;margin:8px 0 4px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div id="offerte-lista" style="padding:4px 0"></div>
   </div>
+</div>
+
+
+<!-- TESSERINI -->
+<div class="page" id="page-tessere">
+  <div class="pg-title">Tesserini</div>
+  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Tesserini di riconoscimento verificabili dal QR su <strong>verifica.leoneconsultingitalia.it</strong>. Le modifiche fatte qui si vedono subito nella pagina di verifica.</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+    <button class="btn btn-p btn-sm" onclick="apriTessera()">＋ Nuovo tesserino</button>
+    <span id="ts-count" style="font-size:13px;color:var(--text2)"></span>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th style="width:44px"></th><th>Persona</th><th>Ruolo</th><th>Tipo</th><th>N. tessera</th><th>Stato</th><th></th></tr></thead>
+    <tbody id="tbl-tessere"><tr><td colspan="7" class="empty">Caricamento…</td></tr></tbody>
+  </table></div>
 </div>
 
 <!-- DOCUMENTI -->
@@ -4462,6 +4486,165 @@ function renderCorsiPagine(){
   cpBarUpd()
 }
 
+
+// ══════════════════════════════════════════════════════════════
+//  TESSERINI  (verifica.leoneconsultingitalia.it)
+// ══════════════════════════════════════════════════════════════
+const _TS_VERIFICA = 'https://verifica.leoneconsultingitalia.it/'
+const _TS_TIPI = ['procacciatore','docente','dipendente','amministratore']
+let _TESSERE = []
+
+async function caricaTessere(){
+  try{
+    const r = await db.from('tessere').select('*').order('tipo').order('nome')
+    if(r.error) throw r.error
+    _TESSERE = r.data || []
+  }catch(e){ _TESSERE = []; console.error('tessere:', e) }
+  renderTessere()
+}
+
+function _tsStato(t){
+  const scaduta = t.scade_il && new Date(t.scade_il).getTime() < Date.now()
+  if(!t.attiva) return {txt:'Revocato', col:'#C51E26'}
+  if(scaduta) return {txt:'Scaduto', col:'#B8860B'}
+  return {txt:'Valido', col:'#1F8A3F'}
+}
+function _tsData(d){ if(!d) return ''; try{ const x=new Date(d); const p=n=>String(n).padStart(2,'0'); return p(x.getDate())+'/'+p(x.getMonth()+1)+'/'+x.getFullYear() }catch(e){ return '' } }
+function _tsParseData(txt){
+  txt=(txt||'').trim(); if(!txt) return null
+  const m=txt.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/); if(!m) return null
+  const d=new Date(+m[3], +m[2]-1, +m[1]); if(isNaN(d.getTime())) return null
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
+}
+
+function renderTessere(){
+  const tb=document.getElementById('tbl-tessere'); if(!tb) return
+  const c=document.getElementById('ts-count')
+  if(c) c.textContent = _TESSERE.length ? (_TESSERE.length+' tesserin'+(_TESSERE.length===1?'o':'i')) : ''
+  if(!_TESSERE.length){ tb.innerHTML='<tr><td colspan="7" class="empty">Nessun tesserino. Creane uno col pulsante qui sopra.</td></tr>'; return }
+  tb.innerHTML=_TESSERE.map(function(t){
+    const s=_tsStato(t)
+    const foto = t.foto_url ? '<img src="'+t.foto_url+'" style="width:34px;height:34px;border-radius:8px;object-fit:cover">'
+                            : '<div style="width:34px;height:34px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:15px">👤</div>'
+    return '<tr>'
+      +'<td>'+foto+'</td>'
+      +'<td><strong>'+escB(t.nome||'')+'</strong>'+(t.nascita?'<br><span style="font-size:11px;color:var(--text3)">'+_tsData(t.nascita)+(t.luogo_nascita?' · '+escB(t.luogo_nascita):'')+'</span>':'')+'</td>'
+      +'<td style="font-size:12.5px;color:var(--text2)">'+escB(t.ruolo||'—')+'</td>'
+      +'<td style="font-size:12px;color:var(--text2)">'+escB(t.tipo||'')+'</td>'
+      +'<td class="mono" style="font-size:12.5px">'+escB(t.codice||'')+'</td>'
+      +'<td><span style="font-size:11.5px;font-weight:700;color:'+s.col+'">'+s.txt+'</span></td>'
+      +'<td class="acts">'
+        +'<button class="btn btn-sm" title="Apri verifica" onclick="window.open(\''+_TS_VERIFICA+encodeURIComponent(t.codice)+'\',\'_blank\')">🔗</button>'
+        +'<button class="btn btn-sm" title="Foto" onclick="cambiaFotoTessera(\''+t.codice+'\')">📷</button>'
+        +'<button class="btn btn-sm" onclick="apriTessera(\''+t.codice+'\')">✏️</button>'
+        +'<button class="btn btn-sm btn-r" onclick="eliminaTessera(\''+t.codice+'\')">🗑</button>'
+      +'</td></tr>'
+  }).join('')
+}
+
+// ridimensiona la foto e la trasforma in testo, come per i procacciatori
+function _tsFoto(file){
+  return new Promise(function(res,rej){
+    if(!file) return res('')
+    const fr=new FileReader()
+    fr.onload=function(){
+      const im=new Image()
+      im.onload=function(){
+        const LATO=340
+        let w=im.width, hh=im.height
+        const s=Math.min(LATO/w, LATO/hh, 1)
+        w=Math.round(w*s); hh=Math.round(hh*s)
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=hh
+        cv.getContext('2d').drawImage(im,0,0,w,hh)
+        res(cv.toDataURL('image/jpeg', 0.82))
+      }
+      im.onerror=function(){ rej(new Error('immagine non valida')) }
+      im.src=fr.result
+    }
+    fr.onerror=function(){ rej(new Error('lettura fallita')) }
+    fr.readAsDataURL(file)
+  })
+}
+
+async function apriTessera(codice){
+  const t = codice ? (_TESSERE.find(x=>x.codice===codice)||{}) : {}
+  const nuovo = !codice
+  const campi=[
+    {id:'nome', label:'Nome e cognome', valore:t.nome||''},
+    {id:'tipo', tipo:'select', libero:false, label:'Tipo', opzioni:_TS_TIPI, valore:t.tipo||'procacciatore'},
+    {id:'ruolo', label:'Ruolo (es. Procacciatore d\u0027affari)', valore:t.ruolo||''},
+    {id:'nascita', label:'Data di nascita — gg/mm/aaaa', valore:_tsData(t.nascita)},
+    {id:'luogo_nascita', label:'Luogo di nascita', valore:t.luogo_nascita||''},
+    {id:'codice', label:'N. tessera (vuoto = lo creo io)', valore:t.codice||''},
+    {id:'scade_il', label:'Valido fino al — gg/mm/aaaa', valore:_tsData(t.scade_il)},
+    {id:'attiva', tipo:'check', label:'Tesserino valido (togli la spunta per revocarlo)', valore:(nuovo?true:!!t.attiva)}
+  ]
+  const r=await chiediCampiLunga(nuovo?'Nuovo tesserino':'Modifica tesserino', campi)
+  if(!r) return
+  const nome=(r.nome||'').trim()
+  if(!nome){ alert('Serve il nome.'); return }
+
+  let cod=(r.codice||'').trim().toUpperCase().replace(/[^A-Z0-9\-]/g,'')
+  if(!cod){
+    const sig={procacciatore:'PRO',docente:'DOC',dipendente:'DIP',amministratore:'ADM'}[r.tipo||'procacciatore']||'GEN'
+    const usati=_TESSERE.filter(x=>(x.codice||'').indexOf('LC-'+sig+'-')===0).length+1
+    cod='LC-'+sig+'-'+String(usati).padStart(3,'0')
+  }
+
+  const foto = t.foto_url || null
+
+  const rec={
+    codice:cod, tipo:r.tipo||'procacciatore', nome:nome,
+    ruolo:(r.ruolo||'').trim()||null,
+    nascita:_tsParseData(r.nascita),
+    luogo_nascita:(r.luogo_nascita||'').trim()||null,
+    scade_il:_tsParseData(r.scade_il),
+    attiva: (r.attiva==='si' || r.attiva===true),
+    foto_url: foto
+  }
+  try{
+    const q = codice
+      ? await db.from('tessere').update(rec).eq('codice', codice)
+      : await db.from('tessere').insert(rec)
+    if(q.error) throw q.error
+    await caricaTessere()
+    try{ toast('Tesserino salvato · '+cod) }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+// carica o sostituisce la foto del tesserino
+function cambiaFotoTessera(codice){
+  const t=_TESSERE.find(x=>x.codice===codice); if(!t) return
+  let inp=document.getElementById('ts-foto-input')
+  if(!inp){
+    inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'
+    inp.id='ts-foto-input'; inp.style.display='none'; document.body.appendChild(inp)
+  }
+  inp.value=''
+  inp.onchange=async function(){
+    const f=inp.files && inp.files[0]; if(!f) return
+    try{
+      const b64=await _tsFoto(f)
+      const q=await db.from('tessere').update({foto_url:b64}).eq('codice',codice)
+      if(q.error) throw q.error
+      await caricaTessere()
+      try{ toast('Foto aggiornata') }catch(e){}
+    }catch(e){ alert('Errore foto: '+((e&&e.message)||e)) }
+  }
+  inp.click()
+}
+
+async function eliminaTessera(codice){
+  const t=_TESSERE.find(x=>x.codice===codice); if(!t) return
+  if(!confirm('Eliminare il tesserino di '+(t.nome||'')+' ('+codice+')?\n\nSe vuoi solo bloccarlo, conviene revocarlo togliendo la spunta “valido”.')) return
+  try{
+    const q=await db.from('tessere').delete().eq('codice', codice)
+    if(q.error) throw q.error
+    await caricaTessere()
+    try{ toast('Tesserino eliminato') }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
 // --- Selezione multipla e azioni in blocco (Pagine corso) ---
 let _cpSel = new Set()
 function cpBarUpd(){
@@ -4756,7 +4939,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();Promise.all([caricaCategorie(),caricaEnti()]).then(renderCategEnti);caricaCorsiPagine()},incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:renderDash,proc:renderProc,docenti:renderDocenti,studenti:renderStudenti,'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:renderVendite,lead:renderLead,provv:renderProvv,rete:renderRete,listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();Promise.all([caricaCategorie(),caricaEnti()]).then(renderCategEnti);caricaCorsiPagine()},tessere:caricaTessere,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:renderContratti,'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:renderDipendenti,buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   renders[id]?.()
 }
 
