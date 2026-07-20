@@ -4535,6 +4535,8 @@ function renderTessere(){
       +'<td><span style="font-size:11.5px;font-weight:700;color:'+s.col+'">'+s.txt+'</span></td>'
       +'<td class="acts">'
         +'<button class="btn btn-sm" title="Apri verifica" onclick="window.open(\''+_TS_VERIFICA+encodeURIComponent(t.codice)+'\',\'_blank\')">🔗</button>'
+        +'<button class="btn btn-sm" title="Stampa tesserino (PDF)" onclick="stampaTessera(\''+t.codice+'\',\'pdf\')">🖨</button>'
+        +'<button class="btn btn-sm" title="Immagine per il telefono" onclick="stampaTessera(\''+t.codice+'\',\'png\')">📱</button>'
         +'<button class="btn btn-sm" title="Foto" onclick="cambiaFotoTessera(\''+t.codice+'\')">📷</button>'
         +'<button class="btn btn-sm" onclick="apriTessera(\''+t.codice+'\')">✏️</button>'
         +'<button class="btn btn-sm btn-r" onclick="eliminaTessera(\''+t.codice+'\')">🗑</button>'
@@ -4566,9 +4568,53 @@ function _tsFoto(file){
   })
 }
 
+// elenco delle persone gia' registrate, per tipo
+async function _tsPersone(tipo){
+  const tab = {procacciatore:'procacciatori', docente:'docenti', dipendente:'dipendenti'}[tipo]
+  if(!tab) return []
+  try{
+    const r = await db.from(tab).select('id,data')
+    if(r.error) throw r.error
+    return (r.data||[]).map(function(x){
+      const d = x.data || {}
+      return { id:x.id, nome:(d.nome||d.nominativo||'').trim(), ruolo:(d.qualifica||d.ruolo||''), nascita:(d.nascita||d.data_nascita||''), luogo:(d.luogo_nascita||d.nato_a||'') }
+    }).filter(function(p){ return p.nome })
+      .sort(function(a,b){ return a.nome.localeCompare(b.nome) })
+  }catch(e){ console.error('persone:', e); return [] }
+}
+
 async function apriTessera(codice){
-  const t = codice ? (_TESSERE.find(x=>x.codice===codice)||{}) : {}
+  let t = codice ? (_TESSERE.find(x=>x.codice===codice)||{}) : {}
   const nuovo = !codice
+
+  // NUOVO: prima scelgo il tipo, poi la persona tra quelle gia' registrate
+  if(nuovo){
+    const s1 = await chiediCampiLunga('Nuovo tesserino \u2014 per chi?', [
+      {id:'tipo', tipo:'select', libero:false, label:'Tipo di tesserino', opzioni:_TS_TIPI, valore:'procacciatore'}
+    ])
+    if(!s1) return
+    const tipo = s1.tipo || 'procacciatore'
+    const persone = await _tsPersone(tipo)
+    let scelto = null
+    if(persone.length){
+      const s2 = await chiediCampiLunga('Scegli la persona', [
+        {id:'persona', tipo:'select', libero:true, label:'Persona gi\u00e0 registrata (oppure scrivi un nome nuovo)',
+         opzioni:persone.map(function(p){ return p.nome }), valore:''}
+      ])
+      if(!s2) return
+      const nomeScelto = (s2.persona||'').trim()
+      if(!nomeScelto){ alert('Serve una persona.'); return }
+      scelto = persone.find(function(p){ return p.nome===nomeScelto }) || null
+      t = { nome:nomeScelto, tipo:tipo,
+            ruolo: (scelto && scelto.ruolo) || '',
+            luogo_nascita: (scelto && scelto.luogo) || '',
+            rif_id: scelto ? scelto.id : null }
+    } else {
+      t = { tipo:tipo }
+    }
+    t.tipo = tipo
+  }
+
   const campi=[
     {id:'nome', label:'Nome e cognome', valore:t.nome||''},
     {id:'tipo', tipo:'select', libero:false, label:'Tipo', opzioni:_TS_TIPI, valore:t.tipo||'procacciatore'},
@@ -4600,6 +4646,7 @@ async function apriTessera(codice){
     luogo_nascita:(r.luogo_nascita||'').trim()||null,
     scade_il:_tsParseData(r.scade_il),
     attiva: (r.attiva==='si' || r.attiva===true),
+    rif_id: (t.rif_id!=null ? String(t.rif_id) : null),
     foto_url: foto
   }
   try{
@@ -4609,6 +4656,23 @@ async function apriTessera(codice){
     if(q.error) throw q.error
     await caricaTessere()
     try{ toast('Tesserino salvato · '+cod) }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+// genera il tesserino: 'pdf' = fronte/retro stampabile, 'png' = immagine per il telefono
+async function stampaTessera(codice, formato){
+  const t=_TESSERE.find(x=>x.codice===codice); if(!t) return
+  if(!window.electronAPI || !window.electronAPI.generatePDF){
+    alert('Questa funzione richiede l\u0027app installata sul computer.'); return
+  }
+  const dati={
+    codice:t.codice, nome:t.nome, ruolo:t.ruolo,
+    nascita:t.nascita, luogo_nascita:t.luogo_nascita,
+    scade_il:t.scade_il, foto:t.foto_url||''
+  }
+  try{
+    try{ toast('Preparo il tesserino…') }catch(e){}
+    await window.electronAPI.generatePDF(formato==='png'?'tesserino_png':'tesserino', JSON.stringify(dati))
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
 
