@@ -852,8 +852,15 @@ tbody tr:hover td{background:var(--surface2)}
   <div id="listino-vis-panel" class="card" style="display:none;margin-bottom:1rem"></div>
   <input id="listino-search" type="text" oninput="filterList(activeCat)" placeholder="🔍 Cerca prodotto o categoria..." style="width:100%;max-width:420px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:1rem;background:var(--surface);color:var(--text);box-sizing:border-box">
   <div class="card"><div class="card-hdr"><h3 id="listino-title">Tutti i prodotti</h3><button class="btn btn-p" onclick="nuovoProdotto()">+ Nuovo prodotto</button></div>
+    <div id="listino-bulk-bar" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;margin:0 0 10px">
+      <span id="listino-bulk-count" style="font-weight:700;font-size:13px"></span>
+      <select id="listino-bulk-cat" style="padding:6px 10px;border:0.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit;font-size:12.5px"></select>
+      <button class="btn btn-sm" onclick="bulkCambiaCategoria()">Sposta in categoria</button>
+      <button class="btn btn-sm btn-r" onclick="bulkEliminaProdotti()">🗑 Elimina selezionati</button>
+      <button class="btn btn-sm" onclick="liDeselezionaTutti()">Annulla selezione</button>
+    </div>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>Prodotto</th><th>Categoria</th><th>Prezzo cliente</th><th>Costo</th><th>Margine</th><th>Provvigione</th><th>Guadagno Leone</th><th></th></tr></thead>
+      <thead><tr><th style="width:28px"><input type="checkbox" id="listino-check-all" onclick="liToggleTutti(this.checked)"></th><th>Prodotto</th><th>Categoria</th><th>Prezzo cliente</th><th>Costo</th><th>Margine</th><th>Provvigione</th><th>Guadagno Leone</th><th></th></tr></thead>
       <tbody id="tbl-listino"></tbody>
     </table></div>
   </div>
@@ -9778,6 +9785,13 @@ function filterList(cat,silent){
   if(q) filtered=filtered.filter(p=>(p.nome||'').toLowerCase().includes(q)||(p.cat||'').toLowerCase().includes(q))
   document.getElementById('listino-title').textContent=(cat||'Tutti i prodotti')+(q?' · ricerca "'+q+'"':'')
   _liA=0
+  _liSel.clear(); _liAnchor=null; _liCursor=null
+  _liOrder=filtered.map(p=>LISTINO.indexOf(p))
+  _liRedraw(filtered)
+}
+function _liRedraw(filtered){
+  liAggiornaBarra()
+  document.getElementById('listino-check-all').checked = filtered.length>0 && _liSel.size===filtered.length
   document.getElementById('tbl-listino').innerHTML=filtered.map((p,i)=>{
     const idx=LISTINO.indexOf(p)
     const dash='<span style="color:var(--text3);font-weight:400">—</span>'
@@ -9809,10 +9823,105 @@ function filterList(cat,silent){
     const _annB=p.annuale?'<span style="display:inline-block;font-size:9.5px;font-weight:700;background:#fff3e0;color:#e65100;border-radius:6px;padding:1px 6px;margin-left:6px">📅 '+(p.anni?('× '+p.anni+' anni'):'ad anno')+'</span>':''
     let _sel=''
     if(_m.length){ _sel=`<div style="margin-top:4px"><button onclick="apriOfferteReali(${idx})" style="font-size:11px;padding:3px 9px;border:0.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--green);font-weight:600;font-family:inherit;cursor:pointer">🔎 Vedi offerte reali (${_m.length})</button></div>` }
-    return`<tr><td style="font-size:12.5px;vertical-align:top">${p.nome}${_comp}${_annB}${_sel}</td><td style="vertical-align:top"><span class="pill">${p.cat}</span></td><td style="font-weight:600;vertical-align:top">${cPrezzo}</td><td style="color:var(--text2);vertical-align:top">${cCosto}</td><td style="vertical-align:top">${cMargine}</td><td style="font-weight:600;vertical-align:top">${cProv}</td><td style="font-weight:700;vertical-align:top">${cGuad}</td><td style="vertical-align:top"><button class="btn btn-sm" onclick="editProdotto(${idx})">✎</button> <button class="btn btn-sm btn-r" title="Elimina prodotto" onclick="deleteProdotto(${idx})">✕</button></td></tr>`
+    return`<tr data-pos="${i}" style="${_liSel.has(idx)?'background:var(--surface2)':''}"><td onclick="event.stopPropagation()"><input type="checkbox" ${_liSel.has(idx)?'checked':''} onclick="liClickRiga(${i}, event.shiftKey)"></td><td style="font-size:12.5px;vertical-align:top;cursor:pointer" onclick="liClickRiga(${i}, event.shiftKey)">${p.nome}${_comp}${_annB}${_sel}</td><td style="vertical-align:top"><span class="pill">${p.cat}</span></td><td style="font-weight:600;vertical-align:top">${cPrezzo}</td><td style="color:var(--text2);vertical-align:top">${cCosto}</td><td style="vertical-align:top">${cMargine}</td><td style="font-weight:600;vertical-align:top">${cProv}</td><td style="font-weight:700;vertical-align:top">${cGuad}</td><td style="vertical-align:top"><button class="btn btn-sm" onclick="editProdotto(${idx})">✎</button> <button class="btn btn-sm btn-r" title="Elimina prodotto" onclick="deleteProdotto(${idx})">✕</button></td></tr>`
   }).join('')
 }
 let _liA=0
+// ── SELEZIONE MULTIPLA LISTINO (spunte, intervallo, azioni in blocco) ──
+let _liSel=new Set()      // indici reali (in LISTINO) selezionati
+let _liOrder=[]           // indici reali, nell'ordine in cui sono mostrati ora (filtrati)
+let _liAnchor=null        // posizione (in _liOrder) dell'ultimo click "semplice"
+let _liCursor=null        // posizione (in _liOrder) corrente, per le frecce
+function liClickRiga(pos, shift){
+  const idx=_liOrder[pos]; if(idx==null) return
+  if(shift && _liAnchor!=null){
+    const a=Math.min(_liAnchor,pos), b=Math.max(_liAnchor,pos)
+    _liSel.clear()
+    for(let k=a;k<=b;k++){ if(_liOrder[k]!=null) _liSel.add(_liOrder[k]) }
+  } else {
+    if(_liSel.has(idx)) _liSel.delete(idx); else _liSel.add(idx)
+    _liAnchor=pos
+  }
+  _liCursor=pos
+  _liRidisegnaSoloSelezione()
+}
+function liToggleTutti(on){
+  _liSel.clear()
+  if(on){ _liOrder.forEach(idx=>{ if(idx!=null) _liSel.add(idx) }) }
+  _liAnchor=on?0:null; _liCursor=on?0:null
+  _liRidisegnaSoloSelezione()
+}
+function liDeselezionaTutti(){
+  _liSel.clear(); _liAnchor=null; _liCursor=null
+  _liRidisegnaSoloSelezione()
+}
+function _liRidisegnaSoloSelezione(){
+  // ridisegna solo spunte/evidenziazione, senza rifare tutta la tabella da zero
+  document.querySelectorAll('#tbl-listino tr').forEach(tr=>{
+    const pos=parseInt(tr.getAttribute('data-pos'),10)
+    const idx=_liOrder[pos]
+    const on=idx!=null && _liSel.has(idx)
+    tr.style.background = on ? 'var(--surface2)' : ''
+    const cb=tr.querySelector('input[type=checkbox]'); if(cb) cb.checked=on
+  })
+  const cAll=document.getElementById('listino-check-all')
+  if(cAll) cAll.checked = _liOrder.length>0 && _liSel.size===_liOrder.length
+  liAggiornaBarra()
+}
+function liAggiornaBarra(){
+  const bar=document.getElementById('listino-bulk-bar'); if(!bar) return
+  const n=_liSel.size
+  bar.style.display = n>0 ? 'flex' : 'none'
+  const c=document.getElementById('listino-bulk-count'); if(c) c.textContent = n+' selezionat'+(n===1?'o':'i')
+  const sel=document.getElementById('listino-bulk-cat')
+  if(sel){
+    const cats=[...new Set(LISTINO.map(x=>x.cat).filter(Boolean))].sort()
+    sel.innerHTML=cats.map(c=>`<option value="${escB(c)}">${escB(c)}</option>`).join('')
+  }
+}
+async function bulkCambiaCategoria(){
+  const nuovaCat=(document.getElementById('listino-bulk-cat')||{}).value
+  if(!nuovaCat || !_liSel.size) return
+  if(!confirm('Spostare '+_liSel.size+' prodotti nella categoria "'+nuovaCat+'"?')) return
+  _liSel.forEach(idx=>{ if(LISTINO[idx]) LISTINO[idx].cat=nuovaCat })
+  try{ await salvaListinoCloud() }catch(e){ alert('Errore salvataggio: '+((e&&e.message)||e)); return }
+  liDeselezionaTutti(); renderListino()
+}
+async function bulkEliminaProdotti(){
+  if(!_liSel.size) return
+  if(!confirm('Eliminare '+_liSel.size+' prodotti selezionati? L\u0027operazione non si pu\u00f2 annullare.')) return
+  const daTenere=LISTINO.filter((p,i)=>!_liSel.has(i))
+  LISTINO.length=0; LISTINO.push(...daTenere)
+  try{ await salvaListinoCloud() }catch(e){ alert('Errore salvataggio: '+((e&&e.message)||e)); return }
+  liDeselezionaTutti(); renderListino()
+}
+// Maiusc+Freccia su/gi\u00f9: estende la selezione da dove sei fermo, come in Explorer/Finder
+document.addEventListener('keydown', function(ev){
+  const pag=document.getElementById('page-listino')
+  if(!pag || !pag.classList.contains('active')) return
+  if(ev.key!=='ArrowDown' && ev.key!=='ArrowUp') return
+  const tag=(document.activeElement&&document.activeElement.tagName||'').toLowerCase()
+  if(tag==='input'||tag==='textarea'||tag==='select') return
+  if(!_liOrder.length) return
+  ev.preventDefault()
+  if(_liCursor==null) _liCursor = ev.key==='ArrowDown' ? -1 : _liOrder.length
+  let next=_liCursor + (ev.key==='ArrowDown' ? 1 : -1)
+  next=Math.max(0, Math.min(_liOrder.length-1, next))
+  if(ev.shiftKey){
+    if(_liAnchor==null) _liAnchor=_liCursor>=0&&_liCursor<_liOrder.length?_liCursor:next
+    const a=Math.min(_liAnchor,next), b=Math.max(_liAnchor,next)
+    _liSel.clear()
+    for(let k=a;k<=b;k++){ if(_liOrder[k]!=null) _liSel.add(_liOrder[k]) }
+  } else {
+    _liSel.clear()
+    if(_liOrder[next]!=null) _liSel.add(_liOrder[next])
+    _liAnchor=next
+  }
+  _liCursor=next
+  _liRidisegnaSoloSelezione()
+  const tr=document.querySelector('#tbl-listino tr[data-pos="'+next+'"]')
+  if(tr) tr.scrollIntoView({block:'nearest'})
+})
 function offerteMatchApp(p){
   const offers=OFFERTE||[]
   if(!p||!offers.length) return []
