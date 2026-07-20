@@ -4492,6 +4492,15 @@ function renderCorsiPagine(){
 // ══════════════════════════════════════════════════════════════
 const _TS_VERIFICA = 'https://verifica.leoneconsultingitalia.it/'
 const _TS_TIPI = ['procacciatore','docente','dipendente','amministratore']
+// il ruolo scritto sul tesserino dipende dal TIPO, non da quello che c'e' in anagrafica
+const _TS_RUOLI = {procacciatore:'Procacciatore', docente:'Docente', dipendente:'Dipendente', amministratore:'Amministratore'}
+const _TS_ETICHETTE = [{v:'',t:'\u2014 scegli il tipo di tesserino \u2014'},{v:'procacciatore',t:'Procacciatore'},{v:'docente',t:'Docente'},{v:'dipendente',t:'Dipendente'},{v:'amministratore',t:'Amministratore'}]
+// fine contratto: sta in posti diversi a seconda dell'anagrafica
+function _tsFineContratto(d){
+  d = d || {}
+  const c = d.contratto || {}
+  return c.fine || d.fine || d.fine_contratto || d.scadenza_contratto || d.contratto_fine || ''
+}
 let _TESSERE = []
 
 async function caricaTessere(){
@@ -4577,7 +4586,10 @@ async function _tsPersone(tipo){
     if(r.error) throw r.error
     return (r.data||[]).map(function(x){
       const d = x.data || {}
-      return { id:x.id, nome:(d.nome||d.nominativo||'').trim(), ruolo:(d.qualifica||d.ruolo||''), nascita:(d.nascita||d.data_nascita||''), luogo:(d.luogo_nascita||d.nato_a||'') }
+      return { id:x.id, nome:(d.nome||d.nominativo||'').trim(),
+               nascita:(d.nascita||d.data_nascita||''),
+               luogo:(d.luogonascita||d.luogo_nascita||d.luogoNascita||d.nato_a||d.comune_nascita||''),
+               fine:_tsFineContratto(d) }
     }).filter(function(p){ return p.nome })
       .sort(function(a,b){ return a.nome.localeCompare(b.nome) })
   }catch(e){ console.error('persone:', e); return [] }
@@ -4587,22 +4599,37 @@ async function apriTessera(codice){
   let t = codice ? (_TESSERE.find(x=>x.codice===codice)||{}) : {}
   const nuovo = !codice
 
-  // NUOVO: una sola finestra che si allarga — scegli il tipo, poi la persona, poi compaiono i dati
+  // NUOVO: una sola finestra che si allarga — tipo, persona, poi i dati gia' compilati
   let _rUnico = null
   if(nuovo){
     const _perTipo = {}
     for(let _i=0;_i<_TS_TIPI.length;_i++){ _perTipo[_TS_TIPI[_i]] = await _tsPersone(_TS_TIPI[_i]) }
-    const _tipoIni = 'procacciatore'
+
+    // numero di tessera progressivo, creato dal programma
+    const _prossimoCodice = function(tp){
+      const sig = {procacciatore:'PRO',docente:'DOC',dipendente:'DIP',amministratore:'ADM'}[tp] || 'GEN'
+      let max = 0
+      _TESSERE.forEach(function(x){
+        const m = String(x.codice||'').match(new RegExp('^LC-'+sig+'-(\\d+)$'))
+        if(m){ const v = parseInt(m[1],10); if(v>max) max = v }
+      })
+      return 'LC-'+sig+'-'+String(max+1).padStart(3,'0')
+    }
+    // se non c'e' un contratto: tre anni da oggi
+    const _traTreAnni = function(){
+      const d = new Date(); d.setFullYear(d.getFullYear()+3)
+      return _tsData(d)
+    }
 
     _rUnico = await chiediCampiLunga('Nuovo tesserino', [
-      {id:'tipo', tipo:'select', libero:false, label:'Tipo di tesserino', opzioni:_TS_TIPI, valore:_tipoIni},
+      {id:'tipo', tipo:'select', libero:false, label:'Tipo di tesserino', opzioni:_TS_ETICHETTE, valore:''},
       {id:'persona', tipo:'select', libero:false, label:'Persona', opzioni:[], valore:''},
       {id:'nome', label:'Nome e cognome', valore:''},
-      {id:'ruolo', label:'Ruolo (es. Procacciatore d\u0027affari)', valore:''},
+      {id:'ruolo', label:'Ruolo (dal tipo di tesserino)', valore:''},
       {id:'nascita', label:'Data di nascita \u2014 gg/mm/aaaa', valore:''},
       {id:'luogo_nascita', label:'Luogo di nascita', valore:''},
-      {id:'codice', label:'N. tessera (vuoto = lo creo io)', valore:''},
-      {id:'scade_il', label:'Valido fino al \u2014 gg/mm/aaaa', valore:''},
+      {id:'codice', label:'N. tessera (lo creo io)', bloccato:true, valore:''},
+      {id:'scade_il', label:'Valido fino al \u2014 fine contratto', valore:''},
       {id:'attiva', tipo:'check', label:'Tesserino valido (togli la spunta per revocarlo)', valore:true}
     ], function(){
       const giu = ['nome','ruolo','nascita','luogo_nascita','codice','scade_il','attiva']
@@ -4613,10 +4640,21 @@ async function apriTessera(codice){
       const mostra = function(on){
         giu.forEach(function(i){ const e=document.getElementById('mmw-'+i); if(e) e.style.display = on?'':'none' })
       }
+      const compila = function(p){
+        p = p || {}
+        val('nome', p.nome||'')
+        val('ruolo', _TS_RUOLI[selT.value] || '')
+        val('luogo_nascita', p.luogo||'')
+        val('nascita', p.nascita ? _tsData(p.nascita) : '')
+        val('codice', _prossimoCodice(selT.value))
+        val('scade_il', p.fine ? _tsData(p.fine) : _traTreAnni())
+        mostra(true)
+      }
 
       const riempiPersone = function(){
+        if(!selT.value){ wP.style.display='none'; mostra(false); return }
         const lista = _perTipo[selT.value] || []
-        let html = '<option value="">\u2014 scegli \u2014</option>'
+        let html = '<option value="">\u2014 scegli la persona \u2014</option>'
         for(let k=0;k<lista.length;k++){
           html += '<option value="'+String(lista[k].nome).replace(/"/g,'&quot;')+'">'+escB(lista[k].nome)+'</option>'
         }
@@ -4625,8 +4663,7 @@ async function apriTessera(codice){
         if(!lista.length){
           wP.style.display = 'none'
           selP.value = '__nuovo__'
-          mostra(true)
-          val('nome',''); val('ruolo',''); val('nascita',''); val('luogo_nascita','')
+          compila({})
         } else {
           wP.style.display = ''
           selP.value = ''
@@ -4637,18 +4674,12 @@ async function apriTessera(codice){
       selP.onchange = function(){
         if(!selP.value){ mostra(false); return }
         if(selP.value === '__nuovo__'){
-          val('nome',''); val('ruolo',''); val('nascita',''); val('luogo_nascita','')
-          mostra(true)
+          compila({})
           const n=document.getElementById('mmc-nome'); if(n) n.focus()
           return
         }
         const lista = _perTipo[selT.value] || []
-        const p = lista.find(function(x){ return x.nome === selP.value }) || {}
-        val('nome', p.nome||'')
-        val('ruolo', p.ruolo||'')
-        val('luogo_nascita', p.luogo||'')
-        val('nascita', _tsData(p.nascita||''))
-        mostra(true)
+        compila(lista.find(function(x){ return x.nome === selP.value }))
       }
 
       selT.onchange = riempiPersone
@@ -4656,6 +4687,7 @@ async function apriTessera(codice){
     })
 
     if(!_rUnico) return
+    if(!_rUnico.tipo){ alert('Serve il tipo di tesserino.'); return }
     const _lista = _perTipo[_rUnico.tipo] || []
     const _sc = _lista.find(function(x){ return x.nome === (_rUnico.persona||'') }) || null
     t = { tipo:_rUnico.tipo, rif_id: _sc ? _sc.id : null }
