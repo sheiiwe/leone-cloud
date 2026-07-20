@@ -2308,6 +2308,7 @@ tbody tr:hover td{background:var(--surface2)}
     <input type="hidden" id="doc-id">
     <div class="msec">Dati anagrafici</div>
     <div class="fr"><div class="fg"><label>Nome e cognome *</label><input id="doc-nome" type="text" placeholder="Mario Rossi"></div><div class="fg"><label>Data di nascita</label><input id="doc-nascita" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Luogo di nascita</label><input id="doc-luogonascita" type="text" placeholder="Comune di nascita" list="dl-comuni-doc" autocomplete="off" oninput="onCittaInput(this)"></div></div>
     <div class="fr"><div class="fg"><label>Codice fiscale</label><input id="doc-cf" type="text" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase"></div><div class="fg"><label>Telefono</label><input id="doc-tel" type="tel" placeholder="+39 333 000000"></div></div>
     <div class="fr"><div class="fg"><label>Email personale</label><input id="doc-email" type="email" placeholder="mario@email.com"></div><div class="fg"><label>Email aziendale (login portale)</label><input id="doc-email-az" type="email" placeholder="nome.cognome@..."></div></div>
     <div style="margin:-2px 0 10px"><button type="button" class="btn btn-g btn-sm" onclick="inviaInvitoPortaleArea('docente')" title="Crea l'accesso con l'email aziendale e invia il link di attivazione alla email personale">📨 Invia invito al portale</button> <button type="button" class="btn btn-sm" onclick="generaCredenzialiPortaleArea('docente')" title="Genera password e crea un PDF con le credenziali">🔑 Genera credenziali (PDF)</button><div style="font-size:11px;color:var(--text2);margin-top:5px">Invito: link di attivazione alla personale · Credenziali: PDF con email e password da consegnare</div></div>
@@ -2600,6 +2601,7 @@ tbody tr:hover td{background:var(--surface2)}
     <h3 id="dip-modal-title">Nuovo dipendente</h3>
     <div class="msec">Dati anagrafici</div>
     <div class="fr"><div class="fg"><label>Nome e cognome *</label><input id="dp-nome" type="text" placeholder="Mario Rossi"></div><div class="fg"><label>Data di nascita</label><input id="dp-nascita" type="date"></div></div>
+    <div class="fr"><div class="fg"><label>Luogo di nascita</label><input id="dp-luogonascita" type="text" placeholder="Comune di nascita" list="dl-comuni-dip" autocomplete="off" oninput="onCittaInput(this)"></div></div>
     <div class="fr"><div class="fg"><label>Email</label><input id="dp-email" type="email" placeholder="mario@email.com"></div><div class="fg"><label>Telefono</label><input id="dp-tel" type="tel" placeholder="+39 333 000000"></div></div>
     <div style="margin:-2px 0 10px"><button type="button" class="btn btn-g btn-sm" onclick="inviaInvitoPortaleArea('dipendente')" title="Invia il link di accesso al portale dipendenti">📨 Invia invito al portale</button> <button type="button" class="btn btn-sm" onclick="generaCredenzialiPortaleArea('dipendente')" title="Genera password e crea un PDF con le credenziali">🔑 Genera credenziali (PDF)</button><div style="font-size:11px;color:var(--text2);margin-top:5px">Login con l'email del dipendente · PDF con email e password da consegnare</div></div>
     <div class="fr"><div class="fg"><label>Codice fiscale *</label><input id="dp-cf" type="text" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase"></div><div class="fg"><label>IBAN</label><input id="dp-iban" type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"></div></div>
@@ -6035,7 +6037,7 @@ function apriDocente(id){
   document.getElementById('doc-modal-title').textContent=d?'Modifica docente':'Nuovo docente'
   const set=(k,v)=>{ const e=document.getElementById(k); if(e) e.value=v||'' }
   document.getElementById('doc-id').value=d?d._id:''
-  set('doc-nome',d&&d.nome); set('doc-nascita',d&&d.nascita); set('doc-cf',d&&d.cf); set('doc-tel',d&&d.tel)
+  set('doc-nome',d&&d.nome); set('doc-nascita',d&&d.nascita); set('doc-luogonascita',d&&d.luogonascita); set('doc-cf',d&&d.cf); set('doc-tel',d&&d.tel)
   set('doc-email',d&&d.email); set('doc-email-az',d&&d.email_aziendale); set('doc-indirizzo',d&&d.indirizzo); set('doc-citta',d&&d.citta); set('doc-cap',d&&d.cap); set('doc-prov',d&&d.prov); set('doc-consenso-mkt',d&&d.consensoMkt)
   set('doc-iban',d&&d.iban); set('doc-piva',d&&d.piva); set('doc-note',d&&d.note)
   document.getElementById('doc-regime').value=(d&&d.regime)||'ritenuta'
@@ -6143,7 +6145,7 @@ async function salvaDocente(){
   const existing = d0 ? (d0.contratto||{}) : {}
   const rinnovi = Array.isArray(existing.rinnovi) ? existing.rinnovi : []
   const contFine = _calcFineContratto(contInizio, rinnovi)
-  const obj={ nome, nascita:g('doc-nascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), prov:(g('doc-prov')||'').toUpperCase(), consensoMkt:g('doc-consenso-mkt'), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), qualifica:document.getElementById('doc-qualifica').value, pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note'), contratto:{ inizio:contInizio, fine:contFine, rinnovi:rinnovi } }
+  const obj={ nome, nascita:g('doc-nascita'), luogonascita:g('doc-luogonascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), prov:(g('doc-prov')||'').toUpperCase(), consensoMkt:g('doc-consenso-mkt'), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), qualifica:document.getElementById('doc-qualifica').value, pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note'), contratto:{ inizio:contInizio, fine:contFine, rinnovi:rinnovi } }
   try{
     if(id){ const r=await db.from('docenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
     else { const r=await db.from('docenti').insert({data:obj}); if(r.error) throw r.error }
@@ -9345,7 +9347,7 @@ function calcolaStipendio(){
 }
 function resetDipForm(){
   ['dp-nome','dp-email','dp-tel','dp-cf','dp-iban','dp-ral','dp-ore','dp-paga-ora','dp-indirizzo','dp-citta','dp-cap','dp-prov','dp-doc-num','dp-doc-ril'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
-  ['dp-nascita','dp-doc-rildata','dp-doc-scad','dp-fine'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
+  ['dp-nascita','dp-luogonascita','dp-doc-rildata','dp-doc-scad','dp-fine'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
   if(document.getElementById('dp-doc-tipo')) document.getElementById('dp-doc-tipo').value="Carta d'Identità"
   if(document.getElementById('dp-durata')) document.getElementById('dp-durata').value='1'
   if(document.getElementById('dp-ncontratto')) document.getElementById('dp-ncontratto').value=d.nContratto||generaNumeroContratto('dip')
@@ -9383,6 +9385,7 @@ async function saveDip(){
   inizio:document.getElementById('dp-inizio').value,
   fine:document.getElementById('dp-fine')?.value||'',
   nascita:document.getElementById('dp-nascita')?.value||'',
+  luogonascita:document.getElementById('dp-luogonascita')?.value||'',
   indirizzo:document.getElementById('dp-indirizzo')?.value||'',
   citta:document.getElementById('dp-citta')?.value||'', cap:document.getElementById('dp-cap')?.value||'', prov:(document.getElementById('dp-prov')?.value||'').toUpperCase(),
   doc_tipo:document.getElementById('dp-doc-tipo')?.value||'',
@@ -9427,6 +9430,7 @@ function editDip(i){
   document.getElementById('dp-inizio').value=d.inizio||''
   if(document.getElementById('dp-fine')) document.getElementById('dp-fine').value=d.fine||''
   if(document.getElementById('dp-nascita')) document.getElementById('dp-nascita').value=d.nascita||''
+  if(document.getElementById('dp-luogonascita')) document.getElementById('dp-luogonascita').value=d.luogonascita||''
   if(document.getElementById('dp-indirizzo')) document.getElementById('dp-indirizzo').value=d.indirizzo||''
   if(document.getElementById('dp-citta')){
     let _ci=d.citta||'', _ca=d.cap||'', _pr=d.prov||''
