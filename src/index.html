@@ -2313,7 +2313,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="fr"><div class="fg"><label>Email personale</label><input id="doc-email" type="email" placeholder="mario@email.com"></div><div class="fg"><label>Email aziendale (login portale)</label><input id="doc-email-az" type="email" placeholder="nome.cognome@..."></div></div>
     <div style="margin:-2px 0 10px"><button type="button" class="btn btn-g btn-sm" onclick="inviaInvitoPortaleArea('docente')" title="Crea l'accesso con l'email aziendale e invia il link di attivazione alla email personale">📨 Invia invito al portale</button> <button type="button" class="btn btn-sm" onclick="generaCredenzialiPortaleArea('docente')" title="Genera password e crea un PDF con le credenziali">🔑 Genera credenziali (PDF)</button><div style="font-size:11px;color:var(--text2);margin-top:5px">Invito: link di attivazione alla personale · Credenziali: PDF con email e password da consegnare</div></div>
     <div class="fr"><div class="fg"><label>Indirizzo / Domicilio</label><input id="doc-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>CAP</label><input id="doc-cap" type="text" inputmode="numeric" maxlength="5" placeholder="00100" oninput="onCapInput('doc-cap','doc-citta','doc-prov')"></div></div>
-    <div class="fr"><div class="fg"><label>Città</label><input id="doc-citta" type="text" placeholder="Roma" list="dl-comuni-doc" autocomplete="off" oninput="onCittaInput(this,'doc-prov','doc-cap')" onchange="onCittaChange('doc-citta','doc-prov','doc-cap')"></div><div class="fg"><label>Provincia</label><input id="doc-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
+    <div class="fr"><div class="fg"><label>Città</label><input id="doc-citta" type="text" placeholder="Roma" list="dl-comuni-doc" autocomplete="off" oninput="onCittaInput(this,'doc-prov','doc-cap')" onchange="onCittaChange('doc-citta','doc-prov','doc-cap')"></div><div class="fg"><label>Provincia</label><input id="doc-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase" oninput="onProvinciaInput(this,'doc-citta')"></div></div>
     <datalist id="dl-comuni-doc"></datalist>
     <div class="msec">Dati fiscali e pagamento</div>
     <div class="fr"><div class="fg"><label>IBAN</label><input id="doc-iban" type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"></div><div class="fg"><label>Regime</label><select id="doc-regime"><option value="ritenuta">Prestazione occasionale</option><option value="piva">Partita IVA</option></select></div><div class="fg"><label>P.IVA (se presente)</label><input id="doc-piva" type="text" placeholder="01234567890"></div></div>
@@ -2379,7 +2379,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="fr"><div class="fg"><label>Nome e cognome *</label><input id="stu-nome" type="text" placeholder="Bianchi Giulia"></div><div class="fg"><label>Data di nascita</label><input id="stu-nascita" type="date"></div></div>
     <div class="fr"><div class="fg"><label>Telefono</label><input id="stu-tel" type="tel" placeholder="+39 333 000000"></div><div class="fg"><label>Email</label><input id="stu-email" type="email" placeholder="giulia@email.com"></div></div>
     <div style="margin:-2px 0 10px"><button type="button" class="btn btn-g btn-sm" onclick="inviaInvitoPortaleArea('studente')" title="Invia il link di accesso al portale studenti (email personale dello studente)">📨 Invia invito al portale</button> <button type="button" class="btn btn-sm" onclick="generaCredenzialiPortaleArea('studente')" title="Genera password e crea un PDF con le credenziali">🔑 Genera credenziali (PDF)</button><div style="font-size:11px;color:var(--text2);margin-top:5px">Login con l'email personale dello studente · PDF con email e password da consegnare</div></div>
-    <div class="fr"><div class="fg"><label>Indirizzo</label><input id="stu-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>Città</label><input id="stu-citta" type="text" placeholder="Roma"></div><div class="fg"><label>CAP</label><input id="stu-cap" type="text" maxlength="5" placeholder="00100"></div></div>
+    <div class="fr"><div class="fg"><label>Indirizzo</label><input id="stu-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>CAP</label><input id="stu-cap" type="text" inputmode="numeric" maxlength="5" placeholder="00100" oninput="onCapInput('stu-cap','stu-citta','stu-prov')"></div></div>
+    <div class="fr"><div class="fg"><label>Città</label><input id="stu-citta" type="text" placeholder="Roma" list="dl-comuni-stu" autocomplete="off" oninput="onCittaInput(this,'stu-prov','stu-cap')" onchange="onCittaChange('stu-citta','stu-prov','stu-cap')"></div><div class="fg"><label>Provincia</label><input id="stu-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase" oninput="onProvinciaInput(this,'stu-citta')"></div></div>
+    <datalist id="dl-comuni-stu"></datalist>
     <div class="msec" id="stu-genitore-msec">Genitore / Tutore <span style="font-weight:400;color:var(--text2)">(obbligatorio per minorenni)</span></div>
     <div class="fr"><div class="fg"><label>Nome e cognome genitore/tutore</label><input id="stu-genitore" type="text" placeholder="Bianchi Marco"></div><div class="fg"><label>Codice fiscale genitore</label><input id="stu-genitore-cf" type="text" placeholder="BNCMRC75A01H501U" style="text-transform:uppercase"></div></div>
     <div class="fr"><div class="fg"><label>Telefono genitore</label><input id="stu-tel-genitore" type="tel" placeholder="+39 333 000000"></div><div class="fg"><label>Email genitore</label><input id="stu-genitore-email" type="email" placeholder="marco@email.com"></div></div>
@@ -2436,7 +2438,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div style="margin:-6px 0 10px"><button type="button" class="btn btn-g btn-sm" onclick="inviaInvitoPortale()" title="Crea l'accesso con l'email aziendale e invia il link di attivazione alla email personale">📨 Invia invito al portale</button> <button type="button" class="btn btn-sm" onclick="generaCredenzialiPortale()" title="Genera password e crea un PDF con le credenziali da consegnare">🔑 Genera credenziali (PDF)</button><div style="font-size:11px;color:var(--text2);margin-top:5px">Invito: link di attivazione alla personale · Credenziali: PDF con email e password pronto da consegnare</div><div style="margin-top:7px"><label class="btn btn-sm" style="cursor:pointer">📤 Carica documento nel portale<input type="file" accept="application/pdf" style="display:none" onchange="caricaDocPortale(this)"></label> <span id="pr-doc-portale-stato" style="font-size:11px;color:var(--text2)"></span><div style="font-size:11px;color:var(--text2);margin-top:4px">Il procacciatore lo vedrà nella sezione "Documenti" del portale. I contratti firmati ci finiscono in automatico.</div></div></div>
     <div class="fr"><div class="fg"><label>Telefono</label><input id="pr-tel" type="tel" placeholder="+39 333 000000"></div></div>
     <div class="fr"><div class="fg"><label>Indirizzo / Domicilio</label><input id="pr-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>CAP</label><input id="pr-cap" type="text" inputmode="numeric" maxlength="5" placeholder="00100" oninput="onCapInput('pr-cap','pr-citta','pr-prov')"></div></div>
-    <div class="fr"><div class="fg"><label>Città</label><input id="pr-citta" type="text" placeholder="Roma" list="dl-comuni" autocomplete="off" oninput="onCittaInput(this,'pr-prov','pr-cap')" onchange="onCittaChange('pr-citta','pr-prov','pr-cap')"></div><div class="fg"><label>Provincia</label><input id="pr-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
+    <div class="fr"><div class="fg"><label>Città</label><input id="pr-citta" type="text" placeholder="Roma" list="dl-comuni" autocomplete="off" oninput="onCittaInput(this,'pr-prov','pr-cap')" onchange="onCittaChange('pr-citta','pr-prov','pr-cap')"></div><div class="fg"><label>Provincia</label><input id="pr-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase" oninput="onProvinciaInput(this,'pr-citta')"></div></div>
     <datalist id="dl-comuni"></datalist>
     <div class="fr"><div class="fg"><label>IBAN</label><input id="pr-iban" type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"></div><div class="fg"><label>BIC / SWIFT (se necessario)</label><input id="pr-bic" type="text" placeholder="es. UNCRITM1XXX"></div><div class="fg"><label>Istituto bancario</label><input id="pr-banca" type="text" placeholder="es. Intesa Sanpaolo"></div><div class="fg"><label>Tipo di conto</label><select id="pr-tipo-conto"><option value="bancario">Conto corrente bancario</option><option value="postale">Conto corrente postale (Poste Italiane)</option><option value="estero">Conto estero</option></select></div><div class="fg"><label>Codice ATECO (solo se P.IVA)</label><input id="pr-ateco" type="text" placeholder="es. 46.18.91"></div></div>
     <div class="msec">Documento d'identità</div>
@@ -2606,7 +2608,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div style="margin:-2px 0 10px"><button type="button" class="btn btn-g btn-sm" onclick="inviaInvitoPortaleArea('dipendente')" title="Invia il link di accesso al portale dipendenti">📨 Invia invito al portale</button> <button type="button" class="btn btn-sm" onclick="generaCredenzialiPortaleArea('dipendente')" title="Genera password e crea un PDF con le credenziali">🔑 Genera credenziali (PDF)</button><div style="font-size:11px;color:var(--text2);margin-top:5px">Login con l'email del dipendente · PDF con email e password da consegnare</div></div>
     <div class="fr"><div class="fg"><label>Codice fiscale *</label><input id="dp-cf" type="text" placeholder="RSSMRA80A01H501U" style="text-transform:uppercase"></div><div class="fg"><label>IBAN</label><input id="dp-iban" type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"></div></div>
     <div class="fr"><div class="fg"><label>Indirizzo / Domicilio</label><input id="dp-indirizzo" type="text" placeholder="Via Roma 1"></div><div class="fg"><label>CAP</label><input id="dp-cap" type="text" inputmode="numeric" maxlength="5" placeholder="00100" oninput="onCapInput('dp-cap','dp-citta','dp-prov')"></div></div>
-    <div class="fr"><div class="fg"><label>Città</label><input id="dp-citta" type="text" placeholder="Roma" list="dl-comuni-dip" autocomplete="off" oninput="onCittaInput(this,'dp-prov','dp-cap')" onchange="onCittaChange('dp-citta','dp-prov','dp-cap')"></div><div class="fg"><label>Provincia</label><input id="dp-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase"></div></div>
+    <div class="fr"><div class="fg"><label>Città</label><input id="dp-citta" type="text" placeholder="Roma" list="dl-comuni-dip" autocomplete="off" oninput="onCittaInput(this,'dp-prov','dp-cap')" onchange="onCittaChange('dp-citta','dp-prov','dp-cap')"></div><div class="fg"><label>Provincia</label><input id="dp-prov" type="text" maxlength="2" placeholder="RM" style="text-transform:uppercase" oninput="onProvinciaInput(this,'dp-citta')"></div></div>
     <datalist id="dl-comuni-dip"></datalist>
     <div class="msec">Documento d'identità</div>
     <div class="fr"><div class="fg"><label>Tipo documento</label><select id="dp-doc-tipo"><option value="Carta d'Identità">Carta d'Identità</option><option value="Passaporto">Passaporto</option><option value="Permesso di Soggiorno">Permesso di Soggiorno</option><option value="Patente">Patente</option></select></div><div class="fg"><label>Numero documento</label><input id="dp-doc-num" type="text" placeholder="es. AB1234567"></div></div>
@@ -4597,15 +4599,26 @@ async function _tsPersone(tipo){
   }catch(e){ console.error('persone:', e); return [] }
 }
 
+let _tsPersoneCache = null   // cache: evita di richiedere le stesse liste ad ogni apertura
+let _tsAprendo = false       // evita aperture multiple se si clicca piu' volte di fretta
 async function apriTessera(codice){
+  if(!codice){
+    if(_tsAprendo) return
+    _tsAprendo = true
+  }
+  try{
   let t = codice ? (_TESSERE.find(x=>x.codice===codice)||{}) : {}
   const nuovo = !codice
 
   // NUOVO: una sola finestra che si allarga — tipo, persona, poi i dati gia' compilati
   let _rUnico = null
   if(nuovo){
-    const _perTipo = {}
-    for(let _i=0;_i<_TS_TIPI.length;_i++){ _perTipo[_TS_TIPI[_i]] = await _tsPersone(_TS_TIPI[_i]) }
+    if(!_tsPersoneCache){
+      const _liste = await Promise.all(_TS_TIPI.map(function(tp){ return _tsPersone(tp) }))
+      _tsPersoneCache = {}
+      _TS_TIPI.forEach(function(tp,i){ _tsPersoneCache[tp] = _liste[i] })
+    }
+    const _perTipo = _tsPersoneCache
 
     // numero di tessera progressivo, creato dal programma
     const _prossimoCodice = function(tp){
@@ -4737,6 +4750,7 @@ async function apriTessera(codice){
     await caricaTessere()
     try{ toast('Tesserino salvato · '+cod) }catch(e){}
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+  }finally{ _tsAprendo = false }
 }
 
 // genera il tesserino: 'pdf' = fronte/retro stampabile, 'png' = immagine per il telefono
@@ -5090,9 +5104,17 @@ function sp(id,el){
 
 // ── AGGIORNAMENTO LIVE (Supabase Realtime) ────────────────────
 let _rtChannel=null, _rtTimer=null
+let _rtVisHooked=false
 function avviaRealtime(){
+  if(!_rtVisHooked){
+    _rtVisHooked=true
+    document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') scheduleLiveRefresh() })
+    window.addEventListener('focus', ()=>scheduleLiveRefresh())
+  }
   if(_rtChannel || !db) return
-  const tabelle=['contratti_firme','vendite','procacciatori','leads','portale_accessi','dipendenti','candidature']
+  const tabelle=['contratti_firme','vendite','procacciatori','leads','portale_accessi','dipendenti','candidature',
+    'docenti','studenti','tessere','offerte','bacheca','messaggi','documenti','portale_documenti',
+    'lezioni_prenotate','marketing_campagne','marketing_invii','corsi_pagine','listino','prodotti_pagamento']
   _rtChannel=db.channel('live-gestionale')
   tabelle.forEach(t=>{
     _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:t}, ()=>scheduleLiveRefresh())
@@ -5123,6 +5145,7 @@ function avviaRealtime(){
   _rtChannel.subscribe()
 }
 function scheduleLiveRefresh(){
+  if(typeof _tsPersoneCache!=='undefined') _tsPersoneCache=null
   if(_rtTimer) clearTimeout(_rtTimer)
   _rtTimer=setTimeout(()=>{
     _rtTimer=null
@@ -5857,7 +5880,7 @@ function apriStudente(id){
   const set=(k,v)=>{ const e=document.getElementById(k); if(e) e.value=v||'' }
   document.getElementById('stu-id').value=s?s._id:''
   set('stu-nome',s&&s.nome); set('stu-nascita',s&&s.nascita); set('stu-tel',s&&s.tel); set('stu-email',s&&s.email)
-  set('stu-indirizzo',s&&s.indirizzo); set('stu-citta',s&&s.citta); set('stu-cap',s&&s.cap)
+  set('stu-indirizzo',s&&s.indirizzo); set('stu-citta',s&&s.citta); set('stu-cap',s&&s.cap); set('stu-prov',s&&s.prov)
   set('stu-genitore',s&&s.genitore); set('stu-tel-genitore',s&&s.tel_genitore)
   set('stu-genitore-cf',s&&s.genitore_cf); set('stu-genitore-email',s&&s.genitore_email); set('stu-genitore-docnum',s&&s.genitore_docnum)
   document.getElementById('stu-genitore-doctipo').value=(s&&s.genitore_doctipo)||''
@@ -5938,7 +5961,7 @@ async function salvaStudente(){
   const stuContrInizio=g('stu-contr-inizio')
   const rinnoviEs=(s0&&s0.contratto&&s0.contratto.rinnovi)||[]
   const stuContrFine=_calcFineContratto(stuContrInizio, rinnoviEs)
-  const obj={ nome, nascita:g('stu-nascita'), tel:g('stu-tel'), email:g('stu-email'), indirizzo:g('stu-indirizzo'), citta:g('stu-citta'), cap:g('stu-cap'), genitore:g('stu-genitore'), genitore_cf:g('stu-genitore-cf').toUpperCase(), genitore_email:g('stu-genitore-email'), tel_genitore:g('stu-tel-genitore'), genitore_doctipo:document.getElementById('stu-genitore-doctipo').value, genitore_docnum:g('stu-genitore-docnum'), autorizzazione:document.getElementById('stu-autorizz').checked, genitore_doc:_stuGenitoreDoc||null, livello:document.getElementById('stu-livello').value, classe:g('stu-classe'), istituto:g('stu-istituto'), materie:_stuMaterie, docenti:_stuDocenti.filter(d=>d&&d.docenteId), docenteId:((_stuDocenti.find(d=>d&&d.docenteId)||{}).docenteId)||'', stato:document.getElementById('stu-stato').value, note:g('stu-note'), contratto:{ inizio:stuContrInizio, fine:stuContrFine, rinnovi:rinnoviEs } }
+  const obj={ nome, nascita:g('stu-nascita'), tel:g('stu-tel'), email:g('stu-email'), indirizzo:g('stu-indirizzo'), citta:g('stu-citta'), cap:g('stu-cap'), prov:(g('stu-prov')||'').toUpperCase(), genitore:g('stu-genitore'), genitore_cf:g('stu-genitore-cf').toUpperCase(), genitore_email:g('stu-genitore-email'), tel_genitore:g('stu-tel-genitore'), genitore_doctipo:document.getElementById('stu-genitore-doctipo').value, genitore_docnum:g('stu-genitore-docnum'), autorizzazione:document.getElementById('stu-autorizz').checked, genitore_doc:_stuGenitoreDoc||null, livello:document.getElementById('stu-livello').value, classe:g('stu-classe'), istituto:g('stu-istituto'), materie:_stuMaterie, docenti:_stuDocenti.filter(d=>d&&d.docenteId), docenteId:((_stuDocenti.find(d=>d&&d.docenteId)||{}).docenteId)||'', stato:document.getElementById('stu-stato').value, note:g('stu-note'), contratto:{ inizio:stuContrInizio, fine:stuContrFine, rinnovi:rinnoviEs } }
   try{
     if(id){ const r=await db.from('studenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
     else { const r=await db.from('studenti').insert({data:obj}); if(r.error) throw r.error }
@@ -6149,7 +6172,7 @@ async function salvaDocente(){
   try{
     if(id){ const r=await db.from('docenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
     else { const r=await db.from('docenti').insert({data:obj}); if(r.error) throw r.error }
-    closeM('m-docente'); await caricaDocenti(); toast('✅ Docente salvato')
+    _tsPersoneCache = null; closeM('m-docente'); await caricaDocenti(); toast('✅ Docente salvato')
   }catch(e){ alert('Errore: '+(e.message||e)) }
 }
 async function caricaDocenti(){
@@ -7178,7 +7201,7 @@ async function saveProc(){
     else await db.from('procacciatori').insert({data:obj})
     // Pre-autorizza l'accesso al portale con l'email aziendale (se presente)
     if(obj.email_aziendale) await preAutorizzaAccesso(obj.email_aziendale, obj.nome)
-    closeM('m-proc');await loadAll();renderProc()
+    _tsPersoneCache = null; closeM('m-proc');await loadAll();renderProc()
     // Apri checklist onboarding per nuovo procacciatore
     if(!eid){
       const nuovoIdx = procs.findIndex(p=>p.nome===obj.nome)
@@ -9402,7 +9425,7 @@ async function saveDip(){
     syncStatus('syncing','Salvataggio...')
     if(eid)await db.from('dipendenti').update({data:obj}).eq('id',eid)
     else await db.from('dipendenti').insert({data:obj})
-    closeM('m-dip');await loadAll();renderDipendenti()
+    _tsPersoneCache = null; closeM('m-dip');await loadAll();renderDipendenti()
     // Apri checklist onboarding per nuovo dipendente
     if(!eid){
       const nuovoIdx = dipendenti.findIndex(d=>d.nome===obj.nome)
@@ -13549,6 +13572,20 @@ function onCapInput(capId,cittaId,provId){
   const c=CAP2[cap]
   const ce=document.getElementById(cittaId); if(ce)ce.value=c.n
   const pe=document.getElementById(provId); if(pe)pe.value=c.s
+}
+// digitando la provincia, il campo città suggerisce tutti i comuni (e quindi i CAP) di quella provincia
+function onProvinciaInput(el, cittaId){
+  const sigla=(el.value||'').toUpperCase().trim()
+  el.value=sigla
+  const cittaEl=document.getElementById(cittaId); if(!cittaEl) return
+  const dlId=cittaEl.getAttribute('list')||'dl-comuni'
+  const dl=document.getElementById(dlId); if(!dl) return
+  if(sigla.length!==2||!COMUNI.length){ return }
+  const m=COMUNI.filter(c=>c.s===sigla).sort((a,b)=>a.n.localeCompare(b.n))
+  dl.innerHTML=m.map(c=>{
+    const cap=(c.caps&&c.caps.length===1)?(' · '+c.caps[0]):''
+    return `<option value="${c.n.replace(/"/g,'&quot;')}">${c.s}${cap}</option>`
+  }).join('')
 }
 function parseLuogo(s){
   s=(s||'').trim()
