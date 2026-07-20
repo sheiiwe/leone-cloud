@@ -426,5 +426,7 @@ if __name__ == '__main__':
         path = compila_tesserino(dati, output)
     elif tipo == 'piva':       path = compila_piva(dati, output, con_timbro)
     elif tipo == 'ritenuta': path = compila_ritenuta(dati, output, con_timbro)
-    else: sys.exit(1)
+    else:
+        sys.stderr.write(f"Tipo di documento non riconosciuto: '{tipo}'. Lo script compila_pdf.py installato non e' aggiornato: usa 'Controlla aggiornamenti' nell'app.\n")
+        sys.exit(1)
     print(path)

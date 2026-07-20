@@ -2145,7 +2145,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="modal" style="width:720px;max-width:96vw">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">
       <h3 id="off-reali-title" style="margin:0">Offerte reali</h3>
-      <button class="btn btn-sm" onclick="closeM('m-offerte-reali')">✕</button>
+      <button class="btn btn-sm" title="Chiudi" onclick="closeM('m-offerte-reali')">✕</button>
     </div>
     <div id="off-reali-body"></div>
   </div>
@@ -4482,8 +4482,8 @@ function renderCorsiPagine(){
       +'<td style="font-size:12.5px">'+tipo+'</td>'
       +'<td><a href="https://'+url+'" target="_blank" style="font-size:11.5px;color:var(--accent)">'+escB(c.slug)+' ↗</a></td>'
       +'<td class="acts">'
-        +'<button class="btn btn-sm" onclick="apriCorsoPag(\''+c.slug+'\')">✏️</button>'
-        +'<button class="btn btn-sm btn-r" onclick="eliminaCorsoPag(\''+c.slug+'\')">🗑</button>'
+        +'<button class="btn btn-sm" title="Modifica pagina corso" onclick="apriCorsoPag(\''+c.slug+'\')">✏️</button>'
+        +'<button class="btn btn-sm btn-r" title="Elimina pagina corso" onclick="eliminaCorsoPag(\''+c.slug+'\')">🗑</button>'
       +'</td></tr>'
   }).join('')
   const sa=document.getElementById('cp-selall'); if(sa) sa.checked = _CORSIPAG.length>0 && _CORSIPAG.every(c=>_cpSel.has(c.slug))
@@ -4551,8 +4551,8 @@ function renderTessere(){
         +'<button class="btn btn-sm" title="Stampa tesserino (PDF)" onclick="stampaTessera(\''+t.codice+'\',\'pdf\')">🖨</button>'
         +'<button class="btn btn-sm" title="Immagine per il telefono" onclick="stampaTessera(\''+t.codice+'\',\'png\')">📱</button>'
         +'<button class="btn btn-sm" title="Foto" onclick="cambiaFotoTessera(\''+t.codice+'\')">📷</button>'
-        +'<button class="btn btn-sm" onclick="apriTessera(\''+t.codice+'\')">✏️</button>'
-        +'<button class="btn btn-sm btn-r" onclick="eliminaTessera(\''+t.codice+'\')">🗑</button>'
+        +'<button class="btn btn-sm" title="Modifica tesserino" onclick="apriTessera(\''+t.codice+'\')">✏️</button>'
+        +'<button class="btn btn-sm btn-r" title="Elimina tesserino" onclick="eliminaTessera(\''+t.codice+'\')">🗑</button>'
       +'</td></tr>'
   }).join('')
 }
@@ -4883,9 +4883,9 @@ async function cpBulkElimina(){
 // --- Gestione tendine: categorie ed enti (aggiungi/elimina) ---
 function renderCategEnti(){
   const cl=document.getElementById('cp-categ-list')
-  if(cl){ cl.innerHTML=(_CATEG||[]).length ? _CATEG.map(x=>'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span style="flex:1;font-size:13px">'+escB(x.nome)+'</span><button class="btn btn-sm btn-r" onclick="eliminaCategoria(\''+x.id+'\')">🗑</button></div>').join('') : '<div class="empty" style="font-size:12px">Nessuna categoria.</div>' }
+  if(cl){ cl.innerHTML=(_CATEG||[]).length ? _CATEG.map(x=>'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span style="flex:1;font-size:13px">'+escB(x.nome)+'</span><button class="btn btn-sm btn-r" title="Elimina categoria" onclick="eliminaCategoria(\''+x.id+'\')">🗑</button></div>').join('') : '<div class="empty" style="font-size:12px">Nessuna categoria.</div>' }
   const el=document.getElementById('cp-enti-list')
-  if(el){ el.innerHTML=(_ENTI||[]).length ? _ENTI.map(x=>'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span style="flex:1;font-size:13px">'+escB(x.nome)+'</span><button class="btn btn-sm btn-r" onclick="eliminaEnte(\''+x.id+'\')">🗑</button></div>').join('') : '<div class="empty" style="font-size:12px">Nessun ente.</div>' }
+  if(el){ el.innerHTML=(_ENTI||[]).length ? _ENTI.map(x=>'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span style="flex:1;font-size:13px">'+escB(x.nome)+'</span><button class="btn btn-sm btn-r" title="Elimina ente" onclick="eliminaEnte(\''+x.id+'\')">🗑</button></div>').join('') : '<div class="empty" style="font-size:12px">Nessun ente.</div>' }
 }
 async function nuovaCategoria(){
   const inp=document.getElementById('cp-categ-new'); const nome=(inp&&inp.value||'').trim(); if(!nome) return
@@ -5793,7 +5793,7 @@ function renderProvvDoc(){
     '<div style="font-size:12px;color:var(--text2);margin-top:3px">'+(c.materia?escB(c.materia)+' · ':'')+_cdData(c.data)+'</div>'+
     '<div style="font-size:12px;margin-top:5px">Incassato <b>'+_cdEur(c.importo)+'</b> · docente <b>'+_cdEur(c.compDocente)+'</b> ('+(c.pct||0)+'%) · azienda <b>'+_cdEur(c.compAzienda)+'</b></div>'+
     (c.note?'<div style="font-size:11px;color:var(--text3);margin-top:4px">'+escB(c.note)+'</div>':'')+
-    '</div><div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="apriCompDoc(\''+c._id+'\')">✏️</button><button class="btn btn-sm btn-r" onclick="eliminaCompDoc(\''+c._id+'\')">🗑</button></div>'+
+    '</div><div style="display:flex;gap:6px"><button class="btn btn-sm" title="Modifica compenso" onclick="apriCompDoc(\''+c._id+'\')">✏️</button><button class="btn btn-sm btn-r" title="Elimina compenso" onclick="eliminaCompDoc(\''+c._id+'\')">🗑</button></div>'+
     '</div></div>').join('')
 }
 
@@ -6015,7 +6015,7 @@ function renderStudenti(){
       warnAut+
       '<div style="font-size:11px;color:var(--text3);margin-top:4px">'+escB(s.email||'')+(s.tel?(' · '+escB(s.tel)):'')+(s.genitore?(' · tutore: '+escB(s.genitore)):'')+docG+'</div>'+
       '</div>'+
-      '<div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="apriStudente(\''+s._id+'\')">✏️</button><button class="btn btn-sm btn-r" onclick="eliminaStudente(\''+s._id+'\')">🗑</button></div>'+
+      '<div style="display:flex;gap:6px"><button class="btn btn-sm" title="Modifica studente" onclick="apriStudente(\''+s._id+'\')">✏️</button><button class="btn btn-sm btn-r" title="Elimina studente" onclick="eliminaStudente(\''+s._id+'\')">🗑</button></div>'+
       '</div></div>'
   }).join('')
 }
@@ -6226,7 +6226,7 @@ function renderDocenti(){
       ((d.certificati||[]).length?'<div style="font-size:11px;color:var(--text2);margin-top:5px">📄 '+(d.certificati||[]).map(escB).join(', ')+'</div>':'')+
       '<div style="font-size:11px;color:var(--text3);margin-top:5px">'+escB(d.email||'')+(d.tel?(' · '+escB(d.tel)):'')+'</div>'+
       '</div>'+
-      '<div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="apriDocente(\''+d._id+'\')">✏️</button><button class="btn btn-sm btn-r" onclick="eliminaDocente(\''+d._id+'\')">🗑</button></div>'+
+      '<div style="display:flex;gap:6px"><button class="btn btn-sm" title="Modifica docente" onclick="apriDocente(\''+d._id+'\')">✏️</button><button class="btn btn-sm btn-r" title="Elimina docente" onclick="eliminaDocente(\''+d._id+'\')">🗑</button></div>'+
       '</div></div>'
   }).join('')
 }
@@ -6490,8 +6490,8 @@ function renderPrDocList(){
         <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.nomeDesc||f.nome}</div>
         <div style="font-size:10px;color:var(--text3)">${f.tipo} · ${f.data_carico||''} · ${f.size}</div>
       </div>
-      <button class="btn btn-sm" style="padding:2px 6px" onclick="apriAllegato(${i},'pr')">👁</button>
-      <button class="btn btn-sm btn-r" style="padding:2px 6px" onclick="_prDocFiles.splice(${i},1);renderPrDocList()">✕</button>
+      <button class="btn btn-sm" style="padding:2px 6px" title="Visualizza allegato" onclick="apriAllegato(${i},'pr')">👁</button>
+      <button class="btn btn-sm btn-r" style="padding:2px 6px" title="Rimuovi allegato" onclick="_prDocFiles.splice(${i},1);renderPrDocList()">✕</button>
     </div>`).join('')
 }
 
@@ -6559,8 +6559,8 @@ function renderDpDocList(){
         <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.nomeDesc||f.nome}</div>
         <div style="font-size:10px;color:var(--text3)">${f.tipo} · ${f.data_carico||''} · ${f.size}</div>
       </div>
-      <button class="btn btn-sm" style="padding:2px 6px" onclick="apriAllegato(${i},'dp')">👁</button>
-      <button class="btn btn-sm btn-r" style="padding:2px 6px" onclick="_dpDocFiles.splice(${i},1);renderDpDocList()">✕</button>
+      <button class="btn btn-sm" style="padding:2px 6px" title="Visualizza allegato" onclick="apriAllegato(${i},'dp')">👁</button>
+      <button class="btn btn-sm btn-r" style="padding:2px 6px" title="Rimuovi allegato" onclick="_dpDocFiles.splice(${i},1);renderDpDocList()">✕</button>
     </div>`).join('')
 }
 
@@ -6996,7 +6996,7 @@ function aggiungiReteRow(){
   div.innerHTML = `<input style="flex:2" type="text" placeholder="Nome e Cognome / Ragione Sociale" class="rete-nome">
     <input style="flex:1.5" type="text" placeholder="CF / P.IVA" class="rete-cf">
     <input style="flex:2" type="text" placeholder="Ruolo / Attività nella rete" class="rete-ruolo">
-    <button class="btn" style="padding:4px 8px;font-size:12px" onclick="rimuoviReteRow(this)">✕</button>`
+    <button class="btn" style="padding:4px 8px;font-size:12px" title="Rimuovi dalla rete" onclick="rimuoviReteRow(this)">✕</button>`
   container.appendChild(div)
 }
 
@@ -7140,7 +7140,7 @@ function removeNet(i){tempNet.splice(i,1);renderTempNet();fillNetSel()}
 function renderTempNet(){
   const el=document.getElementById('pr-net-list')
   if(!tempNet.length){el.innerHTML='<div style="font-size:11.5px;color:var(--text3);padding:4px 0">Nessun membro</div>';return}
-  el.innerHTML=tempNet.map((n,i)=>`<div class="override-row"><div class="av ${avc(n.idx)}" style="width:26px;height:26px;font-size:10px">${ini(procs[n.idx].nome)}</div><span style="flex:1;font-size:12.5px">${procs[n.idx].nome}</span><input class="override-inp" type="number" min="0" max="20" step="0.5" value="${n.pct}" onchange="tempNet[${i}].pct=parseFloat(this.value)||0"><span style="font-size:11px;color:var(--text2)">%</span><button class="btn btn-sm" onclick="removeNet(${i})">✕</button></div>`).join('')
+  el.innerHTML=tempNet.map((n,i)=>`<div class="override-row"><div class="av ${avc(n.idx)}" style="width:26px;height:26px;font-size:10px">${ini(procs[n.idx].nome)}</div><span style="flex:1;font-size:12.5px">${procs[n.idx].nome}</span><input class="override-inp" type="number" min="0" max="20" step="0.5" value="${n.pct}" onchange="tempNet[${i}].pct=parseFloat(this.value)||0"><span style="font-size:11px;color:var(--text2)">%</span><button class="btn btn-sm" title="Rimuovi dalla rete" onclick="removeNet(${i})">✕</button></div>`).join('')
 }
 async function saveProc(){
   const nome=document.getElementById('pr-nome').value.trim()
@@ -7500,7 +7500,7 @@ function apriProfilo(i){
           <div style="font-size:17px;font-weight:700">${p.nome}</div>
           <div style="font-size:12px;color:var(--text2)">${q?.label||''} · ${regLabel}</div>
         </div>
-        <button onclick="document.getElementById('profilo-overlay').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2)">✕</button>
+        <button onclick="document.getElementById('profilo-overlay').remove()" title="Chiudi" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2)">✕</button>
       </div>
       <div style="padding:20px 24px;max-height:60vh;overflow:auto">
         ${sez('Anagrafica', row('Codice fiscale', p.cf)+row('Data di nascita', p.nascita)+row('Luogo di nascita', p.luogonascita)+row('Regime fiscale', regLabel))}
@@ -7696,7 +7696,7 @@ function renderVendite(){
   const mf=document.getElementById('vend-filter').value
   let vv=vendite.filter(v=>{const p=procs[v.pidx];if(mf&&!v.data.startsWith(mf))return false;if(q&&!((p&&p.nome.toLowerCase().includes(q))||v.prod.toLowerCase().includes(q)))return false;return true})
   if(!vv.length){tb.innerHTML='<tr><td colspan="9" class="empty">Nessuna vendita</td></tr>';return}
-  tb.innerHTML=[...vv].reverse().map(v=>{const p=procs[v.pidx];return`<tr><td><div class="ar"><div class="av ${avc(v.pidx)}" style="width:26px;height:26px;font-size:10px">${avatarImg(v.pidx)}</div>${v.azienda?'\ud83c\udfe2 Azienda (mia)':(p?.nome||'?')}</div></td><td style="font-size:12px">${v.prod}</td><td><span class="pill">${v.cat}</span></td><td style="font-size:11px;color:var(--text2)">${v.piatt}</td><td>${v.val>0?fmtE(v.val):'—'}</td><td style="font-weight:600">${fmtE(v.prov)}</td><td style="color:var(--text2)">${v.data}</td><td><span style="cursor:pointer" onclick="apriPopupStatoVend('${v._id}',event)" title="Cambia stato">${statoBadge(v.stato)}</span></td><td><button class="btn btn-sm btn-r" onclick="deleteVend('${v._id}')">✕</button></td></tr>`}).join('')
+  tb.innerHTML=[...vv].reverse().map(v=>{const p=procs[v.pidx];return`<tr><td><div class="ar"><div class="av ${avc(v.pidx)}" style="width:26px;height:26px;font-size:10px">${avatarImg(v.pidx)}</div>${v.azienda?'\ud83c\udfe2 Azienda (mia)':(p?.nome||'?')}</div></td><td style="font-size:12px">${v.prod}</td><td><span class="pill">${v.cat}</span></td><td style="font-size:11px;color:var(--text2)">${v.piatt}</td><td>${v.val>0?fmtE(v.val):'—'}</td><td style="font-weight:600">${fmtE(v.prov)}</td><td style="color:var(--text2)">${v.data}</td><td><span style="cursor:pointer" onclick="apriPopupStatoVend('${v._id}',event)" title="Cambia stato">${statoBadge(v.stato)}</span></td><td><button class="btn btn-sm btn-r" title="Elimina vendita" onclick="deleteVend('${v._id}')">✕</button></td></tr>`}).join('')
 }
 
 // ── LEAD ─────────────────────────────────────────────────────
@@ -9803,7 +9803,7 @@ function filterList(cat,silent){
     const _annB=p.annuale?'<span style="display:inline-block;font-size:9.5px;font-weight:700;background:#fff3e0;color:#e65100;border-radius:6px;padding:1px 6px;margin-left:6px">📅 '+(p.anni?('× '+p.anni+' anni'):'ad anno')+'</span>':''
     let _sel=''
     if(_m.length){ _sel=`<div style="margin-top:4px"><button onclick="apriOfferteReali(${idx})" style="font-size:11px;padding:3px 9px;border:0.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--green);font-weight:600;font-family:inherit;cursor:pointer">🔎 Vedi offerte reali (${_m.length})</button></div>` }
-    return`<tr><td style="font-size:12.5px;vertical-align:top">${p.nome}${_comp}${_annB}${_sel}</td><td style="vertical-align:top"><span class="pill">${p.cat}</span></td><td style="font-weight:600;vertical-align:top">${cPrezzo}</td><td style="color:var(--text2);vertical-align:top">${cCosto}</td><td style="vertical-align:top">${cMargine}</td><td style="font-weight:600;vertical-align:top">${cProv}</td><td style="font-weight:700;vertical-align:top">${cGuad}</td><td style="vertical-align:top"><button class="btn btn-sm" onclick="editProdotto(${idx})">✎</button> <button class="btn btn-sm btn-r" onclick="deleteProdotto(${idx})">✕</button></td></tr>`
+    return`<tr><td style="font-size:12.5px;vertical-align:top">${p.nome}${_comp}${_annB}${_sel}</td><td style="vertical-align:top"><span class="pill">${p.cat}</span></td><td style="font-weight:600;vertical-align:top">${cPrezzo}</td><td style="color:var(--text2);vertical-align:top">${cCosto}</td><td style="vertical-align:top">${cMargine}</td><td style="font-weight:600;vertical-align:top">${cProv}</td><td style="font-weight:700;vertical-align:top">${cGuad}</td><td style="vertical-align:top"><button class="btn btn-sm" onclick="editProdotto(${idx})">✎</button> <button class="btn btn-sm btn-r" title="Elimina prodotto" onclick="deleteProdotto(${idx})">✕</button></td></tr>`
   }).join('')
 }
 let _liA=0
@@ -11072,7 +11072,7 @@ function aggiungiRigaDoc(){
   div.id = 'doc-riga-'+id
   div.style.cssText = 'background:var(--surface2,var(--bg));border:0.5px solid var(--border2);border-radius:8px;padding:12px;position:relative'
   div.innerHTML = `
-    <button onclick="rimuoviRigaDoc(${id})" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text2);font-size:16px">✕</button>
+    <button onclick="rimuoviRigaDoc(${id})" title="Rimuovi riga" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text2);font-size:16px">✕</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Nome documento *</label>
         <input type="text" id="doc-nome-${id}" placeholder="es. Contratto standard 2026" style="width:100%;box-sizing:border-box;background:var(--bg);color:var(--text);border:0.5px solid var(--border2);border-radius:6px;padding:8px;font-family:inherit;font-size:13px"></div>
@@ -11192,7 +11192,7 @@ function renderDocs(){
     <td style="font-size:12px;color:var(--text2)">${d.note||'—'}</td>
     <td class="acts">
       ${d.storagePath?`<button class="btn btn-sm" onclick="apriDoc('${d._id}')">👁 Apri</button><button class="btn btn-sm" onclick="salvaDoc('${d._id}')">⬇ Salva</button>`:''}
-      <button class="btn btn-sm btn-r" onclick="deleteDoc('${d._id}')">✕</button>
+      <button class="btn btn-sm btn-r" title="Elimina documento" onclick="deleteDoc('${d._id}')">✕</button>
     </td>
   </tr>`).join('')
 }

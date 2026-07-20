@@ -362,6 +362,8 @@ ipcMain.handle('aggiornamento-rapido', async () => {
   const fileDaAggiornare = [
     { url: '/sheiiwe/leone-cloud/main/src/index.html', dest: path.join(baseDir, 'src', 'index.html') },
     { url: '/sheiiwe/leone-cloud/main/compila_documento.py', dest: path.join(baseDir, 'compila_documento.py') },
+    { url: '/sheiiwe/leone-cloud/main/compila_pdf.py', dest: path.join(baseDir, 'compila_pdf.py') },
+    { url: '/sheiiwe/leone-cloud/main/fill_pdf_form_with_annotations.py', dest: path.join(baseDir, 'fill_pdf_form_with_annotations.py') },
     { url: '/sheiiwe/leone-cloud/main/ipc-handlers.js', dest: path.join(baseDir, 'ipc-handlers.js') },
     { url: '/sheiiwe/leone-cloud/main/preload.js', dest: path.join(baseDir, 'preload.js') },
     { url: '/sheiiwe/leone-cloud/main/email-server.js', dest: path.join(baseDir, 'email-server.js') },
