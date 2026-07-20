@@ -4587,32 +4587,78 @@ async function apriTessera(codice){
   let t = codice ? (_TESSERE.find(x=>x.codice===codice)||{}) : {}
   const nuovo = !codice
 
-  // NUOVO: prima scelgo il tipo, poi la persona tra quelle gia' registrate
+  // NUOVO: una sola finestra che si allarga — scegli il tipo, poi la persona, poi compaiono i dati
+  let _rUnico = null
   if(nuovo){
-    const s1 = await chiediCampiLunga('Nuovo tesserino \u2014 per chi?', [
-      {id:'tipo', tipo:'select', libero:false, label:'Tipo di tesserino', opzioni:_TS_TIPI, valore:'procacciatore'}
-    ])
-    if(!s1) return
-    const tipo = s1.tipo || 'procacciatore'
-    const persone = await _tsPersone(tipo)
-    let scelto = null
-    if(persone.length){
-      const s2 = await chiediCampiLunga('Scegli la persona', [
-        {id:'persona', tipo:'select', libero:true, label:'Persona gi\u00e0 registrata (oppure scrivi un nome nuovo)',
-         opzioni:persone.map(function(p){ return p.nome }), valore:''}
-      ])
-      if(!s2) return
-      const nomeScelto = (s2.persona||'').trim()
-      if(!nomeScelto){ alert('Serve una persona.'); return }
-      scelto = persone.find(function(p){ return p.nome===nomeScelto }) || null
-      t = { nome:nomeScelto, tipo:tipo,
-            ruolo: (scelto && scelto.ruolo) || '',
-            luogo_nascita: (scelto && scelto.luogo) || '',
-            rif_id: scelto ? scelto.id : null }
-    } else {
-      t = { tipo:tipo }
-    }
-    t.tipo = tipo
+    const _perTipo = {}
+    for(let _i=0;_i<_TS_TIPI.length;_i++){ _perTipo[_TS_TIPI[_i]] = await _tsPersone(_TS_TIPI[_i]) }
+    const _tipoIni = 'procacciatore'
+
+    _rUnico = await chiediCampiLunga('Nuovo tesserino', [
+      {id:'tipo', tipo:'select', libero:false, label:'Tipo di tesserino', opzioni:_TS_TIPI, valore:_tipoIni},
+      {id:'persona', tipo:'select', libero:false, label:'Persona', opzioni:[], valore:''},
+      {id:'nome', label:'Nome e cognome', valore:''},
+      {id:'ruolo', label:'Ruolo (es. Procacciatore d\u0027affari)', valore:''},
+      {id:'nascita', label:'Data di nascita \u2014 gg/mm/aaaa', valore:''},
+      {id:'luogo_nascita', label:'Luogo di nascita', valore:''},
+      {id:'codice', label:'N. tessera (vuoto = lo creo io)', valore:''},
+      {id:'scade_il', label:'Valido fino al \u2014 gg/mm/aaaa', valore:''},
+      {id:'attiva', tipo:'check', label:'Tesserino valido (togli la spunta per revocarlo)', valore:true}
+    ], function(){
+      const giu = ['nome','ruolo','nascita','luogo_nascita','codice','scade_il','attiva']
+      const selT = document.getElementById('mmc-tipo')
+      const selP = document.getElementById('mmc-persona')
+      const wP   = document.getElementById('mmw-persona')
+      const val  = function(id,v){ const e=document.getElementById('mmc-'+id); if(e) e.value = v==null?'':v }
+      const mostra = function(on){
+        giu.forEach(function(i){ const e=document.getElementById('mmw-'+i); if(e) e.style.display = on?'':'none' })
+      }
+
+      const riempiPersone = function(){
+        const lista = _perTipo[selT.value] || []
+        let html = '<option value="">\u2014 scegli \u2014</option>'
+        for(let k=0;k<lista.length;k++){
+          html += '<option value="'+String(lista[k].nome).replace(/"/g,'&quot;')+'">'+escB(lista[k].nome)+'</option>'
+        }
+        html += '<option value="__nuovo__">\u2795 Non \u00e8 in elenco (scrivo io)\u2026</option>'
+        selP.innerHTML = html
+        if(!lista.length){
+          wP.style.display = 'none'
+          selP.value = '__nuovo__'
+          mostra(true)
+          val('nome',''); val('ruolo',''); val('nascita',''); val('luogo_nascita','')
+        } else {
+          wP.style.display = ''
+          selP.value = ''
+          mostra(false)
+        }
+      }
+
+      selP.onchange = function(){
+        if(!selP.value){ mostra(false); return }
+        if(selP.value === '__nuovo__'){
+          val('nome',''); val('ruolo',''); val('nascita',''); val('luogo_nascita','')
+          mostra(true)
+          const n=document.getElementById('mmc-nome'); if(n) n.focus()
+          return
+        }
+        const lista = _perTipo[selT.value] || []
+        const p = lista.find(function(x){ return x.nome === selP.value }) || {}
+        val('nome', p.nome||'')
+        val('ruolo', p.ruolo||'')
+        val('luogo_nascita', p.luogo||'')
+        val('nascita', _tsData(p.nascita||''))
+        mostra(true)
+      }
+
+      selT.onchange = riempiPersone
+      riempiPersone()
+    })
+
+    if(!_rUnico) return
+    const _lista = _perTipo[_rUnico.tipo] || []
+    const _sc = _lista.find(function(x){ return x.nome === (_rUnico.persona||'') }) || null
+    t = { tipo:_rUnico.tipo, rif_id: _sc ? _sc.id : null }
   }
 
   const campi=[
@@ -4625,7 +4671,7 @@ async function apriTessera(codice){
     {id:'scade_il', label:'Valido fino al — gg/mm/aaaa', valore:_tsData(t.scade_il)},
     {id:'attiva', tipo:'check', label:'Tesserino valido (togli la spunta per revocarlo)', valore:(nuovo?true:!!t.attiva)}
   ]
-  const r=await chiediCampiLunga(nuovo?'Nuovo tesserino':'Modifica tesserino', campi)
+  const r = nuovo ? _rUnico : await chiediCampiLunga('Modifica tesserino', campi)
   if(!r) return
   const nome=(r.nome||'').trim()
   if(!nome){ alert('Serve il nome.'); return }
@@ -4931,7 +4977,7 @@ async function eliminaCorsoPag(slug){
 }
 
 // variante di chiediCampi con textarea più alte, campo bloccabile
-function chiediCampiLunga(titolo, campi){
+function chiediCampiLunga(titolo, campi, pronto){
   return new Promise(function(risolvi){
     const vecchia=document.getElementById('mm-chiedi'); if(vecchia) vecchia.remove()
     const d=document.createElement('div'); d.id='mm-chiedi'
@@ -4944,7 +4990,7 @@ function chiediCampiLunga(titolo, campi){
       // SPUNTA sì/no
       if(c.tipo==='check'){
         const on = (c.valore===true || /^s|^y|^1|^v/i.test(String(c.valore||'')))
-        return '<label style="display:flex;align-items:center;gap:9px;margin-bottom:11px;cursor:pointer">'
+        return '<label id="mmw-'+c.id+'" style="display:flex;align-items:center;gap:9px;margin-bottom:11px;cursor:pointer">'
           +'<input type="checkbox" id="mmc-'+c.id+'" '+(on?'checked':'')+' style="width:18px;height:18px;flex:0 0 auto;accent-color:var(--accent)">'
           +'<span style="font-size:13px;color:var(--text)">'+escB(c.label)+'</span></label>'
       }
@@ -4960,14 +5006,14 @@ function chiediCampiLunga(titolo, campi){
         const box = c.libero
           ? '<input id="mmc-'+c.id+'-x" placeholder="Scrivi qui" value="'+(nonInLista?String(c.valore).replace(/"/g,'&quot;'):'')+'" style="'+inputStyle+';margin-top:6px;display:'+(nonInLista?'block':'none')+'" oninput="document.getElementById(\''+'mmc-'+c.id+'\').setAttribute(\'data-libero\',this.value)">'
           : ''
-        return '<div style="margin-bottom:11px"><label style="display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:4px">'+escB(c.label)+'</label>'
+        return '<div id="mmw-'+c.id+'" style="margin-bottom:11px"><label style="display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:4px">'+escB(c.label)+'</label>'
           +'<select id="mmc-'+c.id+'" style="'+inputStyle+'" onchange="{var x=document.getElementById(\''+'mmc-'+c.id+'-x\'); if(x) x.style.display=(this.value===\'__altro__\')?\'block\':\'none\'}">'+opts+optAltro+'</select>'+box+'</div>'
       }
       // testo lungo / testo
       const campo = c.multi
         ? '<textarea id="mmc-'+c.id+'" rows="3" style="'+inputStyle+';resize:vertical">'+escB(c.valore||'')+'</textarea>'
         : '<input id="mmc-'+c.id+'" value="'+val+'"'+dis+' style="'+inputStyle+'">'
-      return '<div style="margin-bottom:11px"><label style="display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:4px">'+escB(c.label)+'</label>'+campo+'</div>'
+      return '<div id="mmw-'+c.id+'" style="margin-bottom:11px"><label style="display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:4px">'+escB(c.label)+'</label>'+campo+'</div>'
     }).join('')
     d.innerHTML='<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;max-width:560px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.45);overflow:hidden;margin:auto">'
       +'<div style="padding:15px 18px;border-bottom:0.5px solid var(--border);font-weight:700;font-size:15px">'+escB(titolo)+'</div>'
@@ -4975,6 +5021,7 @@ function chiediCampiLunga(titolo, campi){
       +'<div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:0.5px solid var(--border);background:var(--surface2)">'
       +'<button class="btn btn-sm" id="mmc-no">Annulla</button><button class="btn btn-sm btn-p" id="mmc-si">Salva</button></div></div>'
     document.body.appendChild(d)
+    if(typeof pronto==='function'){ try{ pronto(d) }catch(e){ console.error('pronto:', e) } }
     const chiudi=function(e){ d.remove(); risolvi(e) }
     d.addEventListener('click', function(e){ if(e.target===d) chiudi(null) })
     document.getElementById('mmc-no').onclick=function(){ chiudi(null) }
