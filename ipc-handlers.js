@@ -170,27 +170,56 @@ ipcMain.handle('generate-pdf', async (event, { tipo, datiJson, conTimbro = false
   }
 
   const outputPath = path.join(os.tmpdir(), `prospetto_${tipo}_${Date.now()}.pdf`)
+  const pyEnv = { ...process.env, PATH: '/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin' }
 
-  return new Promise((resolve, reject) => {
-    execFile('python3', [scriptPath, tipo, datiJson, outputPath, conTimbro ? 'timbro' : ''], 
-      { env: { ...process.env, PATH: '/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin' } },
+  const eseguiScript = () => new Promise((resolve, reject) => {
+    execFile('python3', [scriptPath, tipo, datiJson, outputPath, conTimbro ? 'timbro' : ''],
+      { env: pyEnv },
       (error, stdout, stderr) => {
-        if (error) {
-          reject(new Error(stderr || error.message))
-          return
-        }
-        const pdfPath = stdout.trim()
-        if (fs.existsSync(pdfPath)) {
-          shell.openPath(pdfPath)
-          resolve(pdfPath)
-        } else if (fs.existsSync(outputPath)) {
-          shell.openPath(outputPath)
-          resolve(outputPath)
-        } else {
-          reject(new Error('PDF non generato'))
-        }
+        if (error) { reject({ error, stdout, stderr }); return }
+        resolve({ stdout, stderr })
       }
     )
+  })
+
+  // Se manca una libreria Python (reportlab/Pillow/pypdf), la installo al volo e riprovo una sola volta
+  const installaLibrerieMancanti = (testoErrore) => new Promise((resolve, reject) => {
+    const m = /No module named '([a-zA-Z0-9_]+)'/.exec(testoErrore || '')
+    const nomiPip = { reportlab: 'reportlab', PIL: 'Pillow', pypdf: 'pypdf', fitz: 'PyMuPDF' }
+    const pacchetto = m ? (nomiPip[m[1]] || m[1]) : null
+    if (!pacchetto) { reject(new Error(testoErrore)); return }
+    execFile('python3', ['-m', 'pip', 'install', '--user', '--quiet', pacchetto], { env: pyEnv }, (err1) => {
+      if (!err1) { resolve(); return }
+      // ambiente "gestito esternamente": serve il flag apposito
+      execFile('python3', ['-m', 'pip', 'install', '--user', '--quiet', '--break-system-packages', pacchetto], { env: pyEnv }, (err2) => {
+        if (err2) { reject(new Error(`Manca la libreria Python "${pacchetto}" e non sono riuscito a installarla da solo. Apri il Terminale e lancia: python3 -m pip install --user ${pacchetto}`)); return }
+        resolve()
+      })
+    })
+  })
+
+  return new Promise((resolve, reject) => {
+    eseguiScript()
+      .then(({ stdout }) => finalizza(stdout))
+      .catch(({ stderr, error }) => {
+        installaLibrerieMancanti(stderr || error.message)
+          .then(() => eseguiScript())
+          .then(({ stdout }) => finalizza(stdout))
+          .catch((e2) => reject(e2 instanceof Error ? e2 : new Error(stderr || error.message)))
+      })
+
+    function finalizza(stdout) {
+      const pdfPath = stdout.trim()
+      if (fs.existsSync(pdfPath)) {
+        shell.openPath(pdfPath)
+        resolve(pdfPath)
+      } else if (fs.existsSync(outputPath)) {
+        shell.openPath(outputPath)
+        resolve(outputPath)
+      } else {
+        reject(new Error('PDF non generato'))
+      }
+    }
   })
 })
 
