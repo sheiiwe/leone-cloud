@@ -4478,6 +4478,24 @@ async function caricaCorsiPagine(){
   renderCorsiPagine()
 }
 
+// Copia un link negli appunti con un click, senza dover aprire/cercare/incollare a mano
+async function copiaLink(url, btn){
+  try{
+    await navigator.clipboard.writeText(url)
+  }catch(e){
+    try{
+      const ta=document.createElement('textarea'); ta.value=url; ta.style.position='fixed'; ta.style.opacity='0'
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta)
+    }catch(e2){ alert('Non sono riuscito a copiare il link:\n'+url); return }
+  }
+  if(btn){
+    const orig=btn.textContent
+    btn.textContent='✅'
+    setTimeout(()=>{ btn.textContent=orig }, 1200)
+  }
+  try{ toast('Link copiato') }catch(e){}
+}
+
 function renderCorsiPagine(){
   const tb = document.getElementById('tbl-corsipagine'); if(!tb) return
   const cnt = document.getElementById('cp-count')
@@ -4495,6 +4513,7 @@ function renderCorsiPagine(){
       +'<td style="font-size:12.5px">'+tipo+'</td>'
       +'<td><a href="https://'+url+'" target="_blank" style="font-size:11.5px;color:var(--accent)">'+escB(c.slug)+' ↗</a></td>'
       +'<td class="acts">'
+        +'<button class="btn btn-sm" title="Copia link" onclick="copiaLink(\'https://'+url+'\', this)">🔗</button>'
         +'<button class="btn btn-sm" title="Modifica pagina corso" onclick="apriCorsoPag(\''+c.slug+'\')">✏️</button>'
         +'<button class="btn btn-sm btn-r" title="Elimina pagina corso" onclick="eliminaCorsoPag(\''+c.slug+'\')">🗑</button>'
       +'</td></tr>'
@@ -9823,7 +9842,7 @@ function _liRedraw(filtered){
     const _annB=p.annuale?'<span style="display:inline-block;font-size:9.5px;font-weight:700;background:#fff3e0;color:#e65100;border-radius:6px;padding:1px 6px;margin-left:6px">📅 '+(p.anni?('× '+p.anni+' anni'):'ad anno')+'</span>':''
     let _sel=''
     if(_m.length){ _sel=`<div style="margin-top:4px"><button onclick="apriOfferteReali(${idx})" style="font-size:11px;padding:3px 9px;border:0.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--green);font-weight:600;font-family:inherit;cursor:pointer">🔎 Vedi offerte reali (${_m.length})</button></div>` }
-    return`<tr data-pos="${i}" style="${_liSel.has(idx)?'background:var(--surface2)':''}"><td onclick="event.stopPropagation()"><input type="checkbox" ${_liSel.has(idx)?'checked':''} onclick="liClickRiga(${i}, event.shiftKey)"></td><td style="font-size:12.5px;vertical-align:top;cursor:pointer" onclick="liClickRiga(${i}, event.shiftKey)">${p.nome}${_comp}${_annB}${_sel}</td><td style="vertical-align:top"><span class="pill">${p.cat}</span></td><td style="font-weight:600;vertical-align:top">${cPrezzo}</td><td style="color:var(--text2);vertical-align:top">${cCosto}</td><td style="vertical-align:top">${cMargine}</td><td style="font-weight:600;vertical-align:top">${cProv}</td><td style="font-weight:700;vertical-align:top">${cGuad}</td><td style="vertical-align:top"><button class="btn btn-sm" onclick="editProdotto(${idx})">✎</button> <button class="btn btn-sm btn-r" title="Elimina prodotto" onclick="deleteProdotto(${idx})">✕</button></td></tr>`
+    return`<tr data-pos="${i}" style="${_liSel.has(idx)?'background:var(--surface2)':''}"><td onclick="event.stopPropagation()"><input type="checkbox" ${_liSel.has(idx)?'checked':''} onclick="liClickRiga(${i}, event.shiftKey)"></td><td style="font-size:12.5px;vertical-align:top;cursor:pointer" onclick="liClickRiga(${i}, event.shiftKey)">${p.nome}${_comp}${_annB}${_sel}</td><td style="vertical-align:top"><span class="pill">${p.cat}</span></td><td style="font-weight:600;vertical-align:top">${cPrezzo}</td><td style="color:var(--text2);vertical-align:top">${cCosto}</td><td style="vertical-align:top">${cMargine}</td><td style="font-weight:600;vertical-align:top">${cProv}</td><td style="font-weight:700;vertical-align:top">${cGuad}</td><td style="vertical-align:top">${p.link?`<button class="btn btn-sm" title="Copia link" onclick="copiaLink('${(p.link||'').replace(/'/g,"\\'")}', this)">🔗</button> `:''}<button class="btn btn-sm" onclick="editProdotto(${idx})">✎</button> <button class="btn btn-sm btn-r" title="Elimina prodotto" onclick="deleteProdotto(${idx})">✕</button></td></tr>`
   }).join('')
 }
 let _liA=0
