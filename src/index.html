@@ -2832,6 +2832,226 @@ function syncStatus(state,msg){
 
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
+// ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
+const _RT_BUILD='1.9.269-r6'
+let _rtLastSync=new Date().toISOString()
+let _rtWasSubscribed=false
+const _syncTimers={}
+const _rtDirty={}          // tabella -> true: memoria potenzialmente vecchia dopo una disconnessione
+const _rtEcho={}           // tabella -> scadenza ms dell'eco di un salvataggio locale (evita la lettura doppia)
+const _RT_ECHO_MS=2500
+// Tabelle SENZA Realtime abilitato sul progetto reale: non emettono eventi,
+// quindi si rileggono SOLO all'apertura della loro pagina o dopo un salvataggio locale.
+const _RT_NO_REALTIME=new Set(['buste_paga','compensi_docenti','docenti','studenti','corsi_pagine','documenti','lezioni_prenotate','prodotti_pagamento','tessere'])
+const _RT_CFG={
+  procacciatori:{src:'procacciatori_light',desc:false},
+  vendite:{src:'vendite',desc:true},
+  leads:{src:'leads',desc:true},
+  dipendenti:{src:'dipendenti',desc:false},
+  buste_paga:{src:'buste_paga',desc:false},
+  contratti_firme:{src:'contratti_firme',desc:true},
+  docenti:{src:'docenti',desc:false},
+  studenti:{src:'studenti',desc:false},
+  compensi_docenti:{src:'compensi_docenti',desc:false}
+}
+// Pagina -> tabelle "core" da cui dipende (sync mirato all'apertura e dopo la riconnessione)
+const _RT_PAGE_DEPS={
+  dashboard:['procacciatori','vendite','leads','contratti_firme'],
+  proc:['procacciatori'],
+  rete:['procacciatori'],
+  provv:['procacciatori','vendite'],
+  'provv-doc':['vendite','compensi_docenti','docenti'],
+  vendite:['vendite'],
+  lead:['leads'],
+  dipendenti:['dipendenti'],
+  'dip-dash':['dipendenti'],
+  buste:['buste_paga'],
+  docenti:['docenti'],
+  studenti:['studenti'],
+  contratti:['contratti_firme'],
+  'contratti-dip':['contratti_firme'],
+  'contratti-doc':['contratti_firme'],
+  'contratti-firmati-proc':['contratti_firme'],
+  'contratti-firmati-doc':['contratti_firme'],
+  'contratti-firmati-dip':['contratti_firme']
+}
+// Pagina -> come ridisegnarla
+const _RENDERERS={
+  dashboard:()=>renderDash(),
+  proc:()=>renderProc(),
+  rete:()=>renderRete(),
+  provv:()=>renderProvv(),
+  'provv-doc':()=>renderProvvDoc(),
+  vendite:()=>renderVendite(),
+  lead:()=>{renderLead();aggiornaDotLead()},
+  dipendenti:()=>renderDipendenti(),
+  'dip-dash':()=>renderDipDash(),
+  buste:()=>{renderBusteSel();renderBuste()},
+  docenti:()=>renderDocenti(),
+  studenti:()=>renderStudenti(),
+  contratti:()=>renderContratti(),
+  'contratti-dip':()=>renderContrattiDip(),
+  'contratti-doc':()=>renderContrattiDoc(),
+  'contratti-firmati-proc':()=>renderCFArea('proc'),
+  'contratti-firmati-doc':()=>renderCFArea('doc'),
+  'contratti-firmati-dip':()=>renderCFArea('dip')
+}
+// Tabella -> pagine che la mostrano (per ridisegnare quella attiva dopo un sync)
+const _RT_TABLE_PAGES={}
+Object.keys(_RT_PAGE_DEPS).forEach(function(pg){ _RT_PAGE_DEPS[pg].forEach(function(t){ (_RT_TABLE_PAGES[t]=_RT_TABLE_PAGES[t]||[]).push(pg) }) })
+function _paginaAttiva(){ const p=document.querySelector('.page.active'); return p?p.id.replace('page-',''):'' }
+function _renderIfActive(tabella){
+  const id=_paginaAttiva(); const pages=_RT_TABLE_PAGES[tabella]||[]
+  if(pages.indexOf(id)>=0 && _RENDERERS[id]){ try{ _RENDERERS[id]() }catch(e){ console.warn('render',id,e) } }
+}
+function _mapRows(rows){ return (rows||[]).map(function(r){ return {_id:r.id,created:r.created_at,...r.data} }) }
+function _assegna(name,m){
+  switch(name){
+    case 'procacciatori': procs=m; break
+    case 'vendite': vendite=m; break
+    case 'leads': leads=m; break
+    case 'dipendenti': dipendenti=m; break
+    case 'buste_paga': buste=m; break
+    case 'contratti_firme': contratti=m; _rtLastSync=new Date().toISOString(); break
+    case 'docenti': docenti=m; break
+    case 'studenti': studenti=m; break
+    case 'compensi_docenti': compensiDoc=m; break
+  }
+}
+// Rilegge UNA sola tabella. opts.local=eco di un salvataggio locale; opts.silent=non ridisegnare (lo fa il chiamante)
+async function _syncTable(name,opts){
+  opts=opts||{}
+  const cfg=_RT_CFG[name]; if(!cfg||!db) return
+  if(opts.local) _rtEcho[name]=Date.now()+_RT_ECHO_MS
+  try{
+    const {data,error}=await db.from(cfg.src).select('*').order('created_at',{ascending:!cfg.desc})
+    if(error){ console.warn('syncTable',name,error.message||error); return }
+    _assegna(name,_mapRows(data))
+    _rtDirty[name]=false
+    if(typeof _tsPersoneCache!=='undefined') _tsPersoneCache=null
+    if(name==='contratti_firme'){ try{ await _processaFirmeFirmate() }catch(e){} }
+    if(!opts.silent) _renderIfActive(name)
+  }catch(e){ console.warn('syncTable',name,e) }
+}
+// Evento Realtime: rilettura granulare con debounce; salta l'eco dei salvataggi locali (niente lettura doppia)
+function _syncTableDebounced(name){
+  if(!_RT_CFG[name]) return
+  if(_rtEcho[name] && Date.now() < _rtEcho[name]){
+    // v1.9.269-r3: la lettura doppia NON e' eliminata: e' DIFFERITA e limitata a UNA sola rilettura.
+    // Il salvataggio locale ha gia' letto dati freschi; qui salto la lettura immediata dell'eco e
+    // pianifico una singola rilettura di coda a fine finestra, per catturare modifiche altrui arrivate dopo.
+    if(!_syncTimers['echo:'+name]){
+      _syncTimers['echo:'+name]=setTimeout(function(){ _syncTimers['echo:'+name]=null; _rtEcho[name]=0; _syncTable(name) }, _RT_ECHO_MS)
+    }
+    return
+  }
+  if(_syncTimers[name]) clearTimeout(_syncTimers[name])
+  _syncTimers[name]=setTimeout(function(){
+    _syncTimers[name]=null
+    if(document.querySelector('.modal-overlay.open')){ _syncTimers[name]=setTimeout(function(){ _syncTable(name) },1500) }
+    else { _syncTable(name) }
+  },300)
+}
+// Rileva le firme "Firmato" non ancora gestite -> notifica + invio PDF firmato (prima lo faceva il polling 15s)
+async function _processaFirmeFirmate(){
+  let nuovi=false
+  for(const c of (contratti||[])){
+    if(c.statoFirma!=='Firmato') continue
+    if(firmatiGiaVisti.has(c._id)) continue
+    firmatiGiaVisti.add(c._id)
+    try{ const arr=JSON.parse(localStorage.getItem('firme_notificate')||'[]'); if(!arr.includes(c._id)){ arr.push(c._id); localStorage.setItem('firme_notificate', JSON.stringify(arr)) } }catch(e){}
+    const {_id,created,...d}=c
+    try{ aggiungiNotifica(d) }catch(e){}
+    try{ suonaNotifica() }catch(e){}
+    nuovi=true
+    try{ await inviaContrattoFirmato(d, c._id) }catch(e){ console.error('invio firma:', e) }
+  }
+  if(nuovi) _renderIfActive('contratti_firme')
+}
+// Sync mirato all'apertura di una pagina: tabelle senza Realtime -> sempre; con Realtime -> solo se "dirty"
+async function _syncPaginaSeNecessario(id){
+  const deps=_RT_PAGE_DEPS[id]; if(!deps) return
+  for(const t of deps){
+    if(_RT_NO_REALTIME.has(t)){ await _syncTable(t,{silent:true}) }
+    else if(_rtDirty[t]){ await _syncTable(t,{silent:true}) }
+  }
+}
+// Riconciliazione SOLO al ritorno reale del socket
+async function _reconcileReconnect(){
+  try{
+    await _reconcileContrattiFirme()
+    // le altre tabelle core non hanno updated_at: non sappiamo cosa e' cambiato -> le marchiamo "dirty"
+    Object.keys(_RT_CFG).forEach(function(t){ if(t!=='contratti_firme') _rtDirty[t]=true })
+    // risincronizzo SUBITO solo le dipendenze della pagina aperta (le altre al primo accesso, perche' dirty)
+    const id=_paginaAttiva(); const deps=_RT_PAGE_DEPS[id]||[]
+    for(const t of deps){ if(t!=='contratti_firme' && _rtDirty[t]){ await _syncTable(t) } }
+    // notifiche/aggiornamenti immediati che non passano dalle tabelle core
+    try{ _controllaAccessi(false) }catch(e){}
+    try{ caricaCandidature(true) }catch(e){}
+  }catch(e){ console.warn('reconcile',e) }
+}
+// contratti_firme: alla vera riconnessione UNA sola lettura completa della tabella,
+// con controllo esplicito dell'errore. La memoria si sostituisce SOLO dopo una risposta valida
+// (gestisce insieme inserimenti, modifiche e cancellazioni). Se la lettura fallisce: resto dirty,
+// NON avanzo alcun marcatore e ritento (fino a 3 volte), senza perdere aggiornamenti.
+async function _reconcileContrattiFirme(tent){
+  tent=tent||0
+  let res
+  try{ res=await db.from('contratti_firme').select('*').order('created_at',{ascending:false}) }
+  catch(e){ res={error:e} }
+  if(!res || res.error){
+    _rtDirty['contratti_firme']=true
+    console.warn('reconcile firme: lettura fallita (tentativo '+tent+'), resto dirty', (res&&res.error&&(res.error.message||res.error))||'')
+    if(tent<3){ setTimeout(function(){ _reconcileContrattiFirme(tent+1) }, 3000) }
+    return
+  }
+  contratti=_mapRows(res.data)                 // sostituisco la memoria SOLO dopo risposta valida
+  _rtLastSync=new Date().toISOString()          // avanzo il marcatore SOLO dopo successo
+  _rtDirty['contratti_firme']=false
+  try{ await _processaFirmeFirmate() }catch(e){}
+  _renderIfActive('contratti_firme')
+}
+// v1.9.269-r5: aggiornamento GRANULARE candidature dal payload Realtime (nessun select('*') per evento)
+function _candRealtime(payload){
+  // v1.9.269-r6: se un caricamento e' in corso o non e' ancora avvenuto, accodo (e avvio la prima lettura)
+  if(_candLoading || !_candCaricato){
+    _candPending.push(payload)
+    if(!_candLoading){ caricaCandidature(true) }
+    return
+  }
+  _candApplica(payload)
+}
+function _candApplica(payload){
+  try{
+    const ev=payload && payload.eventType
+    if(ev==='DELETE'){
+      const id=payload.old && payload.old.id
+      if(id==null){ caricaCandidature(true); return }     // fallback: id mancante -> rilettura completa
+      const i=_CAND.findIndex(function(c){return c.id===id}); if(i>=0) _CAND.splice(i,1)
+    } else {
+      const rec=payload.new
+      if(!rec || rec.id==null){ caricaCandidature(true); return } // fallback: payload senza id -> rilettura completa
+      const i=_CAND.findIndex(function(c){return c.id===rec.id})
+      if(i>=0) _CAND[i]=rec; else _CAND.unshift(rec)
+    }
+    ;['proc','doc','dip'].forEach(function(a){ renderCandidature(a) })
+    _candAggiornaPallini()
+  }catch(e){ try{ caricaCandidature(true) }catch(_e){} }
+}
+// v1.9.269-r5: aggiornamento GRANULARE proposte_docenti dal payload (INSERT/UPDATE/DELETE) senza rilettura completa
+function _propDocRealtime(payload){
+  try{ _refreshPropDocDot() }catch(e){}   // pallino su ogni evento
+  const ev=payload && payload.eventType
+  if(ev==='INSERT'){
+    try{ suonaNotifica() }catch(e){}
+    try{ const p=payload.new||{}; const chi=((p.cliente_nome||'')+' '+(p.cliente_cognome||'')).trim(); toast('\ud83c\udf93 Nuova proposta docente: '+chi) }catch(e){}
+  }
+  if(Array.isArray(_PROP_DOC)){
+    if(ev==='DELETE'){ const id=payload.old && payload.old.id; if(id!=null){ const i=_PROP_DOC.findIndex(function(x){return x.id===id}); if(i>=0) _PROP_DOC.splice(i,1) } }
+    else { const rec=payload.new; if(rec && rec.id!=null){ const i=_PROP_DOC.findIndex(function(x){return x.id===rec.id}); if(i>=0) _PROP_DOC[i]=rec; else _PROP_DOC.unshift(rec) } }
+  }
+  const pg=document.getElementById('page-proposte-docenti'); if(pg && !pg.classList.contains('hidden')){ try{ renderProposteDoc() }catch(e){} }
+}
 const AVC=['av-b','av-t','av-c','av-p','av-a']
 const avc=i=>AVC[i%AVC.length]
 function avatarImg(i,size=26){
@@ -3291,36 +3511,7 @@ function aggiornaDotLead(){
   const nuovi=(leads||[]).filter(l=>!l.stato || l.stato==='Nuovo' || l.stato==='Nuova').length
   const dot=document.getElementById('nav-dot-lead'); if(dot) dot.style.display=nuovi>0?'block':'none'
 }
-function setupRealtime(){
-  db.channel('leone-all')
-    .on('postgres_changes',{event:'*',schema:'public',table:'procacciatori'},()=>scheduleLiveRefresh())
-    .on('postgres_changes',{event:'*',schema:'public',table:'vendite'},()=>scheduleLiveRefresh())
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'leads'},(payload)=>{
-      scheduleLiveRefresh()
-      // Notifica email collaboratore se il prodotto ha email aggiuntiva
-      const nuovoLead = payload.new?.data || {}
-      toast('🔔 Nuova lead da ' + (nuovoLead.pnome || 'un procacciatore') + (nuovoLead.nome ? ': ' + nuovoLead.nome : ''))
-      const prodottoNome = nuovoLead.prodotto || nuovoLead.servizio || ''
-      if(prodottoNome){
-        const prodotto = LISTINO.find(p => 
-          prodottoNome.toLowerCase().includes(p.nome.toLowerCase()) ||
-          p.nome.toLowerCase().includes(prodottoNome.toLowerCase())
-        )
-        if(prodotto?.emailNotifica){
-          window.electronAPI?.inviaEmailCollaboratore?.({..._ec(),
-            emailCollaboratore: prodotto.emailNotifica,
-            nomeProdotto: prodotto.nome,
-            lead: nuovoLead
-          })
-        }
-      }
-    })
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'leads'},()=>scheduleLiveRefresh())
-    .on('postgres_changes',{event:'*',schema:'public',table:'dipendenti'},()=>scheduleLiveRefresh())
-    .on('postgres_changes',{event:'*',schema:'public',table:'buste_paga'},()=>scheduleLiveRefresh())
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'contratti_firme'},()=>scheduleLiveRefresh())
-    .subscribe()
-}
+/* v1.9.269-r2: setupRealtime rimosso (codice morto, canale leone-all) */
 
 // ── NOTIFICHE CAMPANELLINA ────────────────────────────────────
 let notifiche = []
@@ -3344,45 +3535,26 @@ async function avviaPollingFirme(){
   const firstRun = localStorage.getItem('firme_notificate') === null
   let notifSet = new Set()
   try{ notifSet = new Set(JSON.parse(localStorage.getItem('firme_notificate')||'[]')) }catch(e){ notifSet = new Set() }
-  const { data: esistenti } = await db.from('contratti_firme').select('id,data').eq('data->>statoFirma','Firmato')
+  // v1.9.269-r3: uso i contratti gia' caricati da loadAll() (niente seconda download di contratti_firme)
+  const firmati = (contratti||[]).filter(function(c){ return c.statoFirma==='Firmato' })
   const nuoveAllAvvio = []
-  if(esistenti) esistenti.forEach(r => {
-    firmatiGiaVisti.add(r.id)                 // il polling non le riconta
-    if(firstRun){ notifSet.add(r.id) }        // prima volta in assoluto: baseline, niente notifiche
-    else if(!notifSet.has(r.id)){ nuoveAllAvvio.push(r); notifSet.add(r.id) } // firmata mentre l'app era chiusa
+  firmati.forEach(function(c){
+    firmatiGiaVisti.add(c._id)
+    if(firstRun){ notifSet.add(c._id) }        // prima volta in assoluto: baseline, niente notifiche
+    else if(!notifSet.has(c._id)){ nuoveAllAvvio.push(c); notifSet.add(c._id) } // firmata mentre l'app era chiusa
   })
   // Avvisa delle firme arrivate mentre eri via
   if(!firstRun && nuoveAllAvvio.length){
     suonaNotifica()
     toast(nuoveAllAvvio.length===1 ? '🔔 1 firma ricevuta mentre eri via' : '🔔 '+nuoveAllAvvio.length+' firme ricevute mentre eri via')
-    for(const r of nuoveAllAvvio){ aggiungiNotifica(r.data||{}); try{ await inviaContrattoFirmato(r.data||{}, r.id) }catch(e){ console.error('invio firma avvio:', e) } }
+    for(const c of nuoveAllAvvio){ const {_id,created,...d}=c; aggiungiNotifica(d); try{ await inviaContrattoFirmato(d, c._id) }catch(e){ console.error('invio firma avvio:', e) } }
   }
   // Salva la baseline (solo le firme ancora esistenti, per non far crescere all'infinito la lista)
-  try{ const live=new Set((esistenti||[]).map(r=>r.id)); localStorage.setItem('firme_notificate', JSON.stringify([...notifSet].filter(id=>live.has(id)))) }catch(e){}
+  try{ const live=new Set(firmati.map(function(c){return c._id})); localStorage.setItem('firme_notificate', JSON.stringify([...notifSet].filter(function(id){return live.has(id)}))) }catch(e){}
 
-  setInterval(async () => {
-    try {
-      const { data, error } = await db.from('contratti_firme').select('*').eq('data->>statoFirma','Firmato')
-      if(error) return
-      let nuovi = false
-      for(const r of (data||[])){
-        if(!firmatiGiaVisti.has(r.id)){
-          firmatiGiaVisti.add(r.id)
-          try{ const arr=JSON.parse(localStorage.getItem('firme_notificate')||'[]'); if(!arr.includes(r.id)){ arr.push(r.id); localStorage.setItem('firme_notificate', JSON.stringify(arr)) } }catch(e){}
-          const d = r.data || {}
-          aggiungiNotifica(d)
-          suonaNotifica()
-          nuovi = true
-          await inviaContrattoFirmato(d, r.id)
-        }
-      }
-      if(nuovi){
-        await loadAll()
-        renderContratti()
-        renderContrattiDip()
-      }
-    } catch(e){ console.error('Polling firme:', e) }
-  }, 15000) // ogni 15 secondi
+  /* v1.9.269-r2: rimosso il polling completo ogni 15s. Le firme arrivano ora da Realtime
+     (canale live-gestionale, tabella contratti_firme) + riconciliazione alla riconnessione
+     + baseline all'avvio qui sopra. La logica di notifica/invio PDF vive in _processaFirmeFirmate(). */
 }
 function _abToBase64(bytes){
   let bin=''; const chunk=0x8000
@@ -3393,6 +3565,7 @@ function _abToBase64(bytes){
 // ── POLLING CAMPANELLINA: richieste di accesso portale ────────
 let accessiGiaVisti = new Set()
 let pollingAccessiAttivo = false
+let _accessiCiclo=null
 async function avviaPollingAccessi(){
   if(pollingAccessiAttivo) return
   pollingAccessiAttivo = true
@@ -3400,9 +3573,9 @@ async function avviaPollingAccessi(){
   let notifSet = new Set()
   try{ notifSet = new Set(JSON.parse(localStorage.getItem('accessi_notificati')||'[]')) }catch(e){ notifSet = new Set() }
   const _areaLbl = (a)=>({procacciatore:'Procacciatore',docente:'Docente',dipendente:'Dipendente',studente:'Studente'}[(a&&a.area)||'procacciatore']||'Portale')
-  async function ciclo(primo){
+  _accessiCiclo = async function(primo){
     let rows=[]
-    try{ const r=await db.from('portale_accessi').select('*'); rows=(r.data||[]).filter(a=>a.approvato!==true) }
+    try{ const r=await db.from('portale_accessi').select('*'); rows=(r.data||[]).filter(function(a){return a.approvato!==true}) }
     catch(e){ return }
     const nuove=[]
     for(const a of rows){
@@ -3414,16 +3587,17 @@ async function avviaPollingAccessi(){
     if(nuove.length){
       suonaNotifica()
       for(const a of nuove){
-        pushNotifica({ icon:'🔑', titolo:(a.nome||a.email||'Nuova richiesta'), sottotitolo:'Richiesta accesso · '+_areaLbl(a), riga3:'Da approvare in Impostazioni → Web App', target:'impostazioni' })
+        pushNotifica({ icon:'\ud83d\udd11', titolo:(a.nome||a.email||'Nuova richiesta'), sottotitolo:'Richiesta accesso \u00b7 '+_areaLbl(a), riga3:'Da approvare in Impostazioni \u2192 Web App', target:'impostazioni' })
       }
     }
-    // aggiorna dot su Impostazioni
-    document.querySelectorAll('.nav-dot-impostazioni').forEach(d=>{ d.style.display = rows.length ? 'inline-block' : 'none' })
-    try{ const live=new Set(rows.map(r=>r.id)); localStorage.setItem('accessi_notificati', JSON.stringify([...notifSet].filter(id=>live.has(id)))) }catch(e){}
+    document.querySelectorAll('.nav-dot-impostazioni').forEach(function(d){ d.style.display = rows.length ? 'inline-block' : 'none' })
+    try{ const live=new Set(rows.map(function(r){return r.id})); localStorage.setItem('accessi_notificati', JSON.stringify([...notifSet].filter(function(id){return live.has(id)}))) }catch(e){}
   }
-  await ciclo(true)
-  setInterval(()=>{ ciclo(false) }, 20000) // ogni 20 secondi
+  await _accessiCiclo(true)
+  // v1.9.269-r4: nessun polling periodico. portale_accessi e' in Realtime: gli aggiornamenti arrivano
+  // dal canale live-gestionale (che chiama _controllaAccessi). Qui resta solo la baseline all'avvio.
 }
+function _controllaAccessi(primo){ if(_accessiCiclo) return _accessiCiclo(!!primo) }
 
 // Genera/scarica il PDF firmato, scarica i documenti del firmatario, apre il PDF e invia le email con TUTTI gli allegati
 async function inviaContrattoFirmato(d, rid, apri=true){
@@ -4076,6 +4250,9 @@ document.addEventListener('click',function(e){
 //  i docenti i docenti, i dipendenti i dipendenti.
 // ══════════════════════════════════════════════════════════════
 let _CAND = []
+let _candCaricato = false   // v1.9.269-r5: la pagina candidature legge dal DB solo la prima volta
+let _candLoading = null     // v1.9.269-r6: Promise dell'unico caricamento completo in corso
+let _candPending = []       // v1.9.269-r6: eventi arrivati durante il caricamento, applicati alla fine
 const _CAND_FILTRO = { proc:'aperte', doc:'aperte', dip:'aperte' }
 
 const CAND_STATI = [
@@ -4102,17 +4279,24 @@ function _candQuando(iso){
 
 async function caricaCandidature(forza){
   if(!db) return
-  if(_CAND.length && !forza){ ['proc','doc','dip'].forEach(a=>renderCandidature(a)); return }
-  try{
-    const r = await db.from('candidature').select('*').order('created_at',{ascending:false}).limit(500)
-    if(r.error) throw r.error
-    _CAND = r.data || []
-  }catch(e){
-    _CAND = []
-    console.error('candidature:', e)
-  }
+  if(_candCaricato && !forza){ ['proc','doc','dip'].forEach(a=>renderCandidature(a)); return }
+  if(_candLoading) return _candLoading   // v1.9.269-r6: un solo caricamento completo alla volta
+  _candLoading = (async function(){
+    try{
+      const r = await db.from('candidature').select('*').order('created_at',{ascending:false}).limit(500)
+      if(r.error) throw r.error
+      _CAND = r.data || []
+      _candCaricato = true
+    }catch(e){
+      // v1.9.269-r6: su errore NON cancello _CAND. Se non era ancora caricato, _candCaricato resta false (la prossima apertura ritenta).
+      console.error('candidature:', e)
+    }
+  })()
+  try{ await _candLoading } finally { _candLoading = null }
   ;['proc','doc','dip'].forEach(a=>renderCandidature(a))
   _candAggiornaPallini()
+  // v1.9.269-r6: applico gli eventi accumulati durante il caricamento (nessun INSERT/UPDATE/DELETE perso)
+  if(_candCaricato && _candPending.length){ const q=_candPending; _candPending=[]; for(const p of q){ try{ _candApplica(p) }catch(e){} } }
 }
 
 // pallino rosso sul menu: quante nuove, per area
@@ -5130,38 +5314,54 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:()=>{renderDash();loadAll().then(renderDash)},proc:()=>{renderProc();loadAll().then(renderProc)},docenti:()=>{renderDocenti();loadAll().then(renderDocenti)},studenti:()=>{renderStudenti();loadAll().then(renderStudenti)},'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:()=>{renderVendite();loadAll().then(renderVendite)},lead:()=>{renderLead();loadAll().then(renderLead)},provv:()=>{renderProvv();loadAll().then(renderProvv)},rete:()=>{renderRete();loadAll().then(renderRete)},listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();Promise.all([caricaCategorie(),caricaEnti()]).then(renderCategEnti);caricaCorsiPagine()},tessere:caricaTessere,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:()=>{renderContratti();loadAll().then(renderContratti)},'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:()=>{renderDipendenti();loadAll().then(renderDipendenti)},buste:()=>{renderBusteSel();renderBuste();loadAll().then(()=>{renderBusteSel();renderBuste()})},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus();loadAll().then(()=>{renderBonus();calcolaBonus()})},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
-  renders[id]?.()
+  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:()=>{renderDash()},proc:()=>{renderProc()},docenti:()=>{renderDocenti()},studenti:()=>{renderStudenti()},'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:()=>{renderVendite()},lead:()=>{renderLead()},provv:()=>{renderProvv()},rete:()=>{renderRete()},listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();Promise.all([caricaCategorie(),caricaEnti()]).then(renderCategEnti);caricaCorsiPagine()},tessere:caricaTessere,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:()=>{renderContratti()},'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:()=>{renderDipendenti()},buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  ;(async function(){ try{ await _syncPaginaSeNecessario(id) }catch(e){} if(renders[id]) renders[id]() })()
 }
 
 // ── AGGIORNAMENTO LIVE (Supabase Realtime) ────────────────────
-let _rtChannel=null, _rtTimer=null
-let _rtVisHooked=false
+let _rtChannel=null
 function avviaRealtime(){
-  if(!_rtVisHooked){
-    _rtVisHooked=true
-    document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') scheduleLiveRefresh() })
-    window.addEventListener('focus', ()=>scheduleLiveRefresh())
-  }
   if(_rtChannel || !db) return
-  const tabelle=['contratti_firme','vendite','procacciatori','leads','portale_accessi','dipendenti','candidature',
-    'docenti','studenti','tessere','offerte','bacheca','messaggi','documenti','portale_documenti',
-    'lezioni_prenotate','marketing_campagne','marketing_invii','corsi_pagine','listino','prodotti_pagamento']
+  // Ausiliarie CON Realtime: se sei sulla loro pagina la ricarico (aggiornamento live mentre guardi)
+  const _RT_LOADERS={
+    offerte:{page:'offerte',fn:function(){try{caricaOfferte()}catch(e){}}},
+    bacheca:{page:'bacheca',fn:function(){try{caricaBacheca()}catch(e){}}},
+    listino:{page:'listino',fn:function(){try{renderListino()}catch(e){}}}
+  }
   _rtChannel=db.channel('live-gestionale')
-  tabelle.forEach(t=>{
-    _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:t}, ()=>scheduleLiveRefresh())
+  // Core CON Realtime (le no-Realtime NON si sottoscrivono: non emetterebbero eventi)
+  const _RT_CORE_LIVE=['procacciatori','vendite','leads','dipendenti','contratti_firme']
+  _RT_CORE_LIVE.forEach(function(t){
+    if(t==='leads'){
+      _rtChannel.on('postgres_changes',{event:'INSERT',schema:'public',table:'leads'}, function(payload){
+        const nuovoLead=(payload.new&&payload.new.data)||{}
+        try{ toast('\ud83d\udd14 Nuova lead da '+(nuovoLead.pnome||'un procacciatore')+(nuovoLead.nome?(': '+nuovoLead.nome):'')) }catch(e){}
+        try{ const prodottoNome=nuovoLead.prodotto||nuovoLead.servizio||''; if(prodottoNome){ const prodotto=LISTINO.find(function(p){return prodottoNome.toLowerCase().includes(p.nome.toLowerCase())||p.nome.toLowerCase().includes(prodottoNome.toLowerCase())}); if(prodotto&&prodotto.emailNotifica){ window.electronAPI&&window.electronAPI.inviaEmailCollaboratore&&window.electronAPI.inviaEmailCollaboratore(Object.assign({},_ec(),{emailCollaboratore:prodotto.emailNotifica,nomeProdotto:prodotto.nome,lead:nuovoLead})) } } }catch(e){}
+        _syncTableDebounced('leads')
+      })
+      _rtChannel.on('postgres_changes',{event:'UPDATE',schema:'public',table:'leads'}, function(){_syncTableDebounced('leads')})
+      _rtChannel.on('postgres_changes',{event:'DELETE',schema:'public',table:'leads'}, function(){_syncTableDebounced('leads')})
+    } else {
+      _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:t}, function(){_syncTableDebounced(t)})
+    }
   })
-  _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:'proposte'}, (payload)=>{
+  Object.keys(_RT_LOADERS).forEach(function(t){ const c=_RT_LOADERS[t]; _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:t}, function(){ if(_paginaAttiva()===c.page) c.fn() }) })
+  // v1.9.269-r4: candidature sottoscritta con refresh FORZATO (bypassa la cache _CAND).
+  // Richiede la migrazione MIGRAZIONE_candidature_realtime.sql applicata su Supabase; prima di
+  // allora l'evento non arriva, ma l'apertura pagina fa comunque un refresh forzato (vedi sp()).
+  _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:'candidature'}, function(payload){ _candRealtime(payload) })
+  // Accessi al portale: notifica e pallino immediati (requisito)
+  _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:'portale_accessi'}, function(){ try{ _controllaAccessi(false) }catch(e){} })
+  _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:'proposte'}, function(payload){
     if(payload && payload.eventType==='INSERT'){
       try{ suonaNotifica() }catch(e){}
       const d=(payload.new&&payload.new.data)||{}
-      try{ pushNotifica({icon:'🛒', titolo:'Nuova proposta', sottotitolo:(d.cliente||'cliente')+(d.autoreNome?(' · da '+d.autoreNome):''), target:'proposte'}) }catch(e){}
+      try{ pushNotifica({icon:'\ud83d\uded2', titolo:'Nuova proposta', sottotitolo:(d.cliente||'cliente')+(d.autoreNome?(' \u00b7 da '+d.autoreNome):''), target:'proposte'}) }catch(e){}
     }
-    caricaProposte()
-    caricaCestino()
-    caricaOfferte()
+    if(_paginaAttiva()==='proposte'){ try{caricaProposte()}catch(e){} }
   })
-  _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:'pagamenti'}, (payload)=>{
+  _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:'proposte_docenti'}, function(payload){ _propDocRealtime(payload) })
+  _rtChannel.on('postgres_changes',{event:'*',schema:'public',table:'pagamenti'}, function(payload){
     try{
       const isPaid=payload&&payload.new&&payload.new.stato==='paid'
       const wasPaid=payload&&payload.old&&payload.old.stato==='paid'
@@ -5174,22 +5374,9 @@ function avviaRealtime(){
     }catch(e){}
     if(typeof caricaIncassi==='function') caricaIncassi()
   })
-  _rtChannel.subscribe()
+  _rtChannel.subscribe(function(status){ if(status==='SUBSCRIBED'){ if(_rtWasSubscribed){ _reconcileReconnect() } _rtWasSubscribed=true } })
 }
-function scheduleLiveRefresh(){
-  if(typeof _tsPersoneCache!=='undefined') _tsPersoneCache=null
-  if(_rtTimer) clearTimeout(_rtTimer)
-  _rtTimer=setTimeout(()=>{
-    _rtTimer=null
-    // non disturbare se stai modificando (modale aperto) o sei in Impostazioni
-    if(document.querySelector('.modal-overlay.open')) return
-    const p=document.querySelector('.page.active'); if(!p) return
-    const id=p.id.replace('page-','')
-    if(id==='impostazioni') return
-    const navEl=document.querySelector('.nav-item.active')
-    loadAll().then(()=>{ sp(id, navEl); mostraLiveTick() }).catch(()=>{})
-  }, 900)
-}
+/* v1.9.269-r2: scheduleLiveRefresh rimossa (codice morto) */
 function mostraLiveTick(){
   let el=document.getElementById('live-tick')
   if(!el){
@@ -7233,7 +7420,7 @@ async function saveProc(){
     else await db.from('procacciatori').insert({data:obj})
     // Pre-autorizza l'accesso al portale con l'email aziendale (se presente)
     if(obj.email_aziendale) await preAutorizzaAccesso(obj.email_aziendale, obj.nome)
-    _tsPersoneCache = null; closeM('m-proc');await loadAll();renderProc()
+    _tsPersoneCache = null; closeM('m-proc');await _syncTable('procacciatori',{local:true})
     // Apri checklist onboarding per nuovo procacciatore
     if(!eid){
       const nuovoIdx = procs.findIndex(p=>p.nome===obj.nome)
@@ -7647,7 +7834,7 @@ async function saveVend(){
   const obj={pidx:isAzienda?null:parseInt(pidx),procId:isAzienda?null:(_pv._id||null),procEmail:isAzienda?'':(_pv.email||'').trim().toLowerCase(),azienda:isAzienda,prod:prod.nome,cat:prod.cat,piatt:prod.piatt,val,prov,cliente:(cnome+' '+ccognome).trim(),cliNome:cnome,cliCognome:ccognome,cliTel:ccell,cliEmail:cemail,stato:document.getElementById('vd-stato').value,note:document.getElementById('vd-note').value,leadId:(_convLeadId||null),data:document.getElementById('vd-data').value||today()}
   Object.assign(obj, exv.v)
   if(bolletta){ obj.bollettaUrl=bolletta.url; obj.bollettaPath=bolletta.path }
-  try{syncStatus('syncing','Salvataggio...');await db.from('vendite').insert({data:obj});if(_convLeadId){try{const lr=leads.find(x=>x._id===_convLeadId);if(lr){const {_id,...ldata}=lr;ldata.stato='Acquisito';await db.from('leads').update({data:ldata}).eq('id',_id)}}catch(e){console.error('convert lead:',e)}_convLeadId=null}closeM('m-vend');['vd-val','vd-cliente','vd-cognome','vd-cell','vd-email','vd-note'].forEach(id=>{const e=document.getElementById(id); if(e) e.value=''});const _ex=document.getElementById('vd-extra'); if(_ex) _ex.innerHTML='';await loadAll();renderVendite();renderLead()}
+  try{syncStatus('syncing','Salvataggio...');await db.from('vendite').insert({data:obj});if(_convLeadId){try{const lr=leads.find(x=>x._id===_convLeadId);if(lr){const {_id,...ldata}=lr;ldata.stato='Acquisito';await db.from('leads').update({data:ldata}).eq('id',_id)}}catch(e){console.error('convert lead:',e)}_convLeadId=null}closeM('m-vend');['vd-val','vd-cliente','vd-cognome','vd-cell','vd-email','vd-note'].forEach(id=>{const e=document.getElementById(id); if(e) e.value=''});const _ex=document.getElementById('vd-extra'); if(_ex) _ex.innerHTML='';await _syncTable('vendite',{local:true});await _syncTable('leads',{local:true})}
   catch(e){syncStatus('err','Errore: '+e.message)}
   finally{btn.disabled=false;btn.innerHTML='Salva'}
 }
@@ -7671,7 +7858,7 @@ async function allineaVendite(){
       ok++
     }catch(e){ salt++ }
   }
-  await loadAll(); renderVendite()
+  await _syncTable('vendite',{local:true})
   syncStatus('ok','Allineamento completato')
   alert('Allineate '+ok+' vendite.'+(salt?('\nSaltate '+salt+' (procacciatore non trovato per quella posizione).'):''))
 }
@@ -7681,7 +7868,7 @@ function fillMeseSel(){
 }
 async function deleteVend(id){
   if(!confirm('Spostare questa vendita nel cestino?'))return
-  try{syncStatus('syncing','Spostamento...');const v=vendite.find(x=>x._id===id);if(v){const {_id,created,...vd}=v;await spostaInCestino('vendita', id, vd, id)}await db.from('vendite').delete().eq('id',id);await loadAll();renderVendite()}
+  try{syncStatus('syncing','Spostamento...');const v=vendite.find(x=>x._id===id);if(v){const {_id,created,...vd}=v;await spostaInCestino('vendita', id, vd, id)}await db.from('vendite').delete().eq('id',id);await _syncTable('vendite',{local:true})}
   catch(e){syncStatus('err','Errore: '+e.message)}
 }
 function apriPopupStatoVend(id, event){
@@ -7719,7 +7906,7 @@ async function cambiaStatoVend(id, stato){
       }catch(e){ console.error('proposta incassata:',e) }
     }
     toast('Vendita: '+stato)
-    await loadAll()
+    await _syncTable('vendite',{local:true})
   }catch(e){ alert('Errore: '+(e.message||e)) }
 }
 function renderVendite(){
@@ -7738,7 +7925,7 @@ async function saveLead(){
   const btn=document.getElementById('btn-save-lead')
   btn.disabled=true;btn.innerHTML='<div class="spinner"></div>'
   const obj={pidx:parseInt(pidx),nome:document.getElementById('ld-nome').value,az:document.getElementById('ld-az').value,tel:document.getElementById('ld-tel').value,cat:document.getElementById('ld-cat').value,stato:document.getElementById('ld-stato').value,note:document.getElementById('ld-note').value,data:new Date().toLocaleDateString('it-IT')}
-  try{syncStatus('syncing','Salvataggio...');await db.from('leads').insert({data:obj});closeM('m-lead');await loadAll();renderLead()}
+  try{syncStatus('syncing','Salvataggio...');await db.from('leads').insert({data:obj});closeM('m-lead');await _syncTable('leads',{local:true})}
   catch(e){syncStatus('err','Errore: '+e.message)}
   finally{btn.disabled=false;btn.innerHTML='Salva'}
 }
@@ -7817,7 +8004,7 @@ async function ripristinaGruppo(gruppo){
       await db.from(t).insert({data:c.origData})
       await db.from('cestino').delete().eq('id',c._id)
     }
-    await caricaCestino(); await loadAll(); if(typeof caricaProposte==='function') await caricaProposte()
+    await caricaCestino(); await _syncTable('vendite',{local:true}); await _syncTable('leads',{local:true}); await _syncTable('procacciatori',{local:true}); await _syncTable('dipendenti',{local:true}); if(typeof caricaProposte==='function') await caricaProposte()
     toast('✅ Ripristinato')
   }catch(e){ alert('Errore ripristino: '+(e.message||e)) }
 }
@@ -8292,7 +8479,7 @@ async function deleteLead(id){
     if(l){ const {_id,created,...data}=l; await spostaInCestino('lead', id, data, id) }
     for(const v of vColl){ const {_id,created,...vd}=v; await spostaInCestino('vendita', v._id, vd, id); await db.from('vendite').delete().eq('id',v._id) }
     await db.from('leads').delete().eq('id',id)
-    await loadAll();renderLead()
+    await _syncTable('leads',{local:true});await _syncTable('vendite',{local:true})
   }catch(e){syncStatus('err','Errore: '+e.message)}
 }
 
@@ -8452,17 +8639,10 @@ async function _refreshPropDocDot(){
     const dot=document.getElementById('nav-dot-proposte-docenti'); if(dot) dot.style.display=(r.count||0)>0?'block':'none'
   }catch(e){}
 }
-setInterval(_refreshPropDocDot, 30000)
+// v1.9.269-r4: rimosso il polling _refreshPropDocDot ogni 30s (ora il pallino si aggiorna dagli
+// eventi Realtime di proposte_docenti, event:'*'). Resta solo il caricamento iniziale una tantum:
 setTimeout(_refreshPropDocDot, 1200)
-try{
-  db.channel('proposte_docenti_ch').on('postgres_changes',{event:'INSERT',schema:'public',table:'proposte_docenti'}, payload=>{
-    _refreshPropDocDot()
-    try{ suonaNotifica() }catch(e){}
-    try{ const p=payload.new||{}; const chi=((p.cliente_nome||'')+' '+(p.cliente_cognome||'')).trim(); toast('\ud83c\udf93 Nuova proposta docente: '+chi) }catch(e){}
-    // se sto guardando la pagina proposte docenti, aggiorno
-    const pg=document.getElementById('page-proposte-docenti'); if(pg && !pg.classList.contains('hidden')) _openProposteDoc()
-  }).subscribe()
-}catch(e){}
+/* v1.9.269-r2: canale proposte_docenti_ch rimosso (codice morto: confluito in live-gestionale) */
 async function sincronizzaBrevo(){
   const btn=document.getElementById('brevo-sync-btn'), out=document.getElementById('brevo-sync-out')
   btn.disabled=true; const _t=btn.innerHTML; btn.innerHTML='Sincronizzazione in corso...'; out.innerHTML=''
@@ -8804,7 +8984,8 @@ async function inviaContratto(sezione){
     }
 
     closeM(sezione==='proc'?'m-invia-contratto':(sezione==='dip'?'m-invia-contratto-dip':'m-invia-contratto-doc'))
-    await loadAll()
+
+    await _syncTable('contratti_firme',{local:true}); await _syncTable(sezione==='proc'?'procacciatori':(sezione==='dip'?'dipendenti':'docenti'))
     if(sezione==='proc')renderContratti(); else if(sezione==='dip')renderContrattiDip(); else renderContrattiDoc()
   }catch(e){alert('Errore invio: '+e.message)}
   finally{btn.disabled=false;btn.innerHTML='✉ Invia contratto'}
@@ -9317,7 +9498,7 @@ async function generaEApriPdfFirmato(id){
   toast('Genero il PDF firmato...')
   const g=await generaPdfFirmato(c._id, c)
   if(!g || g.error || !g.bytes){ alert('Non riesco a generare il PDF firmato.\n\nDettaglio: '+((g&&g.error)||'errore sconosciuto')+'\n\n(Se parla del bucket "contratti", probabilmente va creato su Supabase Storage.)'); return }
-  await loadAll(); renderContratti()
+  await _syncTable('contratti_firme',{local:true})
   const fileName=(c.nomeDestinatario||'contratto').replace(/[^a-zA-Z0-9]+/g,'_')+'_firmato.pdf'
   if(window.electronAPI?.apriFileTmp){ try{ await window.electronAPI.apriFileTmp(Array.from(g.bytes), fileName) }catch(e){} }
   toast('\u2705 PDF firmato pronto')
@@ -9457,7 +9638,7 @@ async function saveDip(){
     syncStatus('syncing','Salvataggio...')
     if(eid)await db.from('dipendenti').update({data:obj}).eq('id',eid)
     else await db.from('dipendenti').insert({data:obj})
-    _tsPersoneCache = null; closeM('m-dip');await loadAll();renderDipendenti()
+    _tsPersoneCache = null; closeM('m-dip');await _syncTable('dipendenti',{local:true})
     // Apri checklist onboarding per nuovo dipendente
     if(!eid){
       const nuovoIdx = dipendenti.findIndex(d=>d.nome===obj.nome)
@@ -9627,7 +9808,7 @@ async function saveBusta(){
         await db.from('buste_paga').update({ data: { ...obj, pdf_path: path, dipendente_id: dip_id } }).eq('id', ins.data.id)
       }
     }catch(e){ console.warn('Storage busta:', e) }
-    closeM('m-busta');await loadAll();renderBuste()
+    closeM('m-busta');await _syncTable('buste_paga',{local:true})
   }catch(e){syncStatus('err','Errore: '+e.message);alert('Errore: '+e.message)}
   finally{btn.disabled=false;btn.innerHTML='Salva busta'}
 }
@@ -10321,7 +10502,7 @@ async function chiudiOnboarding(salva){
       const allegati = [...(persona.allegati||[]), ...nuoviAllegati]
       const tabella = _onbTipo === 'proc' ? 'procacciatori' : 'dipendenti'
       await db.from(tabella).update({data:{...persona, allegati}}).eq('id', persona._id)
-      await loadAll()
+      await _syncTable(tabella,{local:true})   // v1.9.269-r4: eco locale, evita la lettura doppia salvataggio+Realtime
     }
   }
   closeM('m-onboarding')
@@ -10449,7 +10630,7 @@ async function salvaConformitaRete(){
   }
 
   closeM('m-conformita-rete')
-  await loadAll()
+  await _syncTable('procacciatori',{local:true})
   if(_confCallback) _confCallback(true)
   alert(`✅ Rete commerciale attivata!\n${capo.nome} → ${membro.nome}\nDocumenti archiviati correttamente.`)
 }
@@ -10560,7 +10741,6 @@ async function apriAllegato(idx, contesto, procIdx){
   else if(contesto==='prospetti'){ const _pp = procs[procIdx||_anagIdx]; f = (_pp?.allegati||[]).filter(x=>x.tipo==='Prospetto Compensi Mensile')[idx]; pid = _pp?._id }
   else if(contesto==='anag-dip') f = dipendenti[_anagIdx]?.allegati?.[idx]
   if(!f) return alert('File non disponibile')
-  // La lista è alleggerita e non tiene il contenuto pesante: se manca, lo carico ora dal database
   if(!f.data && pid){
     try{
       if(typeof syncStatus==='function') syncStatus('syncing','Apertura documento...')
@@ -10644,7 +10824,7 @@ async function salvaInviaProspetto(i, mese, azione='salva'){
     // Salva nell'anagrafica del procacciatore
     const allegati = [...(p.allegati||[]), allegato]
     await db.from('procacciatori').update({data:{...p, allegati}}).eq('id',p._id)
-    await loadAll()
+    await _syncTable('procacciatori',{local:true})
     
     if(azione==='invia') alert(`Prospetto salvato nell'archivio di ${p.nome}!`)
   } catch(e){
@@ -11937,7 +12117,7 @@ async function confermaProposta(id){
     const {_id,created,...data}=p; data.stato='Gestita'; data.confermata=true
     await db.from('proposte').update({data}).eq('id',id)
     syncStatus('ok','Vendite create')
-    await loadAll(); await caricaProposte()
+    await _syncTable('vendite',{local:true}); await caricaProposte()
     alert(records.length+' vendite create e assegnate a '+(p.autoreNome||'procacciatore')+' (stato: In attesa).')
   }catch(e){ syncStatus('err','Errore'); alert('Errore: '+(e.message||e)) }
 }
@@ -11950,7 +12130,7 @@ async function eliminaPropostaAdmin(id){
     if(p){ const {_id,created,...data}=p; await spostaInCestino('proposta', id, data, id) }
     for(const v of vColl){ const {_id,created,...vd}=v; await spostaInCestino('vendita', v._id, vd, id); await db.from('vendite').delete().eq('id',v._id) }
     await db.from('proposte').delete().eq('id',id)
-    await loadAll(); await caricaProposte()
+    await _syncTable('vendite',{local:true}); await caricaProposte()
   }
   catch(e){ alert('Errore: '+(e.message||e)) }
 }
@@ -13617,7 +13797,6 @@ caricaProposte()
 caricaOfferte()
 renderListino()
 loadAll().then(()=>{
-  setupRealtime()
   avviaPollingFirme()
   avviaPollingAccessi()
   avviaEmailQueue()
