@@ -2866,7 +2866,7 @@ async function _loadAllReale(){
   syncStatus('syncing','Caricamento...')
   try{
     const [rP,rV,rL,rD,rB,rC,rDoc,rStu,rCD]=await Promise.all([
-      db.from('procacciatori').select('*').order('created_at'),
+      db.from('procacciatori_light').select('*').order('created_at'),
       db.from('vendite').select('*').order('created_at',{ascending:false}),
       db.from('leads').select('*').order('created_at',{ascending:false}),
       db.from('dipendenti').select('*').order('created_at'),
@@ -10509,7 +10509,7 @@ function renderAnagDocs(i){
         <div style="font-weight:600;font-size:13px">${f.nomeDesc||f.nome}</div>
         <div style="font-size:11px;color:var(--text3)">${f.tipo} · ${f.data_carico||''} · ${f.size||''}</div>
       </div>
-      ${f.data?`<button class="btn btn-sm" onclick="apriAllegato(${di},'anag')">👁 Apri</button>`:''}
+      ${(f.data||f.nome)?`<button class="btn btn-sm" onclick="apriAllegato(${di},'anag')">👁 Apri</button>`:''}
     </div>`).join('')
 }
 
@@ -10552,13 +10552,25 @@ function renderAnagDipDocs(i){
     </div>`).join('')
 }
 
-function apriAllegato(idx, contesto, procIdx){
-  let f
-  if(contesto==='pr') f = _prDocFiles[idx]
+async function apriAllegato(idx, contesto, procIdx){
+  let f, pid=null
+  if(contesto==='pr'){ f = _prDocFiles[idx]; pid = (document.getElementById('pr-edit-id')||{}).value || null }
   else if(contesto==='dp') f = _dpDocFiles[idx]
-  else if(contesto==='anag') f = procs[_anagIdx]?.allegati?.[idx]
-  else if(contesto==='prospetti') f = (procs[procIdx||_anagIdx]?.allegati||[]).filter(x=>x.tipo==='Prospetto Compensi Mensile')[idx]
+  else if(contesto==='anag'){ f = procs[_anagIdx]?.allegati?.[idx]; pid = procs[_anagIdx]?._id }
+  else if(contesto==='prospetti'){ const _pp = procs[procIdx||_anagIdx]; f = (_pp?.allegati||[]).filter(x=>x.tipo==='Prospetto Compensi Mensile')[idx]; pid = _pp?._id }
   else if(contesto==='anag-dip') f = dipendenti[_anagIdx]?.allegati?.[idx]
+  if(!f) return alert('File non disponibile')
+  // La lista è alleggerita e non tiene il contenuto pesante: se manca, lo carico ora dal database
+  if(!f.data && pid){
+    try{
+      if(typeof syncStatus==='function') syncStatus('syncing','Apertura documento...')
+      const r = await db.from('procacciatori').select('data').eq('id', pid).maybeSingle()
+      const alls = (r && r.data && r.data.data && r.data.data.allegati) || []
+      const m = alls.find(x => (x.nome||'')===(f.nome||'') && (x.data_carico||'')===(f.data_carico||'') && (x.tipo||'')===(f.tipo||'') && String(x.size||'')===String(f.size||''))
+      if(m && m.data) f = Object.assign({}, f, {data:m.data})
+      if(typeof syncStatus==='function') syncStatus('ok','')
+    }catch(e){ if(typeof syncStatus==='function') syncStatus('err','Errore'); }
+  }
   if(!f?.data) return alert('File non disponibile')
   const mime = f.data.split(';')[0].split(':')[1]
   const byteStr = atob(f.data.split(',')[1])
