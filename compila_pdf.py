@@ -410,9 +410,108 @@ def compila_tesserino(dati, output):
     return genera(dati, output, logo, foto)
 
 
+# ══════════════════════════════════════════════════════════════
+#  CERTIFICATO OPEN BADGE + NFT  (A4 orizzontale)
+# ══════════════════════════════════════════════════════════════
+def compila_certificato(dati, output):
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    import textwrap
+
+    pw, ph = landscape(A4)
+    c = canvas.Canvas(output, pagesize=(pw, ph))
+    c.setTitle(f"Certificato {dati.get('codice','')} · Leone Consulting")
+    c.setAuthor("Leone Consulting di Leonardo Angelucci")
+
+    # fondo e cornice
+    c.setFillColorRGB(0.985, 0.982, 0.976); c.rect(0, 0, pw, ph, stroke=0, fill=1)
+    c.setFillColorRGB(*INK); c.rect(0, 0, 35*mm, ph, stroke=0, fill=1)
+    c.setFillColorRGB(*ROSSO); c.rect(35*mm, 0, 2.2*mm, ph, stroke=0, fill=1)
+    c.setStrokeColorRGB(*INK); c.setLineWidth(0.8); c.rect(10*mm, 10*mm, pw-20*mm, ph-20*mm, stroke=1, fill=0)
+
+    # marchio laterale
+    logo = _file_da_b64(_LOGO_TESS_B64)
+    if logo and os.path.exists(logo):
+        try: c.drawImage(ImageReader(logo), 9*mm, ph-33*mm, width=17*mm, height=17*mm, mask='auto')
+        except Exception: pass
+    c.saveState(); c.translate(17.5*mm, 30*mm); c.rotate(90)
+    _txt(c, 0, 0, "LEONE CONSULTING", "Helvetica-Bold", 10, (1,1,1))
+    _txt(c, 0, -5*mm, "CREDENTIAL VERIFICABILE", "Helvetica", 5.6, (0.68,0.66,0.64))
+    c.restoreState()
+
+    x = 49*mm
+    top = ph-25*mm
+    _txt(c, x, top, "CERTIFICATO DIGITALE", "Helvetica-Bold", 8.5, ROSSO)
+    _txt(c, x, top-6*mm, "OPEN BADGE 3.0  ·  NFT NON TRASFERIBILE", "Helvetica-Bold", 6.6, GRIGIO)
+    c.setStrokeColorRGB(*LINEA); c.setLineWidth(1); c.line(x, top-10*mm, pw-18*mm, top-10*mm)
+
+    _txt(c, x, top-21*mm, "SI CERTIFICA CHE", "Helvetica-Bold", 5.8, GRIGIO)
+    nome = str(dati.get("nome") or "")
+    nome_size = 25 if len(nome) <= 30 else 20
+    _txt(c, x, top-33*mm, nome[:55], "Helvetica-Bold", nome_size, INK)
+    _txt(c, x, top-44*mm, "ha conseguito il seguente risultato", "Helvetica", 7.5, GRIGIO)
+
+    titolo = str(dati.get("titolo") or "")
+    title_size = 17 if len(titolo) <= 50 else 14
+    righe = textwrap.wrap(titolo, width=62)[:2] or [""]
+    yy = top-56*mm
+    for riga in righe:
+        _txt(c, x, yy, riga, "Helvetica-Bold", title_size, INK); yy -= 7.5*mm
+
+    descrizione = str(dati.get("descrizione") or "").strip()
+    if descrizione:
+        yy -= 1.5*mm
+        for riga in textwrap.wrap(descrizione, width=95)[:3]:
+            _txt(c, x, yy, riga, "Helvetica", 7, GRIGIO); yy -= 4.1*mm
+
+    # metadati in basso
+    base_y = 36*mm
+    emittente = str(dati.get("emittente") or "Leone Consulting di Leonardo Angelucci")
+    if dati.get("partner"): emittente += " · con " + str(dati.get("partner"))
+    _txt(c, x, base_y+21*mm, "EMITTENTE", "Helvetica-Bold", 5.4, GRIGIO)
+    _txt(c, x, base_y+16*mm, emittente[:82], "Helvetica-Bold", 7, INK)
+    _txt(c, x, base_y+8*mm, "EMESSO IL", "Helvetica-Bold", 5.4, GRIGIO)
+    _txt(c, x+24*mm, base_y+8*mm, "SCADENZA", "Helvetica-Bold", 5.4, GRIGIO)
+    _txt(c, x+51*mm, base_y+8*mm, "CODICE", "Helvetica-Bold", 5.4, GRIGIO)
+    _txt(c, x, base_y+3*mm, _data(dati.get("emesso_il")), "Helvetica-Bold", 7, INK)
+    _txt(c, x+24*mm, base_y+3*mm, _data(dati.get("scade_il")) or "Nessuna", "Helvetica-Bold", 7, INK)
+    _txt(c, x+51*mm, base_y+3*mm, dati.get("codice"), "Helvetica-Bold", 7, INK)
+
+    # QR e prove digitali
+    qr_x, qr_y, qr_l = pw-55*mm, 27*mm, 34*mm
+    url = f"https://{VERIFICA}/{dati.get('codice','')}"
+    q = QrCodeWidget(url, barLevel='M'); b = q.getBounds()
+    draw = Drawing(qr_l, qr_l, transform=[qr_l/(b[2]-b[0]),0,0,qr_l/(b[3]-b[1]),0,0]); draw.add(q)
+    renderPDF.draw(draw, c, qr_x, qr_y)
+    _txt(c, qr_x, qr_y-3.8*mm, "VERIFICA CERTIFICATO · BADGE · NFT", "Helvetica-Bold", 5.1, ROSSO)
+
+    prova_x = pw-98*mm
+    _txt(c, prova_x, 57*mm, "PROVE DIGITALI", "Helvetica-Bold", 5.4, GRIGIO)
+    stato = str(dati.get("stato") or "In attesa")
+    stato_col = (0.12,0.54,0.25) if stato.lower()=="valido" else ROSSO
+    _txt(c, prova_x, 51*mm, "● "+stato.upper(), "Helvetica-Bold", 7.2, stato_col)
+    badge_hash = str(dati.get("open_badge_hash") or "")
+    token = str(dati.get("token_id") or "")
+    _txt(c, prova_x, 44*mm, "Open Badge: "+("firmato" if badge_hash else "in attesa"), "Helvetica", 6.2, INK)
+    _txt(c, prova_x, 39*mm, "NFT: "+(("token #"+token) if token else "in attesa"), "Helvetica", 6.2, INK)
+    _txt(c, prova_x, 34*mm, str(dati.get("rete") or "Polygon Amoy"), "Helvetica", 5.8, GRIGIO)
+
+    # nota e stato non valido in filigrana
+    _txt(c, x, 18*mm, "Firma digitale e prova di integrità sono verificabili tramite il QR. I dati personali non sono pubblicati on-chain.", "Helvetica", 5.5, GRIGIO)
+    if stato.lower() != "valido":
+        c.saveState(); c.setFillColorRGB(0.77,0.12,0.15, alpha=0.10); c.setFont("Helvetica-Bold", 46)
+        c.translate(145*mm, 105*mm); c.rotate(18); c.drawCentredString(0, 0, stato.upper()); c.restoreState()
+
+    c.save()
+    try:
+        if logo and os.path.exists(logo): os.unlink(logo)
+    except Exception: pass
+    return output
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print("Uso: python3 compila_pdf.py <piva|ritenuta> <json> [output]")
+        print("Uso: python3 compila_pdf.py <piva|ritenuta|tesserino|certificato> <json> [output]")
         sys.exit(1)
     tipo   = sys.argv[1]
     dati   = json.loads(sys.argv[2])
@@ -424,6 +523,9 @@ if __name__ == '__main__':
     elif tipo == 'tesserino_png':
         if not output.lower().endswith('.png'): output = (output[:-4] if output.lower().endswith('.pdf') else output) + '.png'
         path = compila_tesserino(dati, output)
+    elif tipo == 'certificato':
+        if not output.lower().endswith('.pdf'): output = output + '.pdf'
+        path = compila_certificato(dati, output)
     elif tipo == 'piva':       path = compila_piva(dati, output, con_timbro)
     elif tipo == 'ritenuta': path = compila_ritenuta(dati, output, con_timbro)
     else:

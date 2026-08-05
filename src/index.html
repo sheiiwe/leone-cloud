@@ -314,6 +314,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('tessere',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.5 16.5c.6-1.6 2-2.4 3.5-2.4s2.9.8 3.5 2.4"/><path d="M14.5 10h5M14.5 13.5h5"/></svg>Tesserini
     </div>
+    <div class="nav-item" onclick="sp('certificati',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="5"/><path d="m8.8 12.2-1.3 8 4.5-2.5 4.5 2.5-1.3-8"/><path d="m9.6 8 1.5 1.5L14.6 6"/></svg>Certificati NFT
+    </div>
     <div class="nav-item" onclick="sp('email-mkt',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Email marketing
     </div>
@@ -414,6 +417,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('tessere',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.5 16.5c.6-1.6 2-2.4 3.5-2.4s2.9.8 3.5 2.4"/><path d="M14.5 10h5M14.5 13.5h5"/></svg>Tesserini
     </div>
+    <div class="nav-item" onclick="sp('certificati',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="5"/><path d="m8.8 12.2-1.3 8 4.5-2.5 4.5 2.5-1.3-8"/><path d="m9.6 8 1.5 1.5L14.6 6"/></svg>Certificati NFT
+    </div>
     <div class="nav-item" onclick="sp('email-mkt',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Email marketing
     </div>
@@ -502,6 +508,9 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="nav-item" onclick="sp('tessere',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.5 16.5c.6-1.6 2-2.4 3.5-2.4s2.9.8 3.5 2.4"/><path d="M14.5 10h5M14.5 13.5h5"/></svg>Tesserini
+    </div>
+    <div class="nav-item" onclick="sp('certificati',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="5"/><path d="m8.8 12.2-1.3 8 4.5-2.5 4.5 2.5-1.3-8"/><path d="m9.6 8 1.5 1.5L14.6 6"/></svg>Certificati NFT
     </div>
     <div class="nav-item" onclick="sp('email-mkt',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Email marketing
@@ -889,6 +898,26 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="tbl-wrap"><table>
     <thead><tr><th style="width:44px"></th><th>Persona</th><th>Ruolo</th><th>Tipo</th><th>N. tessera</th><th>Stato</th><th></th></tr></thead>
     <tbody id="tbl-tessere"><tr><td colspan="7" class="empty">Caricamento…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- CERTIFICATI OPEN BADGE + NFT -->
+<div class="page" id="page-certificati">
+  <div class="pg-title">Certificati · Open Badge · NFT</div>
+  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px;max-width:920px">Ogni certificato emesso comprende il documento PDF, un credential <strong>Open Badge 3.0</strong> e un <strong>NFT nominativo non trasferibile</strong>. Il certificato diventa valido soltanto dopo la conferma blockchain.</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+    <button class="btn btn-p btn-sm" onclick="apriCertificato()">＋ Nuovo certificato NFT</button>
+    <span style="font-size:11.5px;font-weight:700;color:#B8860B;background:rgba(184,134,11,.10);border:1px solid rgba(184,134,11,.25);border-radius:999px;padding:5px 9px">Polygon Mainnet · collaudo</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px">
+    <div class="card" style="padding:13px 15px;margin:0"><div style="font-size:11px;color:var(--text3)">TOTALI</div><strong id="cr-m-total" style="font-size:22px">0</strong></div>
+    <div class="card" style="padding:13px 15px;margin:0"><div style="font-size:11px;color:var(--text3)">VALIDI</div><strong id="cr-m-valid" style="font-size:22px;color:#1F8A3F">0</strong></div>
+    <div class="card" style="padding:13px 15px;margin:0"><div style="font-size:11px;color:var(--text3)">NFT IN ATTESA</div><strong id="cr-m-pending" style="font-size:22px;color:#B8860B">0</strong></div>
+    <div class="card" style="padding:13px 15px;margin:0"><div style="font-size:11px;color:var(--text3)">REVOCATI / SOSPESI</div><strong id="cr-m-blocked" style="font-size:22px;color:#C51E26">0</strong></div>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Destinatario</th><th>Risultato</th><th>Emittente</th><th>Codice</th><th>Open Badge</th><th>NFT</th><th>Stato</th><th></th></tr></thead>
+    <tbody id="tbl-certificati"><tr><td colspan="8" class="empty">Caricamento…</td></tr></tbody>
   </table></div>
 </div>
 
@@ -2833,7 +2862,7 @@ function syncStatus(state,msg){
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
 // ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
-const _RT_BUILD='1.9.269-r6'
+const _RT_BUILD='1.11.0-nft-mainnet'
 let _rtLastSync=new Date().toISOString()
 let _rtWasSubscribed=false
 const _syncTimers={}
@@ -2842,7 +2871,7 @@ const _rtEcho={}           // tabella -> scadenza ms dell'eco di un salvataggio 
 const _RT_ECHO_MS=2500
 // Tabelle SENZA Realtime abilitato sul progetto reale: non emettono eventi,
 // quindi si rileggono SOLO all'apertura della loro pagina o dopo un salvataggio locale.
-const _RT_NO_REALTIME=new Set(['buste_paga','compensi_docenti','docenti','studenti','corsi_pagine','documenti','lezioni_prenotate','prodotti_pagamento','tessere'])
+const _RT_NO_REALTIME=new Set(['buste_paga','compensi_docenti','docenti','studenti','corsi_pagine','documenti','lezioni_prenotate','prodotti_pagamento','tessere','credentials','credential_templates','credential_events'])
 const _RT_CFG={
   procacciatori:{src:'procacciatori_light',desc:false},
   vendite:{src:'vendite',desc:true},
@@ -4708,6 +4737,239 @@ function renderCorsiPagine(){
 
 
 // ══════════════════════════════════════════════════════════════
+//  CERTIFICATI · OPEN BADGE 3.0 · NFT NON TRASFERIBILE
+// ══════════════════════════════════════════════════════════════
+const _CR_VERIFICA = 'https://verifica.leoneconsultingitalia.it/'
+const _CR_BADGE_IMG = _CR_VERIFICA+'assets/leone-open-badge-nft.svg'
+let _CERTIFICATI = []
+
+function _crData(d){
+  if(!d) return ''
+  try{ return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}) }catch(e){ return '' }
+}
+function _crDataInput(d){
+  if(!d) return ''
+  try{ return new Date(d).toISOString().slice(0,10) }catch(e){ return '' }
+}
+function _crStato(c){
+  const scaduto=c.expires_at && new Date(c.expires_at).getTime()<Date.now()
+  if(c.status==='revoked'||c.nft_status==='revoked') return {txt:'Revocato',col:'#C51E26',key:'revoked'}
+  if(c.status==='suspended') return {txt:'Sospeso',col:'#C51E26',key:'suspended'}
+  if(scaduto) return {txt:'Scaduto',col:'#B8860B',key:'expired'}
+  if(c.status==='valid'&&c.nft_status==='minted') return {txt:'Valido',col:'#1F8A3F',key:'valid'}
+  if(c.nft_status==='failed') return {txt:'NFT fallito',col:'#C51E26',key:'failed'}
+  if(c.nft_status==='minting') return {txt:'Minting…',col:'#B8860B',key:'minting'}
+  return {txt:'NFT in attesa',col:'#B8860B',key:'pending'}
+}
+
+async function caricaCertificati(){
+  const tb=document.getElementById('tbl-certificati')
+  try{
+    const r=await db.from('credentials').select('*').order('issued_at',{ascending:false})
+    if(r.error) throw r.error
+    _CERTIFICATI=r.data||[]
+  }catch(e){
+    _CERTIFICATI=[]
+    console.error('credentials:',e)
+    if(tb) tb.innerHTML='<tr><td colspan="8" class="empty">Modulo non ancora attivato su Supabase. Applica la migration inclusa.</td></tr>'
+    return
+  }
+  renderCertificati()
+}
+
+function renderCertificati(){
+  const tb=document.getElementById('tbl-certificati'); if(!tb) return
+  const stati=_CERTIFICATI.map(_crStato)
+  const setN=function(id,n){ const el=document.getElementById(id); if(el) el.textContent=String(n) }
+  setN('cr-m-total',_CERTIFICATI.length)
+  setN('cr-m-valid',stati.filter(x=>x.key==='valid').length)
+  setN('cr-m-pending',stati.filter(x=>['pending','minting','failed'].includes(x.key)).length)
+  setN('cr-m-blocked',stati.filter(x=>['revoked','suspended'].includes(x.key)).length)
+  if(!_CERTIFICATI.length){
+    tb.innerHTML='<tr><td colspan="8" class="empty">Nessun certificato. Creane uno col pulsante qui sopra.</td></tr>'
+    return
+  }
+  tb.innerHTML=_CERTIFICATI.map(function(c){
+    const s=_crStato(c)
+    const emittente=c.partner_name
+      ? escB(c.issuer_name||'Leone Consulting')+'<br><span style="font-size:10.5px;color:var(--text3)">con '+escB(c.partner_name)+'</span>'
+      : escB(c.issuer_name||'Leone Consulting')
+    const badge=c.open_badge_hash
+      ? '<span style="font-size:11.5px;font-weight:700;color:#1F8A3F">Firmato</span>'
+      : '<span style="font-size:11.5px;color:#B8860B">In attesa</span>'
+    const nft=c.nft_status==='minted'
+      ? '<span style="font-size:11.5px;font-weight:700;color:#1F8A3F">#'+escB(c.nft_token_id||'')+'</span><br><span style="font-size:10px;color:var(--text3)">'+escB(c.blockchain_network||'')+'</span>'
+      : '<span style="font-size:11.5px;color:'+(c.nft_status==='failed'?'#C51E26':'#B8860B')+'">'+escB(c.nft_status||'pending')+'</span>'
+    const pending=c.nft_status!=='minted' && !['revoked','suspended'].includes(c.status)
+    const canEdit=c.nft_status!=='minted' && c.status!=='revoked'
+    return '<tr>'
+      +'<td><strong>'+escB(c.recipient_name||'')+'</strong>'+(c.recipient_email?'<br><span style="font-size:11px;color:var(--text3)">'+escB(c.recipient_email)+'</span>':'')+'</td>'
+      +'<td><strong>'+escB(c.achievement_name||'')+'</strong><br><span style="font-size:11px;color:var(--text3)">Emesso '+_crData(c.issued_at)+'</span></td>'
+      +'<td style="font-size:12px;color:var(--text2)">'+emittente+'</td>'
+      +'<td class="mono" style="font-size:11.5px">'+escB(c.verification_code||'')+'</td>'
+      +'<td>'+badge+'</td>'
+      +'<td>'+nft+'</td>'
+      +'<td><span style="font-size:11.5px;font-weight:700;color:'+s.col+'">'+s.txt+'</span></td>'
+      +'<td class="acts">'
+        +'<button class="btn btn-sm" title="Apri verifica pubblica" onclick="window.open(\''+_CR_VERIFICA+encodeURIComponent(c.verification_code)+'\',\'_blank\')">🔗</button>'
+        +'<button class="btn btn-sm" title="Certificato PDF" onclick="stampaCertificato(\''+c.id+'\')">🖨</button>'
+        +(c.open_badge?'<button class="btn btn-sm" title="Scarica Open Badge" onclick="scaricaOpenBadge(\''+c.id+'\')">OB</button>':'')
+        +(pending?'<button class="btn btn-sm" title="Emetti NFT obbligatorio" onclick="avviaMintCertificato(\''+c.id+'\')">NFT</button>':'')
+        +(canEdit?'<button class="btn btn-sm" title="Modifica prima del mint" onclick="apriCertificato(\''+c.id+'\')">✏️</button>':'')
+        +(c.status==='valid'?'<button class="btn btn-sm" title="Sospendi" onclick="sospendiCertificato(\''+c.id+'\')">⏸</button>':'')
+        +(c.status==='suspended'?'<button class="btn btn-sm" title="Riattiva" onclick="riattivaCertificato(\''+c.id+'\')">▶</button>':'')
+        +(c.status!=='revoked'?'<button class="btn btn-sm btn-r" title="Revoca definitivamente" onclick="revocaCertificato(\''+c.id+'\')">⊘</button>':'')
+      +'</td></tr>'
+  }).join('')
+}
+
+async function apriCertificato(id){
+  const c=id?(_CERTIFICATI.find(x=>x.id===id)||null):null
+  if(c&&c.nft_status==='minted'){
+    alert('Questo credential è già ancorato alla blockchain e i dati certificati non possono essere modificati. Puoi sospenderlo o revocarlo.')
+    return
+  }
+  const oggi=new Date().toISOString().slice(0,10)
+  const r=await chiediCampiLunga(c?'Modifica certificato in attesa':'Nuovo certificato Open Badge + NFT',[
+    {id:'recipient_name',label:'Nome e cognome del destinatario',valore:c?.recipient_name||''},
+    {id:'recipient_email',label:'Email del destinatario (resta privata)',valore:c?.recipient_email||''},
+    {id:'achievement_name',label:'Titolo del corso / risultato',valore:c?.achievement_name||''},
+    {id:'description',label:'Descrizione del risultato',multi:true,valore:c?.description||''},
+    {id:'criteria',label:'Criteri per il rilascio',multi:true,valore:c?.criteria||'Completamento dei requisiti previsti e verifica finale.'},
+    {id:'skills',label:'Competenze (separate da virgola)',valore:(c?.skills||[]).join(', ')},
+    {id:'achievement_type',tipo:'select',libero:true,label:'Tipo di risultato',opzioni:['Course','Certificate','Assessment','LearningProgram'],valore:c?.achievement_type||'Course'},
+    {id:'issuer_mode',tipo:'select',libero:false,label:'Emittente',opzioni:[{v:'leone',t:'Leone Consulting'},{v:'partner',t:'Partner'},{v:'joint',t:'Leone Consulting + Partner'}],valore:c?.issuer_mode||'leone'},
+    {id:'partner_name',label:'Nome partner / emittente partner',valore:(c?.issuer_mode==='partner'?c?.issuer_name:c?.partner_name)||''},
+    {id:'issued_at',label:'Data emissione — aaaa-mm-gg',valore:_crDataInput(c?.issued_at)||oggi},
+    {id:'expires_at',label:'Scadenza — aaaa-mm-gg (vuoto = nessuna)',valore:_crDataInput(c?.expires_at)},
+    {id:'badge_image_url',label:'Immagine badge (URL)',valore:c?.badge_image_url||_CR_BADGE_IMG},
+    {id:'evidence_url',label:'Prova / pagina corso (URL, facoltativo)',valore:c?.evidence_url||''},
+    {id:'public_name',tipo:'check',label:'Mostra il nome nella verifica pubblica',valore:c?!!c.public_name:true}
+  ],function(){
+    const sel=document.getElementById('mmc-issuer_mode')
+    const box=document.getElementById('mmw-partner_name')
+    const aggiorna=function(){ if(box) box.style.display=(sel&&sel.value!=='leone')?'':'none' }
+    if(sel) sel.onchange=aggiorna
+    aggiorna()
+  })
+  if(!r) return
+  if(!(r.recipient_name||'').trim()||!(r.achievement_name||'').trim()){
+    alert('Servono il destinatario e il titolo del risultato.'); return
+  }
+  if(r.issuer_mode!=='leone'&&!(r.partner_name||'').trim()){
+    alert('Indica il nome del partner emittente.'); return
+  }
+  const issued=(r.issued_at||oggi)+'T12:00:00.000Z'
+  const expires=r.expires_at?(r.expires_at+'T23:59:59.000Z'):null
+  if(expires&&new Date(expires)<=new Date(issued)){ alert('La scadenza deve essere successiva all’emissione.'); return }
+  const partner=(r.partner_name||'').trim()
+  const rec={
+    recipient_name:r.recipient_name.trim(),
+    recipient_email:(r.recipient_email||'').trim().toLowerCase()||null,
+    achievement_name:r.achievement_name.trim(),
+    description:(r.description||'').trim(),
+    criteria:(r.criteria||'').trim(),
+    skills:(r.skills||'').split(',').map(x=>x.trim()).filter(Boolean),
+    achievement_type:r.achievement_type||'Course',
+    issuer_mode:r.issuer_mode||'leone',
+    issuer_name:r.issuer_mode==='partner'?partner:'Leone Consulting di Leonardo Angelucci',
+    partner_name:r.issuer_mode==='joint'?partner:null,
+    issued_at:issued,
+    expires_at:expires,
+    public_name:r.public_name==='si',
+    badge_image_url:(r.badge_image_url||'').trim()||null,
+    evidence_url:(r.evidence_url||'').trim()||null,
+    status:'pending_nft',
+    nft_status:'pending',
+    blockchain_network:'polygon'
+  }
+  try{
+    let q
+    if(c){
+      q=await db.from('credentials').update(rec).eq('id',c.id).select('*').single()
+    }else{
+      const ses=await db.auth.getSession()
+      rec.created_by=ses.data?.session?.user?.id||null
+      q=await db.from('credentials').insert(rec).select('*').single()
+    }
+    if(q.error) throw q.error
+    await caricaCertificati()
+    try{ toast('Certificato salvato · NFT obbligatorio in emissione') }catch(e){}
+    await avviaMintCertificato(q.data.id,true)
+  }catch(e){ alert('Errore certificato: '+((e&&e.message)||e)) }
+}
+
+async function avviaMintCertificato(id,automatico){
+  const c=_CERTIFICATI.find(x=>x.id===id)
+  if(!c&& !automatico) return
+  if(!automatico&&!confirm('Emettere ora l’NFT non trasferibile su Polygon Mainnet?\n\nIl credential diventerà valido solo dopo la conferma.')) return
+  try{
+    try{ toast('Firma Open Badge e mint NFT in corso…') }catch(e){}
+    const r=await db.functions.invoke('issue-credential-nft',{body:{credential_id:id,action:'mint'}})
+    if(r.error) throw r.error
+    if(r.data?.error) throw new Error(r.data.error)
+    await caricaCertificati()
+    try{ toast('Open Badge firmato · NFT #'+(r.data?.token_id||'')+' emesso') }catch(e){}
+  }catch(e){
+    await caricaCertificati()
+    alert('Il certificato resta in attesa e non è ancora valido.\n\n'+((e&&e.message)||e)+'\n\nConfigura o controlla la Edge Function e riprova dal pulsante NFT.')
+  }
+}
+
+function scaricaOpenBadge(id){
+  const c=_CERTIFICATI.find(x=>x.id===id); if(!c||!c.open_badge) return
+  const blob=new Blob([JSON.stringify(c.open_badge,null,2)],{type:'application/ld+json'})
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob)
+  a.download=(c.verification_code||'credential')+'-open-badge.json'
+  a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href) },2000)
+}
+
+async function stampaCertificato(id){
+  const c=_CERTIFICATI.find(x=>x.id===id); if(!c) return
+  if(!window.electronAPI?.generatePDF){ alert('Questa funzione richiede l’app installata sul computer.'); return }
+  const s=_crStato(c)
+  try{
+    try{ toast('Preparo il certificato…') }catch(e){}
+    await window.electronAPI.generatePDF('certificato',JSON.stringify({
+      codice:c.verification_code,nome:c.recipient_name,titolo:c.achievement_name,
+      descrizione:c.description,criteri:c.criteria,competenze:c.skills||[],
+      emittente:c.issuer_name,partner:c.partner_name||'',emesso_il:c.issued_at,
+      scade_il:c.expires_at,stato:s.txt,open_badge_hash:c.open_badge_hash||'',
+      rete:c.blockchain_network||'',contratto:c.nft_contract||'',
+      token_id:c.nft_token_id||'',tx_hash:c.nft_tx_hash||''
+    }))
+  }catch(e){ alert('Errore PDF: '+((e&&e.message)||e)) }
+}
+
+async function sospendiCertificato(id){
+  const c=_CERTIFICATI.find(x=>x.id===id); if(!c) return
+  const motivo=prompt('Motivo della sospensione:','Verifica amministrativa in corso')
+  if(motivo===null) return
+  const r=await db.from('credentials').update({status:'suspended',status_reason:motivo||null}).eq('id',id)
+  if(r.error) alert(r.error.message); else await caricaCertificati()
+}
+async function riattivaCertificato(id){
+  const c=_CERTIFICATI.find(x=>x.id===id); if(!c||c.nft_status!=='minted') return
+  if(!confirm('Riattivare questo certificato?')) return
+  const r=await db.from('credentials').update({status:'valid',status_reason:null}).eq('id',id)
+  if(r.error) alert(r.error.message); else await caricaCertificati()
+}
+async function revocaCertificato(id){
+  const c=_CERTIFICATI.find(x=>x.id===id); if(!c) return
+  const motivo=prompt('Motivo della revoca definitiva:','')
+  if(motivo===null) return
+  if(!motivo.trim()){ alert('Indica il motivo della revoca.'); return }
+  if(!confirm('Revocare definitivamente '+(c.verification_code||'questo certificato')+'?\n\nLa revoca resterà visibile nella verifica pubblica.')) return
+  try{
+    const r=await db.functions.invoke('issue-credential-nft',{body:{credential_id:id,action:'revoke',reason:motivo.trim()}})
+    if(r.error) throw r.error
+    if(r.data?.error) throw new Error(r.data.error)
+    await caricaCertificati()
+    try{ toast('Certificato revocato') }catch(e){}
+  }catch(e){ alert('Revoca non completata: '+((e&&e.message)||e)) }
+}
+
+// ══════════════════════════════════════════════════════════════
 //  TESSERINI  (verifica.leoneconsultingitalia.it)
 // ══════════════════════════════════════════════════════════════
 const _TS_VERIFICA = 'https://verifica.leoneconsultingitalia.it/'
@@ -5314,7 +5576,7 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:()=>{renderDash()},proc:()=>{renderProc()},docenti:()=>{renderDocenti()},studenti:()=>{renderStudenti()},'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:()=>{renderVendite()},lead:()=>{renderLead()},provv:()=>{renderProvv()},rete:()=>{renderRete()},listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();Promise.all([caricaCategorie(),caricaEnti()]).then(renderCategEnti);caricaCorsiPagine()},tessere:caricaTessere,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:()=>{renderContratti()},'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:()=>{renderDipendenti()},buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:()=>{renderDash()},proc:()=>{renderProc()},docenti:()=>{renderDocenti()},studenti:()=>{renderStudenti()},'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:()=>{renderVendite()},lead:()=>{renderLead()},provv:()=>{renderProvv()},rete:()=>{renderRete()},listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();Promise.all([caricaCategorie(),caricaEnti()]).then(renderCategEnti);caricaCorsiPagine()},tessere:caricaTessere,certificati:caricaCertificati,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:()=>{renderContratti()},'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:()=>{renderDipendenti()},buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   ;(async function(){ try{ await _syncPaginaSeNecessario(id) }catch(e){} if(renders[id]) renders[id]() })()
 }
 
