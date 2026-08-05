@@ -907,7 +907,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px;max-width:920px">Ogni certificato emesso comprende il documento PDF, un credential <strong>Open Badge 3.0</strong> e un <strong>NFT nominativo non trasferibile</strong>. Il certificato diventa valido soltanto dopo la conferma blockchain.</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
     <button class="btn btn-p btn-sm" onclick="apriCertificato()">＋ Nuovo certificato NFT</button>
-    <span style="font-size:11.5px;font-weight:700;color:#B8860B;background:rgba(184,134,11,.10);border:1px solid rgba(184,134,11,.25);border-radius:999px;padding:5px 9px">Polygon Mainnet · collaudo</span>
+    <span style="font-size:11.5px;font-weight:700;color:#1F8A3F;background:rgba(31,138,63,.10);border:1px solid rgba(31,138,63,.25);border-radius:999px;padding:5px 9px">Polygon Mainnet</span>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px">
     <div class="card" style="padding:13px 15px;margin:0"><div style="font-size:11px;color:var(--text3)">TOTALI</div><strong id="cr-m-total" style="font-size:22px">0</strong></div>
@@ -916,7 +916,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="card" style="padding:13px 15px;margin:0"><div style="font-size:11px;color:var(--text3)">REVOCATI / SOSPESI</div><strong id="cr-m-blocked" style="font-size:22px;color:#C51E26">0</strong></div>
   </div>
   <div class="tbl-wrap"><table>
-    <thead><tr><th>Destinatario</th><th>Risultato</th><th>Emittente</th><th>Codice</th><th>Open Badge</th><th>NFT</th><th>Stato</th><th></th></tr></thead>
+    <thead><tr><th>Destinatario</th><th>Certificato / risultato</th><th>Emittente</th><th>Codice</th><th>Open Badge</th><th>NFT</th><th>Stato</th><th></th></tr></thead>
     <tbody id="tbl-certificati"><tr><td colspan="8" class="empty">Caricamento…</td></tr></tbody>
   </table></div>
 </div>
@@ -2862,7 +2862,7 @@ function syncStatus(state,msg){
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
 // ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
-const _RT_BUILD='1.11.0-nft-mainnet'
+const _RT_BUILD='1.11.1-certificati-ruoli'
 let _rtLastSync=new Date().toISOString()
 let _rtWasSubscribed=false
 const _syncTimers={}
@@ -4741,6 +4741,45 @@ function renderCorsiPagine(){
 // ══════════════════════════════════════════════════════════════
 const _CR_VERIFICA = 'https://verifica.leoneconsultingitalia.it/'
 const _CR_BADGE_IMG = _CR_VERIFICA+'assets/leone-open-badge-nft.svg'
+const _CR_TIPI_CERTIFICATO = [
+  {v:'formazione',t:'Corso / formazione / risultato'},
+  {v:'procacciatore',t:"Procacciatore d'affari"},
+  {v:'docente',t:'Docente'},
+  {v:'tutor',t:'Tutor'},
+  {v:'docente_tutor',t:'Docente / Tutor'},
+  {v:'dipendente',t:'Dipendente'},
+  {v:'collaboratore',t:'Collaboratore'},
+  {v:'consulente',t:'Consulente'},
+  {v:'partner_aziendale',t:'Partner aziendale'},
+  {v:'altro',t:'Altro rapporto'}
+]
+const _CR_RUOLI_DEFAULT = {
+  procacciatore:"Procacciatore d'affari", docente:'Docente', tutor:'Tutor',
+  docente_tutor:'Docente / Tutor', dipendente:'Dipendente',
+  collaboratore:'Collaboratore', consulente:'Consulente',
+  partner_aziendale:'Partner aziendale'
+}
+function _crRelazione(tipo){ return !!tipo && tipo!=='formazione' }
+function _crTipoEtichetta(tipo){
+  const x=_CR_TIPI_CERTIFICATO.find(function(v){ return v.v===(tipo||'formazione') })
+  return x?x.t:(tipo||'Certificato')
+}
+function _crDataRapporto(d){
+  if(!d) return ''
+  try{
+    const p=String(d).slice(0,10).split('-')
+    if(p.length===3) return p[2]+'/'+p[1]+'/'+p[0]
+    return _crData(d)
+  }catch(e){ return String(d) }
+}
+function _crDescrizioneRapporto(tipo,nome,ruolo,dal,fino){
+  nome=(nome||'').trim(); ruolo=(ruolo||_CR_RUOLI_DEFAULT[tipo]||'').trim()
+  const periodo=(dal?' con decorrenza dal '+_crDataRapporto(dal):'')+(fino?' e termine previsto il '+_crDataRapporto(fino):'')
+  if(tipo==='procacciatore') return "Leone Consulting attesta che "+nome+" ha sottoscritto un incarico di procacciamento d'affari con Leone Consulting"+periodo+"."
+  if(tipo==='dipendente') return "Leone Consulting attesta che "+nome+" ha un rapporto di lavoro con Leone Consulting in qualità di "+ruolo+periodo+"."
+  if(tipo==='partner_aziendale') return "Leone Consulting attesta che "+nome+" ha sottoscritto un accordo di collaborazione/partnership con Leone Consulting"+periodo+"."
+  return "Leone Consulting attesta che "+nome+" ha sottoscritto un rapporto di collaborazione con Leone Consulting in qualità di "+ruolo+periodo+"."
+}
 let _CERTIFICATI = []
 
 function _crData(d){
@@ -4802,9 +4841,10 @@ function renderCertificati(){
       : '<span style="font-size:11.5px;color:'+(c.nft_status==='failed'?'#C51E26':'#B8860B')+'">'+escB(c.nft_status||'pending')+'</span>'
     const pending=c.nft_status!=='minted' && !['revoked','suspended'].includes(c.status)
     const canEdit=c.nft_status!=='minted' && c.status!=='revoked'
+    const tipoRiga=_crRelazione(c.certificate_type)?(_crTipoEtichetta(c.certificate_type)+' · '):''
     return '<tr>'
       +'<td><strong>'+escB(c.recipient_name||'')+'</strong>'+(c.recipient_email?'<br><span style="font-size:11px;color:var(--text3)">'+escB(c.recipient_email)+'</span>':'')+'</td>'
-      +'<td><strong>'+escB(c.achievement_name||'')+'</strong><br><span style="font-size:11px;color:var(--text3)">Emesso '+_crData(c.issued_at)+'</span></td>'
+      +'<td><strong>'+escB(c.achievement_name||'')+'</strong><br><span style="font-size:11px;color:var(--text3)">'+escB(tipoRiga)+'Emesso '+_crData(c.issued_at)+'</span></td>'
       +'<td style="font-size:12px;color:var(--text2)">'+emittente+'</td>'
       +'<td class="mono" style="font-size:11.5px">'+escB(c.verification_code||'')+'</td>'
       +'<td>'+badge+'</td>'
@@ -4831,10 +4871,16 @@ async function apriCertificato(id){
   }
   const oggi=new Date().toISOString().slice(0,10)
   const r=await chiediCampiLunga(c?'Modifica certificato in attesa':'Nuovo certificato Open Badge + NFT',[
-    {id:'recipient_name',label:'Nome e cognome del destinatario',valore:c?.recipient_name||''},
+    {id:'certificate_type',tipo:'select',libero:false,label:'Tipo di certificato',opzioni:_CR_TIPI_CERTIFICATO,valore:c?.certificate_type||'formazione'},
+    {id:'subject_type',tipo:'select',libero:false,label:'Tipo intestatario',opzioni:[{v:'persona',t:'Persona'},{v:'azienda',t:'Azienda'}],valore:c?.subject_type||'persona'},
+    {id:'recipient_name',label:'Nome e cognome / Ragione sociale',valore:c?.recipient_name||''},
     {id:'recipient_email',label:'Email del destinatario (resta privata)',valore:c?.recipient_email||''},
-    {id:'achievement_name',label:'Titolo del corso / risultato',valore:c?.achievement_name||''},
-    {id:'description',label:'Descrizione del risultato',multi:true,valore:c?.description||''},
+    {id:'role',label:'Ruolo / rapporto',valore:c?.role||_CR_RUOLI_DEFAULT[c?.certificate_type]||''},
+    {id:'relationship_start',label:'Data inizio rapporto — aaaa-mm-gg',valore:c?.relationship_start||''},
+    {id:'relationship_end',label:'Data fine rapporto — aaaa-mm-gg (facoltativa)',valore:c?.relationship_end||''},
+    {id:'contract_reference',label:'Riferimento contratto (solo interno, facoltativo)',valore:c?.contract_reference||''},
+    {id:'achievement_name',label:'Titolo certificato / corso / risultato',valore:c?.achievement_name||''},
+    {id:'description',label:'Descrizione',multi:true,valore:c?.description||''},
     {id:'criteria',label:'Criteri per il rilascio',multi:true,valore:c?.criteria||'Completamento dei requisiti previsti e verifica finale.'},
     {id:'skills',label:'Competenze (separate da virgola)',valore:(c?.skills||[]).join(', ')},
     {id:'achievement_type',tipo:'select',libero:true,label:'Tipo di risultato',opzioni:['Course','Certificate','Assessment','LearningProgram'],valore:c?.achievement_type||'Course'},
@@ -4846,39 +4892,90 @@ async function apriCertificato(id){
     {id:'evidence_url',label:'Prova / pagina corso (URL, facoltativo)',valore:c?.evidence_url||''},
     {id:'public_name',tipo:'check',label:'Mostra il nome nella verifica pubblica',valore:c?!!c.public_name:true}
   ],function(){
-    const sel=document.getElementById('mmc-issuer_mode')
-    const box=document.getElementById('mmw-partner_name')
-    const aggiorna=function(){ if(box) box.style.display=(sel&&sel.value!=='leone')?'':'none' }
-    if(sel) sel.onchange=aggiorna
-    aggiorna()
+    const tipo=document.getElementById('mmc-certificate_type')
+    const soggetto=document.getElementById('mmc-subject_type')
+    const ruolo=document.getElementById('mmc-role')
+    const titolo=document.getElementById('mmc-achievement_name')
+    const emittente=document.getElementById('mmc-issuer_mode')
+    const partnerBox=document.getElementById('mmw-partner_name')
+    const mostra=function(id,on){ const e=document.getElementById('mmw-'+id); if(e) e.style.display=on?'':'none' }
+    const valoriRuolo=Object.keys(_CR_RUOLI_DEFAULT).map(function(k){ return _CR_RUOLI_DEFAULT[k] })
+    const aggiornaEmittente=function(){
+      const rel=_crRelazione(tipo?.value)
+      if(partnerBox) partnerBox.style.display=(!rel&&emittente&&emittente.value!=='leone')?'':'none'
+    }
+    const aggiornaTipo=function(){
+      const tp=tipo?.value||'formazione'
+      const rel=_crRelazione(tp)
+      ;['subject_type','role','relationship_start','relationship_end','contract_reference'].forEach(function(id){ mostra(id,rel) })
+      ;['criteria','skills','achievement_type','evidence_url','expires_at'].forEach(function(id){ mostra(id,!rel) })
+      mostra('issuer_mode',!rel)
+      if(rel){
+        if(emittente) emittente.value='leone'
+        const def=_CR_RUOLI_DEFAULT[tp]||''
+        if(ruolo&&(!ruolo.value||valoriRuolo.includes(ruolo.value))) ruolo.value=def
+        if(titolo&&(!titolo.value||valoriRuolo.includes(titolo.value))) titolo.value=def
+        if(soggetto&&tp==='partner_aziendale') soggetto.value='azienda'
+        else if(soggetto&&soggetto.value!=='azienda') soggetto.value='persona'
+      }
+      aggiornaEmittente()
+    }
+    if(tipo) tipo.onchange=aggiornaTipo
+    if(emittente) emittente.onchange=aggiornaEmittente
+    aggiornaTipo()
   })
   if(!r) return
-  if(!(r.recipient_name||'').trim()||!(r.achievement_name||'').trim()){
-    alert('Servono il destinatario e il titolo del risultato.'); return
-  }
-  if(r.issuer_mode!=='leone'&&!(r.partner_name||'').trim()){
+
+  const tipo=r.certificate_type||'formazione'
+  const relazione=_crRelazione(tipo)
+  const nome=(r.recipient_name||'').trim()
+  const ruolo=((r.role||'').trim()||_CR_RUOLI_DEFAULT[tipo]||'')
+  const rapportoDal=(r.relationship_start||'').trim()||null
+  const rapportoFino=(r.relationship_end||'').trim()||null
+  let titolo=(r.achievement_name||'').trim()
+
+  if(!nome){ alert('Serve il nome del destinatario o la ragione sociale.'); return }
+  if(relazione&&!ruolo){ alert('Indica il ruolo o il tipo di rapporto.'); return }
+  if(relazione&&!rapportoDal){ alert('Indica la data di inizio del rapporto.'); return }
+  if(!relazione&&!titolo){ alert('Serve il titolo del corso o del risultato.'); return }
+  if(relazione&&!titolo) titolo=ruolo||_crTipoEtichetta(tipo)
+  if(rapportoDal&&rapportoFino&&rapportoFino<rapportoDal){ alert('La data di fine rapporto non può precedere quella di inizio.'); return }
+
+  const issuerMode=relazione?'leone':(r.issuer_mode||'leone')
+  if(!relazione&&issuerMode!=='leone'&&!(r.partner_name||'').trim()){
     alert('Indica il nome del partner emittente.'); return
   }
+
   const issued=(r.issued_at||oggi)+'T12:00:00.000Z'
-  const expires=r.expires_at?(r.expires_at+'T23:59:59.000Z'):null
-  if(expires&&new Date(expires)<=new Date(issued)){ alert('La scadenza deve essere successiva all’emissione.'); return }
+  const expires=relazione
+    ? (rapportoFino?rapportoFino+'T23:59:59.000Z':null)
+    : (r.expires_at?(r.expires_at+'T23:59:59.000Z'):null)
+  if(expires&&new Date(expires)<=new Date(issued)&&!relazione){ alert('La scadenza deve essere successiva all’emissione.'); return }
+
   const partner=(r.partner_name||'').trim()
+  const descrizione=(r.description||'').trim() || (relazione?_crDescrizioneRapporto(tipo,nome,ruolo,rapportoDal,rapportoFino):'')
   const rec={
-    recipient_name:r.recipient_name.trim(),
+    certificate_type:tipo,
+    subject_type:relazione?(r.subject_type||'persona'):'persona',
+    role:relazione?ruolo:null,
+    relationship_start:relazione?rapportoDal:null,
+    relationship_end:relazione?rapportoFino:null,
+    contract_reference:relazione?((r.contract_reference||'').trim()||null):null,
+    recipient_name:nome,
     recipient_email:(r.recipient_email||'').trim().toLowerCase()||null,
-    achievement_name:r.achievement_name.trim(),
-    description:(r.description||'').trim(),
-    criteria:(r.criteria||'').trim(),
-    skills:(r.skills||'').split(',').map(x=>x.trim()).filter(Boolean),
-    achievement_type:r.achievement_type||'Course',
-    issuer_mode:r.issuer_mode||'leone',
-    issuer_name:r.issuer_mode==='partner'?partner:'Leone Consulting di Leonardo Angelucci',
-    partner_name:r.issuer_mode==='joint'?partner:null,
+    achievement_name:titolo,
+    description:descrizione,
+    criteria:relazione?'Rapporto contrattuale o di collaborazione risultante dagli atti di Leone Consulting.':(r.criteria||'').trim(),
+    skills:relazione?[]:(r.skills||'').split(',').map(x=>x.trim()).filter(Boolean),
+    achievement_type:relazione?'Certificate':(r.achievement_type||'Course'),
+    issuer_mode:issuerMode,
+    issuer_name:issuerMode==='partner'?partner:'Leone Consulting di Leonardo Angelucci',
+    partner_name:(!relazione&&issuerMode==='joint')?partner:null,
     issued_at:issued,
     expires_at:expires,
     public_name:r.public_name==='si',
     badge_image_url:(r.badge_image_url||'').trim()||null,
-    evidence_url:(r.evidence_url||'').trim()||null,
+    evidence_url:relazione?null:((r.evidence_url||'').trim()||null),
     status:'pending_nft',
     nft_status:'pending',
     blockchain_network:'polygon'
@@ -4932,6 +5029,8 @@ async function stampaCertificato(id){
     try{ toast('Preparo il certificato…') }catch(e){}
     await window.electronAPI.generatePDF('certificato',JSON.stringify({
       codice:c.verification_code,nome:c.recipient_name,titolo:c.achievement_name,
+      tipo_certificato:c.certificate_type||'formazione',tipo_intestatario:c.subject_type||'persona',
+      ruolo:c.role||'',rapporto_dal:c.relationship_start||'',rapporto_fino:c.relationship_end||'',
       descrizione:c.description,criteri:c.criteria,competenze:c.skills||[],
       emittente:c.issuer_name,partner:c.partner_name||'',emesso_il:c.issued_at,
       scade_il:c.expires_at,stato:s.txt,open_badge_hash:c.open_badge_hash||'',
