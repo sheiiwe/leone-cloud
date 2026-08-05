@@ -55,12 +55,20 @@ Deno.serve(async (req) => {
       attributes: [
         { trait_type: "Emittente", value: data.issuer_name },
         { trait_type: "Codice", value: data.code },
+        ...(data.certificate_type && data.certificate_type !== "formazione"
+          ? [
+              { trait_type: "Ruolo / rapporto", value: data.role || data.achievement_name },
+              ...(data.relationship_start ? [{ trait_type: "Rapporto dal", value: data.relationship_start }] : []),
+              ...(data.relationship_end ? [{ trait_type: "Rapporto fino al", value: data.relationship_end }] : []),
+            ]
+          : []),
         { trait_type: "Rete", value: data.nft?.network ?? "polygon" },
         { trait_type: "Trasferibile", value: "No" },
       ],
       properties: {
         credential_hash: data.open_badge_hash,
         credential_type: "OpenBadgeCredential",
+        certificate_type: data.certificate_type ?? "formazione",
       },
     });
   }
