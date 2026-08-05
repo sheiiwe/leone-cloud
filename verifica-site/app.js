@@ -41,6 +41,7 @@
   function renderCredential(data) {
     const status = data.status in labels ? data.status : "pending";
     const isCredential = data.kind === "credential";
+    const isRelationship = isCredential && Boolean(data.certificate_type) && data.certificate_type !== "formazione";
     const nft = data.nft || {};
     const badgeReady = Boolean(data.open_badge && data.open_badge_hash);
     const nftReady = nft.status === "minted" && nft.transaction_hash;
@@ -54,18 +55,19 @@
       <article class="result-card">
         <header class="result-head">
           <div>
-            <span class="kind">${isCredential ? "Certificato digitale" : "Tesserino aziendale"}</span>
+            <span class="kind">${isCredential ? "Certificato NFT" : "Tesserino aziendale"}</span>
             <h2>${esc(isCredential ? data.achievement_name : data.holder_name)}</h2>
             <span class="code">${esc(data.code)}</span>
           </div>
           <span class="status-pill status-${esc(status)}">${esc(labels[status])}</span>
         </header>
         <div class="details-grid">
-          ${detail(isCredential ? "Titolare" : "Nome", data.holder_name)}
+          ${detail(isCredential ? (data.subject_type === "azienda" ? "Azienda" : "Titolare") : "Nome", data.holder_name)}
           ${detail(isCredential ? "Emittente" : "Ruolo", isCredential ? partner : data.role)}
-          ${detail("Data di emissione", fmtDate(data.issued_at, "Non disponibile"))}
-          ${detail("Scadenza", fmtDate(data.expires_at))}
-          ${isCredential ? detail("Tipo", "Open Badge 3.0 + NFT") : detail("Tipo", "Tesserino Leone Consulting")}
+          ${isRelationship ? detail("Ruolo / rapporto", data.role || data.achievement_name) : ""}
+          ${isRelationship ? detail("Rapporto dal", fmtDate(data.relationship_start, "Non indicato")) : detail("Data di emissione", fmtDate(data.issued_at, "Non disponibile"))}
+          ${isRelationship ? detail("Rapporto fino al", fmtDate(data.relationship_end, "In corso")) : detail("Scadenza", fmtDate(data.expires_at))}
+          ${isCredential ? detail("Tipo", isRelationship ? "Certificato NFT" : "Open Badge 3.0 + NFT") : detail("Tipo", "Tesserino Leone Consulting")}
           ${detail("Verifica", data.valid ? "Autentico e in corso di validità" : labels[status])}
         </div>
         ${data.description ? `<p class="description">${esc(data.description)}</p>` : ""}
@@ -78,7 +80,7 @@
             </section>
             <section class="proof">
               <div class="proof-top"><span class="proof-icon">OB</span><h3>Open Badge</h3></div>
-              <p>Credential verificabile con risultato, criteri, competenze e firma dell'emittente.</p>
+              <p>${isRelationship ? "Credential firmata che attesta il rapporto indicato dall'emittente." : "Credential verificabile con risultato, criteri, competenze e firma dell'emittente."}</p>
               ${badgeReady
                 ? `<a class="button secondary" id="download-badge" href="${openBadgeHref}" download="${esc(data.code)}-open-badge.json">Scarica Open Badge</a>`
                 : '<span class="proof-state pending">In preparazione</span>'}

@@ -445,13 +445,16 @@ def compila_certificato(dati, output):
     _txt(c, x, top-6*mm, "OPEN BADGE 3.0  ·  NFT NON TRASFERIBILE", "Helvetica-Bold", 6.6, GRIGIO)
     c.setStrokeColorRGB(*LINEA); c.setLineWidth(1); c.line(x, top-10*mm, pw-18*mm, top-10*mm)
 
-    _txt(c, x, top-21*mm, "SI CERTIFICA CHE", "Helvetica-Bold", 5.8, GRIGIO)
+    tipo_certificato = str(dati.get("tipo_certificato") or "formazione")
+    relazionale = tipo_certificato != "formazione"
+    _txt(c, x, top-21*mm, "SI ATTESTA CHE" if relazionale else "SI CERTIFICA CHE", "Helvetica-Bold", 5.8, GRIGIO)
     nome = str(dati.get("nome") or "")
     nome_size = 25 if len(nome) <= 30 else 20
     _txt(c, x, top-33*mm, nome[:55], "Helvetica-Bold", nome_size, INK)
-    _txt(c, x, top-44*mm, "ha conseguito il seguente risultato", "Helvetica", 7.5, GRIGIO)
+    frase = "ha un rapporto con Leone Consulting in qualità di" if relazionale else "ha conseguito il seguente risultato"
+    _txt(c, x, top-44*mm, frase, "Helvetica", 7.5, GRIGIO)
 
-    titolo = str(dati.get("titolo") or "")
+    titolo = str(dati.get("titolo") or dati.get("ruolo") or "")
     title_size = 17 if len(titolo) <= 50 else 14
     righe = textwrap.wrap(titolo, width=62)[:2] or [""]
     yy = top-56*mm
@@ -470,11 +473,12 @@ def compila_certificato(dati, output):
     if dati.get("partner"): emittente += " · con " + str(dati.get("partner"))
     _txt(c, x, base_y+21*mm, "EMITTENTE", "Helvetica-Bold", 5.4, GRIGIO)
     _txt(c, x, base_y+16*mm, emittente[:82], "Helvetica-Bold", 7, INK)
-    _txt(c, x, base_y+8*mm, "EMESSO IL", "Helvetica-Bold", 5.4, GRIGIO)
-    _txt(c, x+24*mm, base_y+8*mm, "SCADENZA", "Helvetica-Bold", 5.4, GRIGIO)
+    _txt(c, x, base_y+8*mm, "RAPPORTO DAL" if relazionale else "EMESSO IL", "Helvetica-Bold", 5.4, GRIGIO)
+    _txt(c, x+24*mm, base_y+8*mm, "RAPPORTO FINO AL" if relazionale else "SCADENZA", "Helvetica-Bold", 5.4, GRIGIO)
     _txt(c, x+51*mm, base_y+8*mm, "CODICE", "Helvetica-Bold", 5.4, GRIGIO)
-    _txt(c, x, base_y+3*mm, _data(dati.get("emesso_il")), "Helvetica-Bold", 7, INK)
-    _txt(c, x+24*mm, base_y+3*mm, _data(dati.get("scade_il")) or "Nessuna", "Helvetica-Bold", 7, INK)
+    _txt(c, x, base_y+3*mm, _data(dati.get("rapporto_dal") if relazionale else dati.get("emesso_il")), "Helvetica-Bold", 7, INK)
+    fine_val = _data(dati.get("rapporto_fino") if relazionale else dati.get("scade_il"))
+    _txt(c, x+24*mm, base_y+3*mm, fine_val or ("In corso" if relazionale else "Nessuna"), "Helvetica-Bold", 7, INK)
     _txt(c, x+51*mm, base_y+3*mm, dati.get("codice"), "Helvetica-Bold", 7, INK)
 
     # QR e prove digitali
@@ -494,7 +498,7 @@ def compila_certificato(dati, output):
     token = str(dati.get("token_id") or "")
     _txt(c, prova_x, 44*mm, "Open Badge: "+("firmato" if badge_hash else "in attesa"), "Helvetica", 6.2, INK)
     _txt(c, prova_x, 39*mm, "NFT: "+(("token #"+token) if token else "in attesa"), "Helvetica", 6.2, INK)
-    _txt(c, prova_x, 34*mm, str(dati.get("rete") or "Polygon Amoy"), "Helvetica", 5.8, GRIGIO)
+    _txt(c, prova_x, 34*mm, str(dati.get("rete") or "Polygon Mainnet"), "Helvetica", 5.8, GRIGIO)
 
     # nota e stato non valido in filigrana
     _txt(c, x, 18*mm, "Firma digitale e prova di integrità sono verificabili tramite il QR. I dati personali non sono pubblicati on-chain.", "Helvetica", 5.5, GRIGIO)
