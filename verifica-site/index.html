@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080808">
+  <meta name="description" content="Verifica tesserini, certificati Open Badge e NFT emessi da Leone Consulting.">
+  <title>Verifica credenziale · Leone Consulting</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Leone Consulting verifica">
+      <span class="brand-mark">LC</span>
+      <span><b>LEONE</b><small>CONSULTING</small></span>
+    </a>
+    <span class="secure-label"><i></i> Registro verificabile</span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">VERIFICA UFFICIALE</p>
+      <h1>Controlla una<br><span>credenziale.</span></h1>
+      <p class="hero-copy">Un solo controllo per tesserini aziendali, certificati Open Badge e NFT non trasferibili.</p>
+
+      <form id="verify-form" class="search-box">
+        <label for="code">Codice riportato accanto al QR</label>
+        <div>
+          <input id="code" name="code" autocomplete="off" spellcheck="false" placeholder="es. LCB-2026-000001" maxlength="80" required>
+          <button type="submit">Verifica</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="result" class="result-shell" aria-live="polite" aria-busy="false">
+      <div class="empty-state">
+        <span class="scan-icon">⌗</span>
+        <h2>Scansiona il QR</h2>
+        <p>Oppure inserisci il codice per controllare in tempo reale validità, scadenza, Open Badge e NFT.</p>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="Caratteristiche della verifica">
+      <div><b>01</b><span>Stato in tempo reale</span></div>
+      <div><b>02</b><span>Dati personali protetti</span></div>
+      <div><b>03</b><span>Prova NFT su blockchain</span></div>
+    </section>
+  </main>
+
+  <footer>
+    <span>© <span id="year"></span> Leone Consulting di Leonardo Angelucci</span>
+    <span>P.IVA 18231181001</span>
+  </footer>
+
+  <script src="/config.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
