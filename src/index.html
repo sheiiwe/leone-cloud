@@ -267,6 +267,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('vendite',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Vendite
     </div>
+    <div class="nav-item" onclick="sp('ordini',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l4 4v16H6z"/><path d="M14 2v5h5"/><path d="M9 12h7M9 16h7"/></svg>Ordini e fatture<span id="nav-dot-ordini" style="display:none;width:9px;height:9px;border-radius:50%;background:#e63946;margin-left:auto;box-shadow:0 0 0 2px rgba(230,57,70,.25)"></span>
+    </div>
     <div class="nav-item" onclick="sp('lead',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Lead<span id="nav-dot-lead" style="display:none;width:9px;height:9px;border-radius:50%;background:#e63946;margin-left:auto;box-shadow:0 0 0 2px rgba(230,57,70,.25)"></span>
     </div>
@@ -719,7 +722,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="pg-title">Fatture · Procacciatori</div>
   <div class="card">
     <div class="card-hdr"><h3>Fatture elettroniche</h3></div>
-    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Emetti la fattura per gli incassi dei procacciatori. &laquo;Bozza&raquo; crea il documento senza inviarlo; &laquo;Emetti+invia&raquo; lo trasmette all&apos;Agenzia. Il PDF resta archiviato qui.</p>
+    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Emetti la fattura nel tuo servizio di fatturazione elettronica, poi carica qui il PDF e invialo al cliente. Nessun documento viene più creato automaticamente su Fatture in Cloud.</p>
     <input id="fatt-search-proc" type="text" placeholder="🔍 Cerca (cliente, prodotto, numero...)" oninput="renderFattArea('proc')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div class="tbl-wrap"><table>
       <thead><tr><th>Cliente</th><th>Prodotto</th><th>Importo</th><th>Data incasso</th><th>Fattura</th><th>Azioni</th></tr></thead>
@@ -732,7 +735,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="pg-title">Fatture · Docenti</div>
   <div class="card">
     <div class="card-hdr"><h3>Fatture elettroniche</h3></div>
-    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Emetti la fattura per gli incassi dei docenti. &laquo;Bozza&raquo; crea il documento senza inviarlo; &laquo;Emetti+invia&raquo; lo trasmette all&apos;Agenzia. Il PDF resta archiviato qui.</p>
+    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Emetti la fattura nel tuo servizio di fatturazione elettronica, poi carica qui il PDF e invialo al cliente. Nessun documento viene più creato automaticamente su Fatture in Cloud.</p>
     <input id="fatt-search-doc" type="text" placeholder="🔍 Cerca (cliente, prodotto, numero...)" oninput="renderFattArea('doc')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div class="tbl-wrap"><table>
       <thead><tr><th>Cliente</th><th>Prodotto</th><th>Importo</th><th>Data incasso</th><th>Fattura</th><th>Azioni</th></tr></thead>
@@ -757,7 +760,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="pg-title">Fatture · Dipendenti</div>
   <div class="card">
     <div class="card-hdr"><h3>Fatture elettroniche</h3></div>
-    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Emetti la fattura per gli incassi dei dipendenti. &laquo;Bozza&raquo; crea il documento senza inviarlo; &laquo;Emetti+invia&raquo; lo trasmette all&apos;Agenzia. Il PDF resta archiviato qui.</p>
+    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Emetti la fattura nel tuo servizio di fatturazione elettronica, poi carica qui il PDF e invialo al cliente. Nessun documento viene più creato automaticamente su Fatture in Cloud.</p>
     <input id="fatt-search-dip" type="text" placeholder="🔍 Cerca (cliente, prodotto, numero...)" oninput="renderFattArea('dip')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div class="tbl-wrap"><table>
       <thead><tr><th>Cliente</th><th>Prodotto</th><th>Importo</th><th>Data incasso</th><th>Fattura</th><th>Azioni</th></tr></thead>
@@ -769,8 +772,8 @@ tbody tr:hover td{background:var(--surface2)}
 <div class="page" id="page-nc-proc">
   <div class="pg-title">Note di credito · Procacciatori</div>
   <div class="card">
-    <div class="card-hdr"><h3>Note di credito (bozze in Fatture in Cloud)</h3></div>
-    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Le note di credito vengono create come <b>bozze</b> in Fatture in Cloud. Le controlli e le invii tu da FiC per sicurezza.</p>
+    <div class="card-hdr"><h3>Archivio note di credito</h3></div>
+    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Archivio storico dei documenti già registrati. Le nuove note di credito vanno emesse nel tuo servizio di fatturazione elettronica.</p>
     <input id="nc-search-proc" type="text" placeholder="🔍 Cerca (cliente, prodotto, numero...)" oninput="renderNCArea('proc')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div class="tbl-wrap"><table>
       <thead><tr><th>Cliente</th><th>Prodotto</th><th>Importo</th><th>Fattura n.</th><th>NC n.</th><th>Azioni</th></tr></thead>
@@ -782,8 +785,8 @@ tbody tr:hover td{background:var(--surface2)}
 <div class="page" id="page-nc-doc">
   <div class="pg-title">Note di credito · Docenti</div>
   <div class="card">
-    <div class="card-hdr"><h3>Note di credito (bozze in Fatture in Cloud)</h3></div>
-    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Le note di credito vengono create come <b>bozze</b> in Fatture in Cloud. Le controlli e le invii tu da FiC per sicurezza.</p>
+    <div class="card-hdr"><h3>Archivio note di credito</h3></div>
+    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Archivio storico dei documenti già registrati. Le nuove note di credito vanno emesse nel tuo servizio di fatturazione elettronica.</p>
     <input id="nc-search-doc" type="text" placeholder="🔍 Cerca (cliente, prodotto, numero...)" oninput="renderNCArea('doc')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div class="tbl-wrap"><table>
       <thead><tr><th>Cliente</th><th>Prodotto</th><th>Importo</th><th>Fattura n.</th><th>NC n.</th><th>Azioni</th></tr></thead>
@@ -795,8 +798,8 @@ tbody tr:hover td{background:var(--surface2)}
 <div class="page" id="page-nc-dip">
   <div class="pg-title">Note di credito · Dipendenti</div>
   <div class="card">
-    <div class="card-hdr"><h3>Note di credito (bozze in Fatture in Cloud)</h3></div>
-    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Le note di credito vengono create come <b>bozze</b> in Fatture in Cloud. Le controlli e le invii tu da FiC per sicurezza.</p>
+    <div class="card-hdr"><h3>Archivio note di credito</h3></div>
+    <p class="muted" style="margin:0 0 10px;font-size:12.5px">Archivio storico dei documenti già registrati. Le nuove note di credito vanno emesse nel tuo servizio di fatturazione elettronica.</p>
     <input id="nc-search-dip" type="text" placeholder="🔍 Cerca (cliente, prodotto, numero...)" oninput="renderNCArea('dip')" style="width:100%;padding:9px 12px;margin:4px 0 12px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div class="tbl-wrap"><table>
       <thead><tr><th>Cliente</th><th>Prodotto</th><th>Importo</th><th>Fattura n.</th><th>NC n.</th><th>Azioni</th></tr></thead>
@@ -1034,6 +1037,43 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="tbl-wrap"><table>
       <thead><tr><th>Data</th><th>Prodotto</th><th>Importo</th><th>Venditore</th><th>Cliente</th><th>Area</th><th>Stato</th><th>Azioni</th></tr></thead>
       <tbody id="tbl-incassi"><tr><td colspan="8" style="color:var(--text2);padding:14px">Caricamento...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ORDINI PAGATI E FATTURE -->
+<div class="page" id="page-ordini">
+  <div class="pg-title">Ordini e fatture</div>
+  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Qui arrivano automaticamente gli acquisti pagati dal sito e dai portali. Emetti la fattura nel tuo servizio di fatturazione elettronica, poi carica il PDF e invialo al cliente da questa pagina.</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+    <div class="card" style="flex:1;min-width:150px;padding:14px"><div style="font-size:12px;color:var(--text2)">Da fatturare</div><div id="ord-tot-da-fatt" style="font-size:22px;font-weight:700;color:#b7791f">0</div></div>
+    <div class="card" style="flex:1;min-width:150px;padding:14px"><div style="font-size:12px;color:var(--text2)">Fatture da inviare</div><div id="ord-tot-da-inv" style="font-size:22px;font-weight:700;color:#2874a6">0</div></div>
+    <div class="card" style="flex:1;min-width:150px;padding:14px"><div style="font-size:12px;color:var(--text2)">Completati</div><div id="ord-tot-inviati" style="font-size:22px;font-weight:700;color:#117A65">0</div></div>
+    <div class="card" style="flex:1;min-width:170px;padding:14px"><div style="font-size:12px;color:var(--text2)">Totale ordini pagati</div><div id="ord-tot-valore" style="font-size:22px;font-weight:700">&euro; 0,00</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><h3>Registro ordini pagati</h3><button class="btn" onclick="caricaOrdini()">↻ Aggiorna</button></div>
+    <div class="search-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <input type="text" id="ord-search" placeholder="🔍 Cerca cliente, email, prodotto, CF/P.IVA o numero fattura" oninput="renderOrdini()" style="flex:1;min-width:260px;padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+      <select id="ord-f-stato" onchange="renderOrdini()" style="padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+        <option value="">Tutti gli stati</option>
+        <option value="da_fatturare">Da fatturare</option>
+        <option value="da_inviare">Fattura da inviare</option>
+        <option value="inviata">Fattura inviata</option>
+        <option value="errore">Errore invio</option>
+      </select>
+      <select id="ord-f-area" onchange="renderOrdini()" style="padding:8px 11px;font-size:12.5px;border:0.5px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+        <option value="">Tutte le provenienze</option>
+        <option value="azienda">Sito corsi</option>
+        <option value="proc">Procacciatori</option>
+        <option value="doc">Docenti</option>
+        <option value="dip">Dipendenti</option>
+        <option value="studenti">Studenti</option>
+      </select>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Data</th><th>Ordine</th><th>Cliente</th><th>Importo</th><th>Fattura</th><th>Azioni</th></tr></thead>
+      <tbody id="tbl-ordini"><tr><td colspan="6" class="empty">Caricamento...</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -2841,6 +2881,32 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<div class="modal-overlay" id="m-ordine">
+  <div class="modal" style="max-width:780px;width:96vw;max-height:90vh;overflow-y:auto">
+    <h3 style="margin-bottom:4px">Ordine e fattura</h3>
+    <div id="ord-modal-sub" style="color:var(--text2);font-size:12.5px;margin-bottom:14px"></div>
+    <div id="ord-modal-dati" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;padding:12px;border:0.5px solid var(--border);border-radius:9px;background:var(--surface2);margin-bottom:14px"></div>
+
+    <div class="msec">Fattura emessa nel servizio esterno</div>
+    <div class="fr">
+      <div class="fg"><label>Numero fattura *</label><input id="ord-fatt-numero" type="text" placeholder="es. 123/2026"></div>
+      <div class="fg"><label>Email destinatario</label><input id="ord-fatt-email" type="email" readonly></div>
+    </div>
+    <div class="fg">
+      <label>PDF della fattura (massimo 10 MB) *</label>
+      <input id="ord-fatt-file" type="file" accept="application/pdf,.pdf">
+      <div id="ord-fatt-file-attuale" style="font-size:11.5px;color:var(--text2);margin-top:5px"></div>
+    </div>
+    <div id="ord-fatt-esito" style="font-size:12.5px;margin:10px 0"></div>
+    <div class="mact" style="flex-wrap:wrap">
+      <button class="btn" onclick="closeM('m-ordine')">Chiudi</button>
+      <button class="btn" id="ord-btn-apri" onclick="apriPdfOrdineCorrente()" style="display:none">📄 Apri PDF</button>
+      <button class="btn" id="ord-btn-salva" onclick="salvaFatturaOrdine()">💾 Salva fattura</button>
+      <button class="btn btn-p" id="ord-btn-invia" onclick="inviaFatturaOrdine()">✉ Invia PDF al cliente</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── SUPABASE ──────────────────────────────────────────────────
 const SUPA_URL='https://uljdbdbkiulbcquuhfwd.supabase.co'
@@ -4031,6 +4097,7 @@ const STANZE = [
   {a:'proc', id:'cand-proc',              n:'Candidature',            g:'Generale',    k:'candidati curriculum cv lavora con noi assunzioni colloqui'},
   {a:'proc', id:'proc',                   n:'Procacciatori',          g:'Generale',    k:'agenti venditori rete anagrafica collaboratori'},
   {a:'proc', id:'vendite',                n:'Vendite',                g:'Attivit\u00e0',    k:'contratti venduti fatturato ordini'},
+  {a:'proc', id:'ordini',                 n:'Ordini e fatture',       g:'Attivit\u00e0',    k:'acquisti sito pagamenti clienti dati fiscali fatture pdf invio email'},
   {a:'proc', id:'lead',                   n:'Lead',                   g:'Attivit\u00e0',    k:'contatti clienti potenziali richieste nominativi'},
   {a:'proc', id:'cestino',                n:'Cestino',                g:'Attivit\u00e0',    k:'eliminati cancellati recupera'},
   {a:'proc', id:'provv',                  n:'Provvigioni',            g:'Provvigioni', k:'compensi guadagni pagare quanto devo percentuali'},
@@ -5675,7 +5742,8 @@ function sp(id,el){
   if(id==='contratti'){ const _dot=document.getElementById('nav-dot-contratti'); if(_dot) _dot.style.display='none' }
   if(id==='proposte'){ const _d=document.getElementById('nav-dot-proposte'); if(_d) _d.style.display='none' }
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
-  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:()=>{renderDash()},proc:()=>{renderProc()},docenti:()=>{renderDocenti()},studenti:()=>{renderStudenti()},'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:()=>{renderVendite()},lead:()=>{renderLead()},provv:()=>{renderProvv()},rete:()=>{renderRete()},listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();Promise.all([caricaCategorie(),caricaEnti()]).then(renderCategEnti);caricaCorsiPagine()},tessere:caricaTessere,certificati:caricaCertificati,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:()=>{renderContratti()},'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:()=>{renderDipendenti()},buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  if(id==='ordini'){ const _d=document.getElementById('nav-dot-ordini'); if(_d) _d.style.display='none' }
+  const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:()=>{renderDash()},proc:()=>{renderProc()},docenti:()=>{renderDocenti()},studenti:()=>{renderStudenti()},'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:()=>{renderVendite()},ordini:caricaOrdini,lead:()=>{renderLead()},provv:()=>{renderProvv()},rete:()=>{renderRete()},listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();Promise.all([caricaCategorie(),caricaEnti()]).then(renderCategEnti);caricaCorsiPagine()},tessere:caricaTessere,certificati:caricaCertificati,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:()=>{renderContratti()},'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:()=>{renderDipendenti()},buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
   ;(async function(){ try{ await _syncPaginaSeNecessario(id) }catch(e){} if(renders[id]) renders[id]() })()
 }
 
@@ -5729,8 +5797,9 @@ function avviaRealtime(){
       if(isPaid&&!wasPaid){
         try{ suonaNotifica() }catch(e){}
         const r=payload.new||{}
-        try{ pushNotifica({icon:'\ud83d\udcb0', titolo:'Nuovo incasso', sottotitolo:(r.prodotto_nome||'')+' \u00b7 '+_eur(r.importo_pagato)+(r.venditore_nome?(' \u00b7 '+r.venditore_nome):''), target:'incassi'}) }catch(e){}
+        try{ pushNotifica({icon:'\ud83d\uded2', titolo:'Nuovo ordine pagato', sottotitolo:(r.prodotto_nome||'')+' \u00b7 '+_eur(r.importo_pagato)+(r.cliente_nome?(' \u00b7 '+r.cliente_nome):''), target:'ordini'}) }catch(e){}
         const _ai=document.querySelector('.page.active'); if(!_ai||_ai.id!=='page-incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='inline-block' }
+        if(!_ai||_ai.id!=='page-ordini'){ const _o=document.getElementById('nav-dot-ordini'); if(_o) _o.style.display='inline-block' }
       }
     }catch(e){}
     if(typeof caricaIncassi==='function') caricaIncassi()
@@ -6155,6 +6224,7 @@ async function caricaIncassi(){
     _incassiCache=data||[]
   }catch(e){ console.error('caricaIncassi',e); _incassiCache=[]; toast('Errore caricamento incassi') }
   renderIncassi()
+  renderOrdini()
 }
 function _incStato(s){
   if(s==='paid') return '<span style="color:#117A65;font-weight:700">\u25cf PAGATO</span>'
@@ -6194,7 +6264,7 @@ function renderIncassi(){
     const statoCell=isAtt?('<span style="color:#b7791f;font-weight:700;white-space:nowrap">'+(p.metodo==='bonifico'?'\ud83c\udfe6 bonifico':'\ud83d\udcb5 contanti')+' da confermare</span>'):_incStato(p.stato)
     const azioni=isAtt
       ? '<div style="display:flex;gap:6px;white-space:nowrap"><button class="btn btn-sm btn-p" onclick="confermaIncasso(\''+p.id+'\')">\u2705 Conferma</button><button class="btn btn-sm" onclick="rifiutaIncasso(\''+p.id+'\')">Rifiuta</button></div>'
-      : (metLbl?'<span style="font-size:11px;color:var(--text2)">'+metLbl+'</span>':'\u2014')
+      : (p.stato==='paid'?'<button class="btn btn-sm btn-p" onclick="apriOrdine(\''+p.id+'\')">Gestisci fattura</button>':(metLbl?'<span style="font-size:11px;color:var(--text2)">'+metLbl+'</span>':'\u2014'))
     return '<tr>'+
       '<td style="white-space:nowrap;font-size:12px">'+_incData(p.paid_at||p.created_at)+'</td>'+
       '<td><strong>'+escB(p.prodotto_nome||'\u2014')+'</strong>'+usoP+'</td>'+
@@ -6206,6 +6276,143 @@ function renderIncassi(){
       '<td>'+azioni+'</td>'+
     '</tr>'
   }).join('')
+}
+
+// ── ORDINI PAGATI E FATTURE MANUALI ────────────────────────
+let _ordineSelezionato=null
+function caricaOrdini(){ return caricaIncassi() }
+function _ordStato(p){
+  if(p.fattura_email_errore) return 'errore'
+  if(p.fattura_stato==='inviata'||p.fattura_inviata_at) return 'inviata'
+  if(p.fattura_pdf_path||p.fattura_stato==='emessa') return 'da_inviare'
+  return 'da_fatturare'
+}
+function _ordBadge(p){
+  const s=_ordStato(p)
+  if(s==='inviata') return '<span class="badge bg">Inviata'+(p.fattura_numero?(' · n.'+escB(p.fattura_numero)):'')+'</span>'
+  if(s==='da_inviare') return '<span class="badge bb">Da inviare'+(p.fattura_numero?(' · n.'+escB(p.fattura_numero)):'')+'</span>'
+  if(s==='errore') return '<span class="badge br" title="'+escB(p.fattura_email_errore||'Errore invio').replace(/"/g,'&quot;')+'">Errore invio</span>'
+  return '<span class="badge ba">Da fatturare</span>'
+}
+function _ordAreaLabel(a){
+  if(a==='azienda') return 'Sito corsi'
+  return _ppAreeLabel([a])||a||'—'
+}
+function renderOrdini(){
+  const tb=document.getElementById('tbl-ordini'); if(!tb) return
+  const q=((document.getElementById('ord-search')||{}).value||'').trim().toLowerCase()
+  const fs=((document.getElementById('ord-f-stato')||{}).value||'')
+  const fa=((document.getElementById('ord-f-area')||{}).value||'')
+  let tutte=(_incassiCache||[]).filter(function(p){return p.stato==='paid'})
+  const nDaFatt=tutte.filter(function(p){return _ordStato(p)==='da_fatturare'}).length
+  const nDaInv=tutte.filter(function(p){return _ordStato(p)==='da_inviare'||_ordStato(p)==='errore'}).length
+  const nInv=tutte.filter(function(p){return _ordStato(p)==='inviata'}).length
+  const valore=tutte.reduce(function(s,p){return s+Number(p.importo_pagato||0)},0)
+  const setTxt=function(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
+  setTxt('ord-tot-da-fatt',String(nDaFatt)); setTxt('ord-tot-da-inv',String(nDaInv)); setTxt('ord-tot-inviati',String(nInv)); setTxt('ord-tot-valore',_eur(valore))
+  let rows=tutte
+  if(fs) rows=rows.filter(function(p){return _ordStato(p)===fs})
+  if(fa) rows=rows.filter(function(p){return (p.area||'')===fa})
+  if(q) rows=rows.filter(function(p){return ((p.cliente_nome||'')+' '+(p.cliente_rag_sociale||'')+' '+(p.cliente_email||'')+' '+(p.cliente_cf||'')+' '+(p.cliente_piva||'')+' '+(p.prodotto_nome||'')+' '+(p.fattura_numero||'')).toLowerCase().includes(q)})
+  rows=rows.slice().sort(_perData(['paid_at','created_at']))
+  if(!rows.length){tb.innerHTML='<tr><td colspan="6" class="empty">Nessun ordine pagato con questi filtri.</td></tr>';return}
+  tb.innerHTML=rows.map(function(p){
+    const nome=p.cliente_rag_sociale||p.cliente_nome||'—'
+    const cont=[p.cliente_email,p.cliente_tel].filter(Boolean).join(' · ')
+    return '<tr>'+
+      '<td style="white-space:nowrap;font-size:12px">'+_incData(p.paid_at||p.created_at)+'</td>'+
+      '<td><strong>'+escB(p.prodotto_nome||'—')+'</strong><br><span style="font-size:11px;color:var(--text2)">'+escB(_ordAreaLabel(p.area))+'</span></td>'+
+      '<td><strong>'+escB(nome)+'</strong><br><span style="font-size:11px;color:var(--text2)">'+escB(cont||p.cliente_cf||p.cliente_piva||'')+'</span></td>'+
+      '<td style="white-space:nowrap"><strong>'+_eur(p.importo_pagato)+'</strong></td>'+
+      '<td>'+_ordBadge(p)+'</td>'+
+      '<td><button class="btn btn-sm btn-p" onclick="apriOrdine(\''+p.id+'\')">Apri e gestisci</button></td>'+
+    '</tr>'
+  }).join('')
+}
+function _ordDato(label,val){return '<div style="min-width:0"><div style="font-size:10.5px;color:var(--text2);text-transform:uppercase;letter-spacing:.03em">'+escB(label)+'</div><div style="font-size:12.5px;word-break:break-word">'+escB(val||'—')+'</div></div>'}
+async function apriOrdine(id){
+  let p=(_incassiCache||[]).find(function(x){return String(x.id||x._id)===String(id)})
+  if(!p){await caricaIncassi();p=(_incassiCache||[]).find(function(x){return String(x.id||x._id)===String(id)})}
+  if(!p){alert('Ordine non trovato.');return}
+  _ordineSelezionato=p
+  const sub=document.getElementById('ord-modal-sub'); if(sub) sub.innerHTML='<strong>'+escB(p.prodotto_nome||'Ordine')+'</strong> · '+_eur(p.importo_pagato)+' · '+escB(_incData(p.paid_at||p.created_at))+' · '+escB(_ordAreaLabel(p.area))
+  const dati=document.getElementById('ord-modal-dati')
+  if(dati) dati.innerHTML=[
+    _ordDato('Cliente',p.cliente_nome),_ordDato('Ragione sociale',p.cliente_rag_sociale),
+    _ordDato('Email',p.cliente_email),_ordDato('Telefono',p.cliente_tel),
+    _ordDato('Codice fiscale',p.cliente_cf),_ordDato('Partita IVA',p.cliente_piva),
+    _ordDato('Codice SDI',p.cliente_sdi),_ordDato('PEC',p.cliente_pec),
+    _ordDato('Indirizzo',p.cliente_indirizzo),_ordDato('Comune',p.cliente_citta),
+    _ordDato('CAP',p.cliente_cap),_ordDato('Provincia',p.cliente_prov),
+    _ordDato('Metodo',p.metodo||'Carta'),_ordDato('ID ordine',p.id)
+  ].join('')
+  const num=document.getElementById('ord-fatt-numero'); if(num) num.value=p.fattura_numero||''
+  const em=document.getElementById('ord-fatt-email'); if(em) em.value=p.cliente_email||''
+  const fi=document.getElementById('ord-fatt-file'); if(fi) fi.value=''
+  const att=document.getElementById('ord-fatt-file-attuale'); if(att) att.textContent=p.fattura_pdf_path?('PDF archiviato: '+(p.fattura_file_name||p.fattura_pdf_path.split('/').pop())):'Nessun PDF ancora caricato.'
+  const es=document.getElementById('ord-fatt-esito'); if(es) es.innerHTML=p.fattura_email_errore?'<span style="color:var(--red)">Ultimo invio non riuscito: '+escB(p.fattura_email_errore)+'</span>':(p.fattura_inviata_at?'<span style="color:var(--green)">PDF inviato a '+escB(p.fattura_email_destinatario||p.cliente_email||'')+' il '+escB(_incData(p.fattura_inviata_at))+'</span>':'')
+  const apri=document.getElementById('ord-btn-apri'); if(apri) apri.style.display=p.fattura_pdf_path?'inline-flex':'none'
+  const invia=document.getElementById('ord-btn-invia'); if(invia){invia.disabled=!p.fattura_pdf_path;invia.textContent=p.fattura_inviata_at?'↻ Reinvia PDF al cliente':'✉ Invia PDF al cliente'}
+  openM('m-ordine')
+}
+async function salvaFatturaOrdine(){
+  const p=_ordineSelezionato; if(!p) return
+  const numero=(document.getElementById('ord-fatt-numero').value||'').trim()
+  const input=document.getElementById('ord-fatt-file'), file=input&&input.files&&input.files[0]
+  if(!numero){alert('Inserisci il numero della fattura emessa.');return}
+  if(!file&&!p.fattura_pdf_path){alert('Seleziona il PDF della fattura.');return}
+  if(file&&file.type&&file.type!=='application/pdf'){alert('Puoi caricare soltanto un file PDF.');return}
+  if(file&&file.size>10*1024*1024){alert('Il PDF supera il limite di 10 MB.');return}
+  const btn=document.getElementById('ord-btn-salva'), old=btn&&btn.textContent
+  if(btn){btn.disabled=true;btn.textContent='Salvataggio...'}
+  let nuovoPath=''
+  try{
+    if(file){
+      const safe=(file.name||'fattura.pdf').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'_')
+      nuovoPath='ordini/'+p.id+'/'+Date.now()+'_'+safe
+      const up=await db.storage.from('leone-fatture').upload(nuovoPath,file,{contentType:'application/pdf',cacheControl:'3600',upsert:false})
+      if(up.error) throw up.error
+    }
+    const patch={fattura_numero:numero,fattura_stato:(file||p.fattura_stato!=='inviata')?'emessa':p.fattura_stato,fattura_emessa_at:p.fattura_emessa_at||new Date().toISOString()}
+    if(file){patch.fattura_pdf_path=nuovoPath;patch.fattura_file_name=file.name;patch.fattura_inviata_at=null;patch.fattura_email_destinatario=null;patch.fattura_email_errore=null}
+    const r=await db.from('pagamenti').update(patch).eq('id',p.id)
+    if(r.error) throw r.error
+    if(file&&p.fattura_pdf_path&&p.fattura_pdf_path!==nuovoPath&&p.fattura_pdf_path.indexOf('ordini/')===0){try{await db.storage.from('leone-fatture').remove([p.fattura_pdf_path])}catch(e){}}
+    toast('Fattura archiviata ✓'); await caricaIncassi(); await apriOrdine(p.id)
+  }catch(e){
+    if(nuovoPath){try{await db.storage.from('leone-fatture').remove([nuovoPath])}catch(x){}}
+    alert('Errore nel salvataggio della fattura: '+(e.message||e))
+  }finally{if(btn){btn.disabled=false;btn.textContent=old||'💾 Salva fattura'}}
+}
+async function apriPdfFattura(path){
+  if(!path) return
+  try{
+    const r=await db.storage.from('leone-fatture').createSignedUrl(path,300)
+    if(r.error) throw r.error
+    window.open(r.data.signedUrl,'_blank')
+  }catch(e){
+    // Compatibilità con i vecchi PDF archiviati prima del passaggio al nuovo sistema.
+    window.open(SUPA_URL+'/storage/v1/object/public/contratti/'+path,'_blank')
+  }
+}
+function apriPdfOrdineCorrente(){if(_ordineSelezionato&&_ordineSelezionato.fattura_pdf_path)apriPdfFattura(_ordineSelezionato.fattura_pdf_path)}
+async function inviaFatturaOrdine(){
+  const p=_ordineSelezionato; if(!p) return
+  const numero=(document.getElementById('ord-fatt-numero').value||'').trim()
+  if(!p.fattura_pdf_path){alert('Prima salva il PDF della fattura.');return}
+  if(!numero){alert('Inserisci e salva il numero della fattura.');return}
+  if(numero!==String(p.fattura_numero||'')){alert('Hai modificato il numero: premi prima “Salva fattura”.');return}
+  if(!p.cliente_email){alert('Questo ordine non contiene l’email del cliente.');return}
+  if(!confirm('Inviare la fattura n.'+numero+' a '+p.cliente_email+'?')) return
+  const btn=document.getElementById('ord-btn-invia'), old=btn&&btn.textContent
+  if(btn){btn.disabled=true;btn.textContent='Invio in corso...'}
+  try{
+    const r=await db.functions.invoke('ordine-fattura',{body:{paymentId:p.id}})
+    const d=r.data||{}
+    if(r.error||d.error||d.ok===false) throw new Error(d.error||(r.error&&r.error.message)||'Invio non riuscito')
+    toast('Fattura inviata al cliente ✓'); await caricaIncassi(); await apriOrdine(p.id)
+  }catch(e){alert('Errore invio fattura: '+(e.message||e))}
+  finally{if(btn){btn.disabled=false;btn.textContent=old||'✉ Invia PDF al cliente'}}
 }
 
 // ── CONFERMA / RIFIUTA INCASSI DA CONFERMARE (contanti/bonifico) ──
@@ -8905,38 +9112,12 @@ function renderFattArea(area){
   rows=rows.slice().sort(_perData(['paid_at','created_at']))
   if(!rows.length){ tb.innerHTML='<tr><td colspan="6" class="empty">'+(_q?'Nessun risultato per la ricerca':'Nessun incasso da fatturare')+'</td></tr>'; return }
   tb.innerHTML=rows.map(p=>{
-    const emessa=p.fattura_stato==='emessa'
-    const err=p.fattura_stato==='errore'
-    const stornata=p.fattura_stato==='stornata'
-    const badge=stornata?`<span class="badge br">Stornata${p.nota_credito_numero?(' \u00b7 NC n.'+p.nota_credito_numero):''}</span>`:(emessa?`<span class="badge bg">Emessa n.${p.fattura_numero||''}</span>`:(err?`<span class="badge br" title="${(p.fattura_errore||'').replace(/"/g,'&quot;')}">Errore</span>`:(p.fattura_fic_id?'<span class="badge ba">Bozza</span>':'<span class="badge ba">Da emettere</span>')))
-    const pdfBtn=p.fattura_pdf_path?`<button class="btn btn-sm btn-p" onclick="apriPdfFattura('${p.fattura_pdf_path}')" title="Apri PDF archiviato">\ud83d\udcc4 PDF</button>`:''
-    const ncPdfBtn=p.nota_credito_pdf_path?`<button class="btn btn-sm" onclick="apriPdfFattura('${p.nota_credito_pdf_path}')" title="PDF nota di credito">\ud83d\udcc4 NC</button>`:''
-    let emitBtns=''
-    if(stornata){ emitBtns='' } else if(emessa){ emitBtns=`<button class="btn btn-sm" onclick="notaCredito('${p._id||p.id}','${area}')" title="Nota di credito (rimborso)">\u21a9\ufe0f Nota credito</button>` } else if(p.fattura_fic_id){ emitBtns=`<button class="btn btn-sm btn-p" onclick="emettiFattura('${p._id||p.id}',false,'${area}')" title="Invia allo SDI">\ud83d\udce4 Invia SDI</button><button class="btn btn-sm" onclick="eliminaFattura('${p._id||p.id}','${area}')" title="Elimina bozza di prova">\ud83d\uddd1\ufe0f Elimina</button>` } else { emitBtns=`<button class="btn btn-sm" onclick="emettiFattura('${p._id||p.id}',true,'${area}')" title="Crea bozza">\ud83d\udcdd Bozza</button><button class="btn btn-sm btn-p" onclick="emettiFattura('${p._id||p.id}',false,'${area}')" title="Emetti e invia">\ud83d\udce4 Emetti+invia</button>` }
     const data=(p.paid_at||p.created_at||'').slice(0,10)
-    const chi=p.cliente_nome||(p.uso_personale?'(uso personale)':'\u2014')
-    return `<tr><td><strong style="font-weight:600">${chi}</strong><br><span style="font-size:11px;color:var(--text2)">${p.cliente_cf||p.cliente_piva||''}</span></td><td style="font-size:12px">${p.prodotto_nome||''}</td><td>${_eurA(p.importo_pagato)}</td><td style="color:var(--text2)">${data}</td><td>${badge}</td><td class="acts">${pdfBtn}${ncPdfBtn}${emitBtns}</td></tr>`
+    const chi=p.cliente_rag_sociale||p.cliente_nome||(p.uso_personale?'(uso personale)':'\u2014')
+    const pdfBtn=p.fattura_pdf_path?`<button class="btn btn-sm" onclick="apriPdfFattura('${p.fattura_pdf_path}')" title="Apri PDF archiviato">\ud83d\udcc4 PDF</button>`:''
+    return `<tr><td><strong style="font-weight:600">${escB(chi)}</strong><br><span style="font-size:11px;color:var(--text2)">${escB(p.cliente_cf||p.cliente_piva||p.cliente_email||'')}</span></td><td style="font-size:12px">${escB(p.prodotto_nome||'')}</td><td>${_eurA(p.importo_pagato)}</td><td style="color:var(--text2)">${data}</td><td>${_ordBadge(p)}</td><td class="acts">${pdfBtn}<button class="btn btn-sm btn-p" onclick="apriOrdine('${p._id||p.id}')">Gestisci</button></td></tr>`
   }).join('')
 }
-async function emettiFattura(id, soloCrea, area){
-  let conto=null
-  try{
-    const p=(_incassiCache||[]).find(x=>String(x.id)===String(id)||String(x._id)===String(id))
-    if(p && String(p.metodo||'').toLowerCase()==='bonifico'){
-      conto = confirm('Bonifico incassato su quale conto?\u000a\u000aOK = Conto FINOM\u000aAnnulla = Conto SUMUP') ? 'finom' : 'sumup'
-    }
-  }catch(e){}
-  if(!soloCrea && !confirm('Emettere e INVIARE la fattura elettronica all\u0027Agenzia delle Entrate?\u000a\u000aL\u0027operazione e\u0027 definitiva.')) return
-  try{ toast(soloCrea?'Creo la bozza...':'Emetto la fattura...') }catch(e){}
-  try{
-    const r=await db.functions.invoke('fic-emetti-fattura',{ body:{ pagamento_id:id, solo_crea:!!soloCrea, conto:conto } })
-    const d=r.data||{}
-    if(r.error||d.error||d.ok===false){ throw new Error(d.error||(r.error&&r.error.message)||'Errore emissione') }
-    try{ toast(soloCrea?('Bozza creata n.'+(d.fattura_numero||'')):('Fattura emessa n.'+(d.fattura_numero||''))) }catch(e){}
-    await caricaIncassi(); renderFattArea(area||'doc')
-  }catch(e){ alert('Errore fattura: '+((e&&e.message)||e)) }
-}
-function apriPdfFattura(path){ if(!path) return; window.open(SUPA_URL+'/storage/v1/object/public/contratti/'+path,'_blank') }
 function _openNC(area){ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(()=>renderNCArea(area)) } else renderNCArea(area) }
 function renderNCArea(area){
   const tb=document.getElementById('tbl-nc-'+area); if(!tb) return
@@ -8945,13 +9126,12 @@ function renderNCArea(area){
   const _q=(document.getElementById('nc-search-'+area)&&document.getElementById('nc-search-'+area).value||'').trim().toLowerCase()
   if(_q) rows=rows.filter(p=>((p.cliente_nome||'')+' '+(p.prodotto_nome||'')+' '+(p.fattura_numero||'')+' '+(p.nota_credito_numero||'')).toLowerCase().includes(_q))
   rows=rows.slice().sort(_perData(['paid_at','created_at']))
-  if(!rows.length){ tb.innerHTML='<tr><td colspan="6" class="empty">'+(_q?'Nessun risultato':'Nessuna nota di credito. Le crei dalla sezione Fatture, sulla riga di una fattura emessa.')+'</td></tr>'; return }
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="6" class="empty">'+(_q?'Nessun risultato':'Nessuna nota di credito nello storico.')+'</td></tr>'; return }
   tb.innerHTML=rows.map(p=>{
     const chi=p.cliente_nome||(p.uso_personale?'(uso personale)':'—')
     const pdfBtn=p.nota_credito_pdf_path?`<button class="btn btn-sm btn-p" onclick="apriPdfFattura('${p.nota_credito_pdf_path}')" title="Apri PDF nota di credito">📄 PDF</button>`:''
     const fatBtn=p.fattura_pdf_path?`<button class="btn btn-sm" onclick="apriPdfFattura('${p.fattura_pdf_path}')" title="Apri PDF fattura originaria">📄 Fattura</button>`:''
-    const ficBtn=`<a class="btn btn-sm" href="https://secure.fattureincloud.it/documents-issued-list" target="_blank" rel="noopener" style="text-decoration:none" title="Apri Fatture in Cloud">Apri in FiC</a>`
-    return `<tr><td><strong style="font-weight:600">${esc(chi)}</strong><br><span style="font-size:11px;color:var(--text2)">${esc(p.cliente_cf||p.cliente_piva||'')}</span></td><td style="font-size:12px">${esc(p.prodotto_nome||'')}</td><td>${_eurA(p.importo_pagato)}</td><td style="color:var(--text2)">${esc(p.fattura_numero||'—')}</td><td><span class="badge ba">n.${esc(p.nota_credito_numero||'—')}</span></td><td class="acts">${pdfBtn}${fatBtn}${ficBtn}</td></tr>`
+    return `<tr><td><strong style="font-weight:600">${esc(chi)}</strong><br><span style="font-size:11px;color:var(--text2)">${esc(p.cliente_cf||p.cliente_piva||'')}</span></td><td style="font-size:12px">${esc(p.prodotto_nome||'')}</td><td>${_eurA(p.importo_pagato)}</td><td style="color:var(--text2)">${esc(p.fattura_numero||'—')}</td><td><span class="badge ba">n.${esc(p.nota_credito_numero||'—')}</span></td><td class="acts">${pdfBtn}${fatBtn}</td></tr>`
   }).join('')
 }
 let _PROP_DOC=[]
@@ -9017,26 +9197,6 @@ async function sincronizzaBrevo(){
     out.innerHTML=html+'</div>'
   }catch(e){ out.innerHTML='<div class="msg msg-err">Errore: '+((e&&e.message)||e)+'</div>' }
   btn.disabled=false; btn.innerHTML=_t
-}
-async function eliminaFattura(id, area){
-  if(!confirm('Eliminare questa fattura di prova?\u000a(funziona solo se NON è ancora stata trasmessa allo SDI)')) return
-  try{
-    const r=await db.functions.invoke('fic-emetti-fattura',{ body:{ pagamento_id:id, azione:'elimina' } })
-    const d=r.data||{}
-    if(r.error||d.error||d.ok===false){ throw new Error(d.error||(r.error&&r.error.message)||'Errore') }
-    try{ toast('Fattura eliminata') }catch(e){}
-    await caricaIncassi(); renderFattArea(area||'doc')
-  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
-}
-async function notaCredito(id, area){
-  if(!confirm('Creare la nota di credito (storno/rimborso) per questo cliente?\u000aLa creo come BOZZA in Fatture in Cloud: controllala e inviala da lì.')) return
-  try{
-    const r=await db.functions.invoke('fic-emetti-fattura',{ body:{ pagamento_id:id, azione:'nota_credito' } })
-    const d=r.data||{}
-    if(r.error||d.error||d.ok===false){ throw new Error(d.error||(r.error&&r.error.message)||'Errore') }
-    try{ toast('Nota di credito creata n.'+(d.numero||'')) }catch(e){}
-    await caricaIncassi(); renderFattArea(area||'doc')
-  }catch(e){ alert('Errore nota di credito: '+((e&&e.message)||e)) }
 }
 function renderContrattiDip(){
   const tb=document.getElementById('tbl-contratti-dip')
