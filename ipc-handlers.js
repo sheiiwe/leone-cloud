@@ -14,6 +14,7 @@ const GOOGLE_WALLET_CLASS_ID = `${GOOGLE_WALLET_ISSUER_ID}.leone_badge_aziendale
 const GOOGLE_WALLET_SCOPE = 'https://www.googleapis.com/auth/wallet_object.issuer'
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const GOOGLE_OBJECTS_URL = 'https://walletobjects.googleapis.com/walletobjects/v1/genericObject'
+const GOOGLE_CLASSES_URL = 'https://walletobjects.googleapis.com/walletobjects/v1/genericClass'
 const GOOGLE_WALLET_LOGO_URL = 'https://verifica.leoneconsultingitalia.it/assets/google-wallet-logo.png'
 let _googleWalletTokenCache = null
 
@@ -105,6 +106,34 @@ async function _gwAccessToken(credentials){
 async function _gwWalletRequest(credentials,url,method,body){
   const token=await _gwAccessToken(credentials)
   return _gwRequest(url,{method,headers:{Authorization:`Bearer ${token}`,Accept:'application/json',...(body==null?{}:{'Content-Type':'application/json'})},body})
+}
+async function statoGoogleWallet(credentials){
+  const response=await _gwWalletRequest(credentials,`${GOOGLE_CLASSES_URL}/${encodeURIComponent(GOOGLE_WALLET_CLASS_ID)}`,'GET')
+  if(response.status===404){
+    return {configured:true,classReady:false,classId:GOOGLE_WALLET_CLASS_ID,email:credentials.client_email,projectId:credentials.project_id}
+  }
+  if(response.status<200||response.status>=300) throw _gwError(response,'Non è stato possibile verificare la configurazione Google Wallet.')
+  return {
+    configured:true,classReady:true,classId:GOOGLE_WALLET_CLASS_ID,
+    classReviewStatus:response.data?.reviewStatus||null,
+    email:credentials.client_email,projectId:credentials.project_id
+  }
+}
+async function ensureGoogleWalletClass(credentials){
+  const stato=await statoGoogleWallet(credentials)
+  if(stato.classReady) return stato
+  let response=await _gwWalletRequest(credentials,GOOGLE_CLASSES_URL,'POST',{
+    id:GOOGLE_WALLET_CLASS_ID,
+    issuerName:'Leone Consulting di Leonardo Angelucci',
+    reviewStatus:'UNDER_REVIEW'
+  })
+  if(response.status===409) return statoGoogleWallet(credentials)
+  if(response.status<200||response.status>=300) throw _gwError(response,'Non è stato possibile creare la classe Google Wallet.')
+  return {
+    configured:true,classReady:true,classId:GOOGLE_WALLET_CLASS_ID,
+    classReviewStatus:response.data?.reviewStatus||'UNDER_REVIEW',
+    email:credentials.client_email,projectId:credentials.project_id
+  }
 }
 async function upsertGoogleWalletObject(credentials,object){
   const resourceUrl=`${GOOGLE_OBJECTS_URL}/${encodeURIComponent(object.id)}`, existing=await _gwWalletRequest(credentials,resourceUrl,'GET'); let response
@@ -254,13 +283,20 @@ ipcMain.handle('configura-google-wallet', async () => {
       fs.chmodSync(tmp,0o600)
       fs.renameSync(tmp,p.googleCredentials)
     }else fs.chmodSync(p.googleCredentials,0o600)
-    return {
-      ok:true,
-      email:credentials.client_email,
-      projectId:credentials.project_id,
-      classId:GOOGLE_WALLET_CLASS_ID
-    }
+    const stato=await ensureGoogleWalletClass(credentials)
+    return {ok:true,...stato}
   }catch(e){ return {ok:false,errore:e.message||String(e)} }
+})
+
+ipcMain.handle('stato-google-wallet', async () => {
+  const p=walletPaths()
+  if(!fs.existsSync(p.googleCredentials)){
+    return {ok:true,configured:false,classReady:false,classId:GOOGLE_WALLET_CLASS_ID}
+  }
+  try{
+    const credentials=leggiCredenzialiGoogleWallet()
+    return {ok:true,...await statoGoogleWallet(credentials)}
+  }catch(e){ return {ok:false,configured:true,classReady:false,classId:GOOGLE_WALLET_CLASS_ID,errore:e.message||String(e)} }
 })
 
 ipcMain.handle('genera-google-wallet', async (_event, badge) => {

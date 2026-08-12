@@ -909,6 +909,7 @@ tbody tr:hover td{background:var(--surface2)}
     <button class="btn btn-sm" onclick="creaTessereMancanti()">⚡ Crea tesserini mancanti</button>
     <button class="btn btn-sm" onclick="configuraCertificatoApple()"> Configura certificato Apple</button>
     <button class="btn btn-sm" onclick="configuraAccountGoogleWallet()">G Configura Google Wallet</button>
+    <span id="ts-google-status" onclick="mostraStatoGoogleWallet()" title="Clicca per i dettagli" style="font-size:12px;color:var(--text3);cursor:pointer">Google: controllo…</span>
     <span id="ts-count" style="font-size:13px;color:var(--text2)"></span>
   </div>
   <div class="tbl-wrap"><table>
@@ -2969,7 +2970,7 @@ function syncStatus(state,msg){
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
 // ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
-const _RT_BUILD='1.13.2-apple-wallet-pass'
+const _RT_BUILD='1.14.7-badge-nft-anagrafiche'
 let _rtLastSync=new Date().toISOString()
 let _rtWasSubscribed=false
 const _syncTimers={}
@@ -5183,8 +5184,8 @@ async function revocaCertificato(id){
 const _TS_VERIFICA = 'https://verifica.leoneconsultingitalia.it/'
 const _TS_TIPI = ['procacciatore','docente','dipendente','amministratore']
 // il ruolo scritto sul tesserino dipende dal TIPO, non da quello che c'e' in anagrafica
-const _TS_RUOLI = {procacciatore:'Procacciatore', docente:'Docente', dipendente:'Dipendente', amministratore:'Amministratore'}
-const _TS_ETICHETTE = [{v:'',t:'\u2014 scegli il tipo di tesserino \u2014'},{v:'procacciatore',t:'Procacciatore'},{v:'docente',t:'Docente'},{v:'dipendente',t:'Dipendente'},{v:'amministratore',t:'Amministratore'}]
+const _TS_RUOLI = {procacciatore:"Procacciatore d'affari", docente:'Docente', dipendente:'Dipendente', amministratore:'Amministratore'}
+const _TS_ETICHETTE = [{v:'',t:'\u2014 scegli il tipo di tesserino \u2014'},{v:'procacciatore',t:'Procacciatore / Partner'},{v:'docente',t:'Docente / Tutor'},{v:'dipendente',t:'Dipendente'},{v:'amministratore',t:'Amministratore'}]
 // fine contratto: sta in posti diversi a seconda dell'anagrafica
 function _tsFineContratto(d){
   d = d || {}
@@ -5200,6 +5201,7 @@ async function caricaTessere(){
     _TESSERE = r.data || []
   }catch(e){ _TESSERE = []; console.error('tessere:', e) }
   renderTessere()
+  controllaStatoGoogleWallet()
 }
 
 function _tsStato(t){
@@ -5308,8 +5310,48 @@ async function configuraAccountGoogleWallet(){
     const r=await window.electronAPI?.configuraGoogleWallet?.()
     if(r?.canceled) return
     if(!r?.ok) throw new Error(r?.errore||'Configurazione non riuscita')
-    alert('✅ Google Wallet configurato.\n\nAccount di servizio: '+(r.email||'configurato')+'\nClasse: '+(r.classId||'configurata'))
+    await controllaStatoGoogleWallet()
+    alert('✅ Google Wallet configurato e classe pronta.\n\nAccount di servizio: '+(r.email||'configurato')+'\nClasse: '+(r.classId||'configurata')+(r.classReviewStatus?'\nRevisione: '+r.classReviewStatus:''))
   }catch(e){ alert('Errore Google Wallet:\n'+((e&&e.message)||e)) }
+}
+
+let _googleWalletStato=null
+async function controllaStatoGoogleWallet(){
+  const el=document.getElementById('ts-google-status'); if(!el) return
+  if(!window.electronAPI?.statoGoogleWallet){
+    _googleWalletStato={ok:false,errore:'Questa versione dell’app non include ancora il controllo Google Wallet.'}
+    el.textContent='Google: aggiorna l’app'; el.style.color='#B8860B'; return
+  }
+  el.textContent='Google: controllo…'; el.style.color='var(--text3)'
+  try{
+    const r=await window.electronAPI.statoGoogleWallet()
+    _googleWalletStato=r
+    if(!r?.ok){
+      el.textContent='Google: configurazione incompleta'; el.style.color='#C51E26'
+      el.title=r?.errore||'Controllo non riuscito'; return
+    }
+    if(!r.configured){
+      el.textContent='Google: JSON da caricare'; el.style.color='#B8860B'; el.title='Carica la chiave JSON dell’account di servizio'; return
+    }
+    if(!r.classReady){
+      el.textContent='Google: JSON valido · classe mancante'; el.style.color='#B8860B';
+      el.title='Premi Configura Google Wallet: l’app creerà la classe aziendale'; return
+    }
+    el.textContent='Google: configurato · classe pronta'; el.style.color='#1F8A3F'
+    el.title=(r.email||'')+(r.classReviewStatus?' · '+r.classReviewStatus:'')
+  }catch(e){
+    _googleWalletStato={ok:false,errore:(e&&e.message)||String(e)}
+    el.textContent='Google: controllo fallito'; el.style.color='#C51E26'; el.title=(e&&e.message)||String(e)
+  }
+}
+
+function mostraStatoGoogleWallet(){
+  const r=_googleWalletStato
+  if(!r){ alert('Controllo Google Wallet ancora in corso.'); return }
+  if(!r.ok){ alert('Google Wallet non è pronto.\n\n'+(r.errore||'Controlla la configurazione.')); return }
+  if(!r.configured){ alert('Google Wallet non è configurato.\n\nPremi “Configura Google Wallet” e seleziona il JSON dell’account di servizio.'); return }
+  if(!r.classReady){ alert('Il JSON è valido, ma la classe Google Wallet non esiste ancora.\n\nPremi “Configura Google Wallet”: l’app proverà a crearla automaticamente.'); return }
+  alert('✅ Google Wallet configurato.\n\nAccount: '+(r.email||'—')+'\nClasse: '+(r.classId||'—')+(r.classReviewStatus?'\nRevisione: '+r.classReviewStatus:''))
 }
 
 async function emettiGoogleWallet(codice){
@@ -5377,6 +5419,127 @@ async function gestisciWalletTessera(codice){
     await caricaTessere()
     try{ toast('Account Wallet aggiornato') }catch(e){}
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+function _badgeNftDatiAnagrafica(sezione,id){
+  let persona=null, tipi=[], tipoDefault='', ruolo='', dal='', fino='', contratto=''
+  if(sezione==='proc'){
+    const i=procs.findIndex(x=>String(x._id)===String(id)); persona=i>=0?procs[i]:null
+    const partner=persona&&getQual(persona,i).key==='sp'
+    tipi=[{v:'procacciatore',t:"Procacciatore d'affari"},{v:'partner_aziendale',t:'Partner aziendale'}]
+    tipoDefault=partner?'partner_aziendale':'procacciatore'; ruolo=_CR_RUOLI_DEFAULT[tipoDefault]
+    dal=persona?.inizio||''; fino=persona?.fine||''; contratto=persona?.nContratto||''
+  }else if(sezione==='doc'){
+    persona=docenti.find(x=>String(x._id)===String(id))||null
+    tipi=[{v:'docente',t:'Docente'},{v:'tutor',t:'Tutor'},{v:'docente_tutor',t:'Docente / Tutor'}]
+    tipoDefault='docente'; ruolo='Docente'
+    dal=persona?.contratto?.inizio||''; fino=persona?.contratto?.fine||''
+  }else if(sezione==='dip'){
+    persona=dipendenti.find(x=>String(x._id)===String(id))||null
+    tipi=[{v:'dipendente',t:'Dipendente'}]; tipoDefault='dipendente'; ruolo=persona?.ruolo||'Dipendente'
+    dal=persona?.inizio||''; fino=persona?.fine||''; contratto=persona?.nContratto||''
+  }
+  return {persona,tipi,tipoDefault,ruolo,dal,fino,contratto}
+}
+
+function _badgeTipoDaCertificato(tipo){
+  if(tipo==='partner_aziendale') return 'procacciatore'
+  if(tipo==='tutor'||tipo==='docente_tutor') return 'docente'
+  return tipo
+}
+function _badgeGruppoTipo(tipo){
+  return [tipo]
+}
+function _badgeProssimoCodice(tipo){
+  const sig={procacciatore:'PRO',docente:'DOC',dipendente:'DIP',amministratore:'ADM'}[tipo]||'GEN'
+  let max=0, re=new RegExp('^LC-'+sig+'-(\\d+)$')
+  _TESSERE.forEach(function(t){ const m=String(t.codice||'').match(re); if(m) max=Math.max(max,parseInt(m[1],10)||0) })
+  return 'LC-'+sig+'-'+String(max+1).padStart(3,'0')
+}
+
+async function creaBadgeNftDaAnagrafica(sezione,id){
+  const cfg=_badgeNftDatiAnagrafica(sezione,id), p=cfg.persona
+  if(!p){ alert('Anagrafica non trovata. Aggiorna la pagina e riprova.'); return }
+  const oggi=new Date().toISOString().slice(0,10)
+  const emailDefault=(p.email_aziendale||p.email||'').trim().toLowerCase()
+  const r=await chiediCampiLunga('Crea badge aziendale + NFT · '+(p.nome||''),[
+    {id:'certificate_type',tipo:'select',libero:false,label:'Tipo di rapporto',opzioni:cfg.tipi,valore:cfg.tipoDefault},
+    {id:'owner_email',label:'E-mail account portale',valore:emailDefault},
+    {id:'role',label:'Ruolo da mostrare',valore:cfg.ruolo},
+    {id:'relationship_start',label:'Data inizio rapporto — aaaa-mm-gg',valore:cfg.dal||oggi},
+    {id:'relationship_end',label:'Data fine rapporto — aaaa-mm-gg (facoltativa)',valore:cfg.fino||''},
+    {id:'contract_reference',label:'Riferimento contratto (facoltativo)',valore:cfg.contratto||''},
+    {id:'wallet_enabled',tipo:'check',label:'Abilita Apple Wallet e Google Wallet per il badge',valore:true}
+  ],function(){
+    const tipo=document.getElementById('mmc-certificate_type'), ruolo=document.getElementById('mmc-role')
+    if(tipo&&ruolo){ tipo.onchange=function(){ ruolo.value=_CR_RUOLI_DEFAULT[tipo.value]||ruolo.value } }
+  })
+  if(!r) return
+  const tipo=r.certificate_type||cfg.tipoDefault
+  const ruolo=(r.role||'').trim()||_CR_RUOLI_DEFAULT[tipo]||''
+  const email=(r.owner_email||'').trim().toLowerCase()
+  const dal=(r.relationship_start||'').trim(), fino=(r.relationship_end||'').trim()
+  if(email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ alert('Inserisci un indirizzo e-mail valido.'); return }
+  if(!dal){ alert('Indica la data di inizio del rapporto.'); return }
+  if(fino&&fino<dal){ alert('La data di fine rapporto non può precedere quella di inizio.'); return }
+  if(!confirm('Creo o aggiorno il badge aziendale e poi emetto l\u2019NFT non trasferibile su Polygon Mainnet per '+(p.nome||'questa persona')+'?\n\nSe esistono già, non verranno creati duplicati.')) return
+
+  let badge=null, badgeCreato=false, certificato=null, certificatoCreato=false
+  try{
+    await caricaTessere()
+    const badgeTipo=_badgeTipoDaCertificato(tipo), gruppo=_badgeGruppoTipo(badgeTipo)
+    badge=_TESSERE.find(function(t){ return String(t.rif_id||'')===String(p._id)&&gruppo.includes(t.tipo) })||null
+    const badgeData={
+      tipo:badgeTipo,rif_id:String(p._id),nome:(p.nome||'').trim(),ruolo,
+      owner_email:email||null,nascita:_tsIsoData(p.nascita),
+      luogo_nascita:(p.luogonascita||p.luogo_nascita||'').trim()||null,
+      scade_il:_tsIsoData(fino)||_tsTraTreAnniIso(),wallet_enabled:(r.wallet_enabled==='si'||r.wallet_enabled===true)
+    }
+    let q
+    if(badge){
+      q=await db.from('tessere').update(badgeData).eq('codice',badge.codice).select('*').single()
+    }else{
+      q=await db.from('tessere').insert({codice:_badgeProssimoCodice(badgeTipo),attiva:true,...badgeData}).select('*').single()
+      badgeCreato=true
+    }
+    if(q.error) throw q.error
+    badge=q.data
+    await caricaTessere()
+
+    await caricaCertificati()
+    certificato=_CERTIFICATI.find(function(c){
+      if(c.status==='revoked'||c.certificate_type!==tipo) return false
+      if(email&&String(c.recipient_email||'').trim().toLowerCase()===email) return true
+      return !email&&String(c.recipient_name||'').trim().toLowerCase()===String(p.nome||'').trim().toLowerCase()
+    })||null
+    if(!certificato){
+      const ses=await db.auth.getSession()
+      const rec={
+        certificate_type:tipo,subject_type:'persona',role:ruolo,
+        relationship_start:dal,relationship_end:fino||null,
+        contract_reference:(r.contract_reference||'').trim()||null,
+        recipient_name:(p.nome||'').trim(),recipient_email:email||null,
+        achievement_name:ruolo,description:_crDescrizioneRapporto(tipo,p.nome,ruolo,dal,fino),
+        criteria:'Rapporto contrattuale o di collaborazione risultante dagli atti di Leone Consulting.',
+        skills:[],achievement_type:'Certificate',issuer_mode:'leone',
+        issuer_name:'Leone Consulting di Leonardo Angelucci',partner_name:null,
+        issued_at:oggi+'T12:00:00.000Z',expires_at:fino?fino+'T23:59:59.000Z':null,
+        public_name:true,badge_image_url:_CR_BADGE_IMG,evidence_url:null,
+        status:'pending_nft',nft_status:'pending',blockchain_network:'polygon',
+        created_by:ses.data?.session?.user?.id||null
+      }
+      q=await db.from('credentials').insert(rec).select('*').single()
+      if(q.error) throw q.error
+      certificato=q.data; certificatoCreato=true
+      await caricaCertificati()
+    }
+    if(certificato.nft_status!=='minted') await avviaMintCertificato(certificato.id,true)
+    else await caricaCertificati()
+    const nftOra=_CERTIFICATI.find(x=>x.id===certificato.id)||certificato
+    alert('\u2705 Operazione completata.\n\nBadge: '+badge.codice+(badgeCreato?' creato':' già esistente, aggiornato')+'\nNFT: '+(nftOra.nft_status==='minted'?('#'+(nftOra.nft_token_id||'')+' emesso'):(certificatoCreato?'creato, in attesa di conferma':'già esistente, in attesa di conferma'))+(email?'':'\n\nNota: aggiungi un\u2019e-mail al badge per pubblicarlo su Apple/Google Wallet.'))
+  }catch(e){
+    alert('Operazione non completata.\n\n'+(badge?('Il badge '+badge.codice+' è stato salvato, ma il certificato/NFT no.\n\n'):'')+((e&&e.message)||e))
+  }
 }
 
 function _tsIsoData(value){
@@ -5458,7 +5621,7 @@ function _tsFoto(file){
 
 // elenco delle persone gia' registrate, per tipo
 async function _tsPersone(tipo){
-  const tab = {procacciatore:'procacciatori', docente:'docenti', dipendente:'dipendenti'}[tipo]
+  const tab = {procacciatore:'procacciatori',docente:'docenti',dipendente:'dipendenti'}[tipo]
   if(!tab) return []
   try{
     const r = await db.from(tab).select('id,data')
@@ -7433,7 +7596,7 @@ function renderDocenti(){
       ((d.certificati||[]).length?'<div style="font-size:11px;color:var(--text2);margin-top:5px">📄 '+(d.certificati||[]).map(escB).join(', ')+'</div>':'')+
       '<div style="font-size:11px;color:var(--text3);margin-top:5px">'+escB(d.email||'')+(d.tel?(' · '+escB(d.tel)):'')+'</div>'+
       '</div>'+
-      '<div style="display:flex;gap:6px"><button class="btn btn-sm" title="Modifica docente" onclick="apriDocente(\''+d._id+'\')">✏️</button><button class="btn btn-sm btn-r" title="Elimina docente" onclick="eliminaDocente(\''+d._id+'\')">🗑</button></div>'+
+      '<div style="display:flex;gap:6px"><button class="btn btn-sm" title="Crea badge aziendale e NFT" onclick="creaBadgeNftDaAnagrafica(\'doc\',\''+d._id+'\')">🪪 NFT</button><button class="btn btn-sm" title="Modifica docente" onclick="apriDocente(\''+d._id+'\')">✏️</button><button class="btn btn-sm btn-r" title="Elimina docente" onclick="eliminaDocente(\''+d._id+'\')">🗑</button></div>'+
       '</div></div>'
   }).join('')
 }
@@ -8749,7 +8912,7 @@ function renderProc(){
     const fat=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&v.data.startsWith(m)).reduce((s,v)=>s+v.val,0)
     const rete=p.rete||[]
     const scadenza=p.fine?controllaScadenza(p.fine):''
-    return`<tr style="cursor:pointer" ondblclick="apriProfilo(${i})"><td><div class="ar"><div class="av ${avc(i)}">${avatarImg(i,32)}</div><div style="min-width:0;max-width:200px"><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.nome}">${p.nome}</div>${p.email?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email}">${p.email}</div>`:''}${p.email_aziendale?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email_aziendale}">🏢 ${p.email_aziendale}</div>`:''}</div></div></td><td>${qualBadge(q,isAuto)}</td><td style="font-weight:600">${q.prov}%</td><td style="font-size:11px;color:var(--text2)">${rete.length>0?rete.map(n=>`${procs[n.idx]?.nome||'?'}: ${n.pct}%`).join(', '):'—'}</td><td>${regimeBadge(p.regime)}</td><td style="font-size:11px;color:var(--text2)">${p.cf||'—'}</td><td>${fmtE(fat)}</td><td><span style="cursor:pointer" onclick="apriPopupStato(${i},event)">${statoBadge(p.stato)}</span></td><td style="font-size:11px;color:var(--text2)">${p.inizio||'—'}</td><td style="font-size:11px">${p.fine?`${p.fine}${scadenza}`:'—'}</td><td style="vertical-align:middle"><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:flex-start"><button class="btn btn-sm" onclick="editProc(${i})" title="Modifica">✎</button><button class="btn btn-sm" onclick="apriAnagrafica(${i},'proc')" title="Archivio">📁</button><button class="btn btn-sm btn-r" onclick="eliminaProc(${i})" title="Elimina">✕</button></div></td></tr>`
+    return`<tr style="cursor:pointer" ondblclick="apriProfilo(${i})"><td><div class="ar"><div class="av ${avc(i)}">${avatarImg(i,32)}</div><div style="min-width:0;max-width:200px"><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.nome}">${p.nome}</div>${p.email?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email}">${p.email}</div>`:''}${p.email_aziendale?`<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.email_aziendale}">🏢 ${p.email_aziendale}</div>`:''}</div></div></td><td>${qualBadge(q,isAuto)}</td><td style="font-weight:600">${q.prov}%</td><td style="font-size:11px;color:var(--text2)">${rete.length>0?rete.map(n=>`${procs[n.idx]?.nome||'?'}: ${n.pct}%`).join(', '):'—'}</td><td>${regimeBadge(p.regime)}</td><td style="font-size:11px;color:var(--text2)">${p.cf||'—'}</td><td>${fmtE(fat)}</td><td><span style="cursor:pointer" onclick="apriPopupStato(${i},event)">${statoBadge(p.stato)}</span></td><td style="font-size:11px;color:var(--text2)">${p.inizio||'—'}</td><td style="font-size:11px">${p.fine?`${p.fine}${scadenza}`:'—'}</td><td style="vertical-align:middle"><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:flex-start"><button class="btn btn-sm" onclick="creaBadgeNftDaAnagrafica('proc','${p._id}')" title="Crea badge aziendale e NFT">🪪 NFT</button><button class="btn btn-sm" onclick="editProc(${i})" title="Modifica">✎</button><button class="btn btn-sm" onclick="apriAnagrafica(${i},'proc')" title="Archivio">📁</button><button class="btn btn-sm btn-r" onclick="eliminaProc(${i})" title="Elimina">✕</button></div></td></tr>`
   }).join('')
 }
 
@@ -10638,7 +10801,7 @@ function renderDipendenti(){
   tb.innerHTML=dipendenti.map((d,i)=>{
     const tipoLabel={fulltime:'Full-time',parttime:'Part-time',ore:'A ore'}[d.tipo]||d.tipo
     const ralLabel=d.tipo==='ore'?`€${d.pagaOra||0}/ora`:`RAL €${(d.ral||0).toLocaleString('it-IT')}`
-    return`<tr style="cursor:pointer" ondblclick="editDip(${i})"><td><div class="ar"><div class="av ${avc(i)}">${ini(d.nome)}</div><div><div style="font-weight:600">${d.nome}</div>${d.email?`<div style="font-size:11px;color:var(--text2)">${d.email}</div>`:''}</div></div></td><td><span class="badge ${d.tipo==='fulltime'?'bg':d.tipo==='parttime'?'bb':'ba'}">${tipoLabel}</span></td><td style="color:var(--text2)">${d.ruolo||'—'}</td><td style="font-weight:600">${ralLabel}</td><td style="font-size:11px;color:var(--text2)">${d.ccnl||'—'}</td><td><span class="badge bgr">Dipendente</span></td><td style="color:var(--text2)">${d.inizio||'—'}</td><td><span onclick="apriPopupStatoDip(${i},event)" style="cursor:pointer" title="Cambia stato">${statoBadge(d.stato)}</span></td><td class="acts"><button class="btn btn-sm" onclick="editDip(${i})" title="Modifica">✎</button><button class="btn btn-sm" onclick="apriAnagrafica(${i},'dip')" title="Archivio documenti">📁</button></td></tr>`
+    return`<tr style="cursor:pointer" ondblclick="editDip(${i})"><td><div class="ar"><div class="av ${avc(i)}">${ini(d.nome)}</div><div><div style="font-weight:600">${d.nome}</div>${d.email?`<div style="font-size:11px;color:var(--text2)">${d.email}</div>`:''}</div></div></td><td><span class="badge ${d.tipo==='fulltime'?'bg':d.tipo==='parttime'?'bb':'ba'}">${tipoLabel}</span></td><td style="color:var(--text2)">${d.ruolo||'—'}</td><td style="font-weight:600">${ralLabel}</td><td style="font-size:11px;color:var(--text2)">${d.ccnl||'—'}</td><td><span class="badge bgr">Dipendente</span></td><td style="color:var(--text2)">${d.inizio||'—'}</td><td><span onclick="apriPopupStatoDip(${i},event)" style="cursor:pointer" title="Cambia stato">${statoBadge(d.stato)}</span></td><td class="acts"><button class="btn btn-sm" onclick="creaBadgeNftDaAnagrafica('dip','${d._id}')" title="Crea badge aziendale e NFT">🪪 NFT</button><button class="btn btn-sm" onclick="editDip(${i})" title="Modifica">✎</button><button class="btn btn-sm" onclick="apriAnagrafica(${i},'dip')" title="Archivio documenti">📁</button></td></tr>`
   }).join('')
 }
 

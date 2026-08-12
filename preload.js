@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   configuraAppleWallet: () => ipcRenderer.invoke('configura-apple-wallet'),
   generaAppleWallet: (badge) => ipcRenderer.invoke('genera-apple-wallet', badge),
   configuraGoogleWallet: () => ipcRenderer.invoke('configura-google-wallet'),
+  statoGoogleWallet: () => ipcRenderer.invoke('stato-google-wallet'),
   generaGoogleWallet: (badge) => ipcRenderer.invoke('genera-google-wallet', badge),
   revocaGoogleWallet: (objectId) => ipcRenderer.invoke('revoca-google-wallet', objectId),
 })
