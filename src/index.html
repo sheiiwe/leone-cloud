@@ -7159,9 +7159,216 @@ function apriDocente(id){
   document.getElementById('doc-modal-title').textContent=d?'Modifica docente':'Nuovo docente'
   const set=(k,v)=>{ const e=document.getElementById(k); if(e) e.value=v||'' }
   document.getElementById('doc-id').value=d?d._id:''
-  set('doc-nome',d&&d.nome); set('doc-nascita',d&&d.nascita); 
-... 18071 bytes omitted ...
-dagno":40},
+  set('doc-nome',d&&d.nome); set('doc-nascita',d&&d.nascita); set('doc-luogonascita',d&&d.luogonascita); set('doc-cf',d&&d.cf); set('doc-tel',d&&d.tel)
+  set('doc-email',d&&d.email); set('doc-email-az',d&&d.email_aziendale); set('doc-indirizzo',d&&d.indirizzo); set('doc-citta',d&&d.citta); set('doc-cap',d&&d.cap); set('doc-prov',d&&d.prov); set('doc-consenso-mkt',d&&d.consensoMkt)
+  set('doc-iban',d&&d.iban); set('doc-piva',d&&d.piva); set('doc-note',d&&d.note)
+  document.getElementById('doc-regime').value=(d&&d.regime)||'ritenuta'
+  document.getElementById('doc-qualifica').value=(d&&d.qualifica)||'procacciatore'
+  document.getElementById('doc-stato').value=(d&&d.stato)||'Attivo'
+  document.getElementById('doc-pct').value=(d&&d.pctDocente!=null)?d.pctDocente:''
+  _docPctEcho()
+  document.querySelectorAll('.doc-liv').forEach(c=>{ c.checked=!!(d&&(d.livelli||[]).includes(c.value)) })
+  _docMaterie=(d&&Array.isArray(d.materie))?[...d.materie]:[]
+  _docCerti=(d&&Array.isArray(d.certificati))?[...d.certificati]:[]
+  _docFillMaterieSugg(); _docRenderChips()
+  _docRenderStudenti(d?d._id:null)
+  // Contratto (semplificato: solo data inizio, fine calcolata, storico rinnovi)
+  const c=(d&&d.contratto)||{}
+  set('doc-contr-inizio', c.inizio||'')
+  set('doc-contr-fine', c.fine||_calcFineContratto(c.inizio, c.rinnovi))
+  _docContrAlert(c)
+  _docRenderRinnovi(c.rinnovi||[])
+  openM('m-docente')
+}
+function _calcFineContratto(inizio, rinnovi){
+  if(!inizio) return ''
+  const base=new Date(inizio+'T00:00:00'); if(isNaN(base.getTime())) return ''
+  // fine = inizio + 12 mesi + (1 anno per ogni rinnovo)
+  const nRinnovi = Array.isArray(rinnovi) ? rinnovi.length : 0
+  base.setFullYear(base.getFullYear() + 1 + nRinnovi)
+  return base.toISOString().slice(0,10)
+}
+function _docCalcFine(){
+  const inizio=document.getElementById('doc-contr-inizio').value
+  const id=document.getElementById('doc-id').value
+  const d=id?docenti.find(x=>x._id===id):null
+  const rinnovi=(d&&d.contratto&&d.contratto.rinnovi)||[]
+  document.getElementById('doc-contr-fine').value = _calcFineContratto(inizio, rinnovi)
+  _docContrAlert({ inizio, fine:document.getElementById('doc-contr-fine').value, rinnovi })
+}
+function _docRenderRinnovi(rinnovi){
+  const box=document.getElementById('doc-rinnovi-list'); if(!box) return
+  if(!rinnovi||!rinnovi.length){ box.innerHTML='<div style="color:var(--text3);font-size:12px;padding:4px 0">Nessun rinnovo ancora. Il contratto scade tra 12 mesi dalla data di inizio.</div>'; return }
+  box.innerHTML=rinnovi.map((r,i)=>{
+    const dt=r.data||'—'
+    const link=r.pdf_path?('<a href="'+SUPA_URL+'/storage/v1/object/public/contratti/'+r.pdf_path+'" target="_blank" style="color:var(--blu);text-decoration:none">📄 PDF</a>'):''
+    const fonte = r.fonte==='auto' ? '<span style="color:var(--green);font-size:11px">🔄 Automatico</span>' : '<span style="color:var(--text2);font-size:11px">📤 Manuale</span>'
+    return '<div style="padding:6px 10px;background:var(--surface2);border-radius:6px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:8px"><div>Rinnovo #'+(i+1)+' · '+escB(dt)+' '+fonte+'</div><div style="display:flex;gap:6px;align-items:center">'+link+'</div></div>'
+  }).join('')
+}
+async function caricaRinnovoDoc(input){
+  const f=input.files&&input.files[0]; if(!f) return
+  const id=document.getElementById('doc-id').value
+  if(!id){ alert('Salva prima il docente, poi carica il rinnovo.'); input.value=''; return }
+  const d=docenti.find(x=>x._id===id); if(!d) return
+  try{
+    const ext=(f.name.split('.').pop()||'pdf').toLowerCase()
+    const path='rinnovi/doc_'+id+'_'+Date.now()+'.'+ext
+    const up=await db.storage.from('contratti').upload(path, f, {upsert:false, contentType:f.type||'application/pdf'})
+    if(up.error) throw up.error
+    const contr=Object.assign({}, d.contratto||{})
+    contr.rinnovi=Array.isArray(contr.rinnovi)?contr.rinnovi:[]
+    contr.rinnovi.push({ data:new Date().toISOString().slice(0,10), pdf_path:path, fonte:'manuale' })
+    contr.fine=_calcFineContratto(contr.inizio, contr.rinnovi)
+    const newData=Object.assign({}, d); delete newData._id; newData.contratto=contr
+    const r=await db.from('docenti').update({data:newData}).eq('id',id); if(r.error) throw r.error
+    toast('✅ Rinnovo caricato')
+    await caricaDocenti(); apriDocente(id)
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+  input.value=''
+}
+function _docContrAlert(c){
+  const box=document.getElementById('doc-contr-alert'); if(!box) return
+  if(!c||!c.fine){ box.style.display='none'; return }
+  const oggi=new Date(); oggi.setHours(0,0,0,0)
+  const fine=new Date(c.fine+'T00:00:00')
+  const giorniMancanti=Math.floor((fine.getTime()-oggi.getTime())/86400000)
+  if(giorniMancanti<0){
+    box.style.display='block'; box.style.background='#fee'; box.style.color='#c0392b'; box.style.border='1px solid #f5c6cb'
+    box.innerHTML='⚠️ <strong>Contratto scaduto</strong> il '+fine.toLocaleDateString('it-IT')+' ('+Math.abs(giorniMancanti)+' giorni fa). Rinnovare o disattivare il docente.'
+  } else if(giorniMancanti<=30){
+    box.style.display='block'; box.style.background='#fff3cd'; box.style.color='#856404'; box.style.border='1px solid #ffeaa7'
+    box.innerHTML='⚠️ <strong>Contratto in scadenza</strong>: mancano '+giorniMancanti+' giorni ('+fine.toLocaleDateString('it-IT')+').'
+  } else {
+    box.style.display='none'
+  }
+}
+function _docRenderStudenti(docId){
+  const box=document.getElementById('doc-studenti-list'); if(!box) return
+  if(!docId){ box.innerHTML='<div style="color:var(--text3);padding:6px 0">Salva prima il docente per vedere gli studenti collegati.</div>'; return }
+  const legami=[]
+  ;(typeof studenti!=='undefined'?studenti:[]).forEach(s=>{
+    ;(s.docenti||[]).forEach(x=>{ if(x&&x.docenteId===docId){ legami.push({stu:s, materia:x.materia||'', oreTot:x.oreTot||0, oreBonus:x.oreBonus||0, oreFatte:x.oreFatte||0}) } })
+  })
+  if(!legami.length){ box.innerHTML='<div style="color:var(--text3);padding:6px 0">Nessuno studente collegato a questo docente.</div>'; return }
+  box.innerHTML='<table class="tbl" style="width:100%;font-size:13px"><thead><tr><th>Studente</th><th>Materia</th><th>Ore tot.</th><th>Svolte</th><th>Residue</th></tr></thead><tbody>'+
+    legami.map(l=>{ const res=Math.max(0,(Number(l.oreTot)||0)+(Number(l.oreBonus)||0)-(Number(l.oreFatte)||0)); const tot=(Number(l.oreTot)||0)+(Number(l.oreBonus)||0); const totLbl=tot?(tot+(l.oreBonus?(' <span style="color:#e65100;font-size:10px">(+'+l.oreBonus+' bonus)</span>'):'')):'\u2014'; return '<tr><td>'+escB(l.stu.nome||'')+'</td><td>'+escB(l.materia)+'</td><td>'+totLbl+'</td><td>'+(l.oreFatte||'\u2014')+'</td><td>'+(res||'\u2014')+'</td></tr>' }).join('')+
+    '</tbody></table>'
+}
+async function salvaDocente(){
+  const nome=(document.getElementById('doc-nome').value||'').trim()
+  if(!nome) return alert('Inserisci cognome e nome.')
+  const livelli=[...document.querySelectorAll('.doc-liv')].filter(c=>c.checked).map(c=>c.value)
+  const g=k=>{ const e=document.getElementById(k); return e?e.value.trim():'' }
+  const pct=parseFloat(document.getElementById('doc-pct').value)
+  const id=document.getElementById('doc-id').value
+  const d0=id?docenti.find(x=>x._id===id):null
+  const contInizio=g('doc-contr-inizio')
+  const existing = d0 ? (d0.contratto||{}) : {}
+  const rinnovi = Array.isArray(existing.rinnovi) ? existing.rinnovi : []
+  const contFine = _calcFineContratto(contInizio, rinnovi)
+  const obj={ nome, nascita:g('doc-nascita'), luogonascita:g('doc-luogonascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), prov:(g('doc-prov')||'').toUpperCase(), consensoMkt:g('doc-consenso-mkt'), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), qualifica:document.getElementById('doc-qualifica').value, pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note'), contratto:{ inizio:contInizio, fine:contFine, rinnovi:rinnovi } }
+  try{
+    if(id){ const r=await db.from('docenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
+    else { const r=await db.from('docenti').insert({data:obj}); if(r.error) throw r.error }
+    _tsPersoneCache = null; closeM('m-docente'); await caricaDocenti(); toast('✅ Docente salvato')
+  }catch(e){ alert('Errore: '+(e.message||e)) }
+}
+async function caricaDocenti(){
+  try{ const r=await db.from('docenti').select('*').order('created_at'); docenti=(r.data||[]).map(x=>({_id:x.id,created:x.created_at,...x.data})) }catch(e){}
+  renderDocenti()
+}
+async function eliminaDocente(id){
+  const d=docenti.find(x=>x._id===id); if(!d) return
+  if(!confirm('Eliminare il docente "'+(d.nome||'')+'"?')) return
+  try{ const r=await db.from('docenti').delete().eq('id',id); if(r.error) throw r.error; await caricaDocenti(); toast('Docente eliminato') }catch(e){ alert('Errore: '+(e.message||e)) }
+}
+function renderDocenti(){
+  _docFillMaterieSugg()
+  const box=document.getElementById('docenti-lista'); if(!box) return
+  const q=(document.getElementById('doc-search')?.value||'').trim().toLowerCase()
+  const fm=document.getElementById('doc-f-materia')?.value||''
+  const fl=document.getElementById('doc-f-livello')?.value||''
+  const fq=document.getElementById('doc-f-qualifica')?.value||''
+  const _matNomeR=m=>(typeof m==='string')?m:((m&&m.nome)||'')
+  let list=docenti.slice()
+  if(fm) list=list.filter(d=>(d.materie||[]).map(_matNomeR).includes(fm))
+  if(fl) list=list.filter(d=>(d.livelli||[]).includes(fl))
+  if(fq) list=list.filter(d=>(d.qualifica||'procacciatore')===fq)
+  if(q) list=list.filter(d=>((d.nome||'')+' '+(d.materie||[]).map(_matNomeR).join(' ')+' '+(d.livelli||[]).join(' ')+' '+(d.email||'')).toLowerCase().includes(q))
+  if(!docenti.length){ box.innerHTML='<div class="empty" style="padding:3rem">Nessun docente. Premi "+ Nuovo docente" per iniziare.</div>'; return }
+  if(!list.length){ box.innerHTML='<div class="empty" style="padding:2rem">Nessun docente trovato con questi filtri.</div>'; return }
+  box.innerHTML=list.map(d=>{
+    const mat=(d.materie||[]).map(m=>{
+      const nm=(typeof m==='string')?m:(m&&m.nome)||''
+      const lv=(m&&Array.isArray(m.livelli))?m.livelli.join(''):'EMS'
+      return '<span style="background:var(--surface2);border-radius:10px;padding:2px 8px;font-size:11px">'+escB(nm)+' <small style="opacity:.6">'+lv+'</small></span>'
+    }).join(' ')
+    const liv=(d.livelli||[]).join(', ')
+    const az=(d.pctDocente!=null&&isFinite(d.pctDocente))?(100-d.pctDocente):null
+    const col=d.stato==='Attivo'?'#2a9d5c':(d.stato==='In pausa'?'#888':'#c0392b')
+    const badge='<span onclick="apriPopupStatoDoc(\''+d._id+'\',event)" title="Cambia stato" style="cursor:pointer;background:'+col+';color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">'+escB(d.stato||'Attivo')+'</span>'
+    const ql=(d.qualifica==='assunto')?'<span style="background:#3a5a8c;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">Assunto</span>':'<span style="background:#7a5c2e;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">Autonomo</span>'
+    let contrBadge=''
+    if(d.contratto&&d.contratto.fine){
+      const oggi0=new Date(); oggi0.setHours(0,0,0,0)
+      const fine0=new Date(d.contratto.fine+'T00:00:00')
+      const gg=Math.floor((fine0.getTime()-oggi0.getTime())/86400000)
+      if(gg<0){ contrBadge=' <span title="Contratto scaduto" style="background:#c0392b;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">⚠️ Contratto scaduto</span>' }
+      else if(gg<=30){ contrBadge=' <span title="Contratto in scadenza" style="background:#e67e22;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">⏳ '+gg+'gg</span>' }
+    }
+    return '<div class="card" style="margin-bottom:10px;cursor:pointer" ondblclick="apriDocente(\''+d._id+'\')"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
+      '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(d.nome||'—')+' '+badge+' '+ql+contrBadge+'</div>'+
+      '<div style="font-size:12px;color:var(--text2);margin:3px 0">'+(liv?('📚 '+escB(liv)):'')+(d.pctDocente!=null?('  ·  💶 docente '+d.pctDocente+'% / azienda '+az+'%'):'')+'</div>'+
+      ((d.contratto&&(d.contratto.inizio||d.contratto.fine))?('<div style="font-size:12px;color:var(--text2);margin:3px 0">📝 Contratto: '+(d.contratto.inizio?new Date(d.contratto.inizio+'T00:00:00').toLocaleDateString('it-IT'):'—')+' → '+(d.contratto.fine?new Date(d.contratto.fine+'T00:00:00').toLocaleDateString('it-IT'):'—')+((d.contratto.rinnovi&&d.contratto.rinnovi.length)?('  ·  🔄 '+d.contratto.rinnovi.length+' rinnov'+(d.contratto.rinnovi.length===1?'o':'i')):'')+'</div>'):'')+
+      (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
+      ((d.certificati||[]).length?'<div style="font-size:11px;color:var(--text2);margin-top:5px">📄 '+(d.certificati||[]).map(escB).join(', ')+'</div>':'')+
+      '<div style="font-size:11px;color:var(--text3);margin-top:5px">'+escB(d.email||'')+(d.tel?(' · '+escB(d.tel)):'')+'</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:6px"><button class="btn btn-sm" title="Modifica docente" onclick="apriDocente(\''+d._id+'\')">✏️</button><button class="btn btn-sm btn-r" title="Elimina docente" onclick="eliminaDocente(\''+d._id+'\')">🗑</button></div>'+
+      '</div></div>'
+  }).join('')
+}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}))
+// Chiudi modal con tasto Esc
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    const open = document.querySelector('.modal-overlay.open')
+    if(open) open.classList.remove('open')
+  }
+})
+
+// ── QUALIFICHE ────────────────────────────────────────────────
+const Qsoglie=[
+  {key:'sp',label:'Senior Partner',prov:12,badge:'ba',min:40001},
+  {key:'am',label:'Area Manager',prov:11,badge:'bp',min:25001},
+  {key:'tl',label:'Team Leader',prov:10,badge:'bt',min:10001},
+  {key:'base',label:'Agente Base',prov:8,badge:'bb',min:0},
+]
+function getQual(p,i,mese){
+  if(p.qualForce&&p.qualForce!=='auto')return Qsoglie.find(q=>q.key===p.qualForce)||Qsoglie[3]
+  const m=mese||curMese()
+  const fat=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&v.data.startsWith(m)).reduce((s,v)=>s+v.val,0)
+  return Qsoglie.find(q=>fat>=q.min)||Qsoglie[3]
+}
+const qualBadge=(q,auto)=>`<span class="badge ${q.badge}">${q.label} <span class="auto-tag">${auto?'auto':'forzata'}</span></span>`
+const regimeBadge=r=>r==='piva'?'<span class="badge bt">P. IVA</span>':'<span class="badge bp">Ritenuta</span>'
+function statoBadge(s){const m={Incassato:'bg','In attesa':'ba',Annullato:'br',Attivo:'bg',Inattivo:'bgr','In pausa':'ba',Scaduto:'br',Terminato:'br','In prova':'ba',Nuovo:'bb',Contattato:'ba',Interessato:'bg','Non interessato':'br',Chiuso:'bgr',Acquisito:'bg',Inviato:'bb',Firmato:'bg','In attesa firma':'ba'};return`<span class="badge ${m[s]||'bgr'}">${s||'—'}</span>`}
+
+// ── LISTINO ───────────────────────────────────────────────────
+const LISTINO=[
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-plenitude-standard-rid","nome":"Plenitude Standard (Rid Bancario)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":35},
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-plenitude-standard-bp","nome":"Plenitude Standard (Bollettino Postale)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":35},
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-plenitude-promo-rid","nome":"Plenitude Promo (Rid Bancario)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":35,"guadagno":25},
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-plenitude-promo-bp","nome":"Plenitude Promo (Bollettino Postale)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":25,"guadagno":15},
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-top-rid","nome":"IREN Top (Rid Bancario)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":70,"guadagno":50},
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-top-bp","nome":"IREN Top (Bollettino Postale)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":60,"guadagno":40},
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-standard-rid","nome":"IREN Standard (Rid Bancario)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":35},
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-standard-bp","nome":"IREN Standard (Bollettino Postale)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":35},
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-promo-rid","nome":"IREN Promo (Rid Bancario)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":35,"guadagno":25},
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-promo-bp","nome":"IREN Promo (Bollettino Postale)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":25,"guadagno":15},
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-subentri-rid","nome":"IREN Subentri (Rid Bancario)","piatt":"P.S.","prov":25,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":30},
+  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-subentri-bp","nome":"IREN Subentri (Bollettino Postale)","piatt":"P.S.","prov":15,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":40},
   {"cat":"Energia & Utenze","pid":"Energia & Utenze-enel-rid","nome":"ENEL (Rid Bancario)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":45,"guadagno":35},
   {"cat":"Energia & Utenze","pid":"Energia & Utenze-enel-bp","nome":"ENEL (Bollettino Postale)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":45,"guadagno":35},
   {"cat":"Energia & Utenze","pid":"Energia & Utenze-fastweb-energia-rid","nome":"Fastweb Energia (Rid Bancario)","piatt":"P.S.","prov":15,"tipo":"fisso","prezzo":null,"costo":null,"margine":50,"guadagno":35},
