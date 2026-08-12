@@ -166,6 +166,11 @@ tr:last-child td{border-bottom:none}
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px"><button id="btn-adm-annulla" onclick="annullaModificaAdmin()" style="display:none;background:#eee;color:#444;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Annulla</button><button id="btn-adm-pub" onclick="pubblicaPostAdmin()" style="background:#F22015;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px">Pubblica</button></div>
     </div>
     <div class="card" style="margin-bottom:14px"><div class="notice">Sei collegato come <strong>amministratore</strong>. Qui pubblichi le comunicazioni e vedi i post dei procacciatori. La gestione completa (provvigioni, listino, ecc.) è nell'app desktop.</div></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:18px 0 10px">
+      <h2 style="margin:0">🪪 Il mio badge amministratore</h2>
+      <button onclick="caricaMioBadge('amministratore','badge-personale-admin')" style="background:#f0efe8;color:#444;border:0;padding:8px 13px;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit">↻ Aggiorna badge</button>
+    </div>
+    <div id="badge-personale-admin"><div class="card"><div class="empty">Caricamento badge…</div></div></div>
     <div id="avvisi-lista-admin"></div>
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
@@ -559,6 +564,7 @@ async function avvia(session){
     mostra('v-admin')
     try{ const bc = await db.from('bacheca').select('*').order('created_at',{ascending:false}); renderBacheca(bc.data||[], 'bacheca-lista-admin') }catch(e){ renderBacheca([], 'bacheca-lista-admin') }
     caricaOfferteAdmin()
+    caricaMioBadge('amministratore','badge-personale-admin')
     try{
       if(session?.access_token) db.realtime.setAuth(session.access_token)
       if(window._canaleRt){ try{ db.removeChannel(window._canaleRt) }catch(e){} }
@@ -745,11 +751,11 @@ function vai(t){
 
 // ── BADGE WALLET E AGEVOLAZIONI ──────────────────────────────
 let MIO_BADGE=null, MIE_AGEVOLAZIONI=[], MIE_RICHIESTE_AGE=[]
-async function caricaMioBadge(){
-  const box=document.getElementById('badge-personale'); if(!box) return
+async function caricaMioBadge(tipo='procacciatore',boxId='badge-personale'){
+  const box=document.getElementById(boxId); if(!box) return
   box.innerHTML='<div class="card"><div class="empty">Caricamento badge…</div></div>'
   try{
-    const r=await db.rpc('get_my_wallet_badge_for_portal',{p_tipo:'procacciatore'})
+    const r=await db.rpc('get_my_wallet_badge_for_portal',{p_tipo:tipo})
     if(r.error) throw r.error
     MIO_BADGE=r.data||{found:false}
     if(!MIO_BADGE.found){
@@ -757,6 +763,7 @@ async function caricaMioBadge(){
       return
     }
     const b=MIO_BADGE
+    const qrId=boxId==='badge-personale-admin'?'wallet-qr-admin':'wallet-qr'
     const stato={valido:['Valido','#3B6D11','#EAF3DE'],scaduto:['Scaduto','#854F0B','#FAEEDA'],revocato:['Revocato','#A32D2D','#FCEBEB']}[b.status]||[b.status||'—','#6b6b66','#eee']
     const foto=b.photo_url?'<img src="'+esc(b.photo_url)+'" alt="" style="width:82px;height:82px;border-radius:16px;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.16)">':'<div style="width:82px;height:82px;border-radius:16px;background:#fff;color:#F22015;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800">LC</div>'
     const apple=b.apple_pass_url
@@ -770,9 +777,9 @@ async function caricaMioBadge(){
       +'<div style="display:flex;gap:16px;align-items:center">'+foto+'<div style="flex:1"><div style="font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.8px">Leone Consulting</div><div style="font-size:21px;font-weight:800;margin-top:4px">'+esc(b.name||'')+'</div><div style="font-size:13px;opacity:.86;margin-top:3px">'+esc(b.role||b.type||'')+'</div></div>'
       +'<span style="align-self:flex-start;background:'+stato[2]+';color:'+stato[1]+';font-size:11px;font-weight:800;padding:6px 10px;border-radius:20px">'+stato[0]+'</span></div>'
       +'<div style="display:flex;justify-content:space-between;gap:12px;margin-top:18px;font-size:12px"><div><span style="opacity:.65">N. BADGE</span><br><strong>'+esc(b.code||'')+'</strong></div><div style="text-align:right"><span style="opacity:.65">VALIDO FINO AL</span><br><strong>'+(b.expires_at?new Date(b.expires_at).toLocaleDateString('it-IT'):'—')+'</strong></div></div></div>'
-      +'<div style="padding:18px;display:grid;grid-template-columns:minmax(150px,190px) 1fr;gap:18px;align-items:center"><div style="text-align:center"><canvas id="wallet-qr" width="170" height="170" style="max-width:100%;background:#fff;border-radius:10px"></canvas><div style="font-size:11px;color:#6b6b66;margin-top:6px">Scansiona per verificare</div></div>'
+      +'<div style="padding:18px;display:grid;grid-template-columns:minmax(150px,190px) 1fr;gap:18px;align-items:center"><div style="text-align:center"><canvas id="'+qrId+'" width="170" height="170" style="max-width:100%;background:#fff;border-radius:10px"></canvas><div style="font-size:11px;color:#6b6b66;margin-top:6px">Scansiona per verificare</div></div>'
       +'<div><div style="font-size:13px;color:#6b6b66;line-height:1.5;margin-bottom:12px">Il QR controlla sempre lo stato aggiornato del badge sul sito ufficiale.</div><div style="display:grid;gap:8px">'+apple+google+'<a href="'+esc(b.verify_url)+'" target="_blank" rel="noopener" style="text-align:center;color:#F22015;font-size:13px;font-weight:700;text-decoration:none;padding:8px">Apri verifica ufficiale ↗</a></div></div></div></div>'
-    setTimeout(()=>{ try{ if(window.QRCode) QRCode.toCanvas(document.getElementById('wallet-qr'),b.verify_url,{width:170,margin:1,color:{dark:'#111111',light:'#ffffff'}}) }catch(e){ console.error('qr:',e) } },0)
+    setTimeout(()=>{ try{ if(window.QRCode) QRCode.toCanvas(document.getElementById(qrId),b.verify_url,{width:170,margin:1,color:{dark:'#111111',light:'#ffffff'}}) }catch(e){ console.error('qr:',e) } },0)
   }catch(e){
     box.innerHTML='<div class="card"><div class="empty">Impossibile caricare il badge: '+esc((e&&e.message)||String(e))+'</div></div>'
   }
