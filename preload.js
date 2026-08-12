@@ -21,4 +21,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   suonaNotifica: () => ipcRenderer.invoke('suona-notifica'),
   apriFileTmp: (buffer, fileName) => ipcRenderer.invoke('apri-file-tmp', { buffer, fileName }),
   salvaFile: (buffer, fileName) => ipcRenderer.invoke('salva-file', { buffer, fileName }),
+  configuraAppleWallet: () => ipcRenderer.invoke('configura-apple-wallet'),
+  generaAppleWallet: (badge) => ipcRenderer.invoke('genera-apple-wallet', badge),
 })

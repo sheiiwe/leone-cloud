@@ -906,6 +906,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
     <button class="btn btn-p btn-sm" onclick="apriTessera()">＋ Nuovo tesserino</button>
     <button class="btn btn-sm" onclick="creaTessereMancanti()">⚡ Crea tesserini mancanti</button>
+    <button class="btn btn-sm" onclick="configuraCertificatoApple()"> Configura certificato Apple</button>
     <span id="ts-count" style="font-size:13px;color:var(--text2)"></span>
   </div>
   <div class="tbl-wrap"><table>
@@ -2966,7 +2967,7 @@ function syncStatus(state,msg){
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
 // ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
-const _RT_BUILD='1.13.1-wallet-badge-associazione'
+const _RT_BUILD='1.13.2-apple-wallet-pass'
 let _rtLastSync=new Date().toISOString()
 let _rtWasSubscribed=false
 const _syncTimers={}
@@ -5237,6 +5238,7 @@ function renderTessere(){
         +'<button class="btn btn-sm" title="Immagine per il telefono" onclick="stampaTessera(\''+t.codice+'\',\'png\')">📱</button>'
         +'<button class="btn btn-sm" title="Foto" onclick="cambiaFotoTessera(\''+t.codice+'\')">📷</button>'
         +'<button class="btn btn-sm" title="Associa il badge all’account del portale" onclick="gestisciWalletTessera(\''+t.codice+'\')">🔗 Associa account</button>'
+        +(t.owner_email&&t.wallet_enabled!==false?'<button class="btn btn-sm" title="Firma e pubblica il pass Apple Wallet" onclick="emettiAppleWallet(\''+t.codice+'\')"> '+(t.apple_wallet_status==='emesso'?'Rigenera':'Emetti')+'</button>':'')
         +'<button class="btn btn-sm" title="Modifica tesserino" onclick="apriTessera(\''+t.codice+'\')">✏️</button>'
         +'<button class="btn btn-sm btn-r" title="Elimina tesserino" onclick="eliminaTessera(\''+t.codice+'\')">🗑</button>'
       +'</td></tr>'
@@ -5248,6 +5250,53 @@ function _tsWalletStato(nome,stato,enabled){
   const m={emesso:['pronto','#1F8A3F'],in_attesa:['in attesa','#B8860B'],revocato:['revocato','#C51E26'],errore:['errore','#C51E26'],non_configurato:['da configurare','var(--text3)']}
   const x=m[stato]||m.non_configurato
   return '<span style="font-weight:700;color:'+x[1]+'">'+nome+': '+x[0]+'</span>'
+}
+
+async function configuraCertificatoApple(){
+  try{
+    const r=await window.electronAPI?.configuraAppleWallet?.()
+    if(r?.canceled) return
+    if(!r?.ok) throw new Error(r?.errore||'Configurazione non riuscita')
+    alert('✅ Certificato Apple Wallet configurato e abbinato alla chiave privata di questo Mac.')
+  }catch(e){ alert('Errore Apple Wallet:\n'+((e&&e.message)||e)) }
+}
+
+function _base64Bytes(base64){
+  const raw=atob(base64), out=new Uint8Array(raw.length)
+  for(let i=0;i<raw.length;i++) out[i]=raw.charCodeAt(i)
+  return out
+}
+
+async function emettiAppleWallet(codice){
+  const t=_TESSERE.find(x=>x.codice===codice); if(!t) return
+  if(!t.owner_email){ alert('Prima associa il tesserino all’account del portale.'); return }
+  if(!t.wallet_enabled){ alert('Wallet è disattivato per questo tesserino.'); return }
+  if(!t.attiva){ alert('Non puoi emettere un pass per un tesserino revocato.'); return }
+  if(!confirm((t.apple_wallet_status==='emesso'?'Rigenero':'Emetto')+' il pass Apple Wallet per '+(t.nome||codice)+'?')) return
+  try{
+    let q=await db.from('tessere').update({apple_wallet_status:'in_attesa',wallet_updated_at:new Date().toISOString()}).eq('codice',codice)
+    if(q.error) throw q.error
+    await caricaTessere()
+    const result=await window.electronAPI?.generaAppleWallet?.({
+      code:t.codice,name:t.nome,role:t.ruolo,type:t.tipo,expiresAt:t.scade_il
+    })
+    if(!result?.ok) throw new Error(result?.errore||'Firma del pass non riuscita')
+    const storagePath='apple/'+String(codice).replace(/[^A-Za-z0-9_-]/g,'_')+'.pkpass'
+    const up=await db.storage.from('wallet-passes').upload(storagePath,_base64Bytes(result.base64),{
+      contentType:'application/vnd.apple.pkpass',upsert:true,cacheControl:'0'
+    })
+    if(up.error) throw up.error
+    q=await db.from('tessere').update({
+      apple_wallet_status:'emesso',apple_serial:codice,apple_storage_path:storagePath,
+      apple_pass_url:null,wallet_updated_at:new Date().toISOString()
+    }).eq('codice',codice)
+    if(q.error) throw q.error
+    await caricaTessere()
+    alert('✅ Pass Apple Wallet emesso.\n\nLa persona lo troverà nel proprio portale.')
+  }catch(e){
+    try{ await db.from('tessere').update({apple_wallet_status:'errore',wallet_updated_at:new Date().toISOString()}).eq('codice',codice); await caricaTessere() }catch(_){}
+    alert('Errore emissione Apple Wallet:\n'+((e&&e.message)||e))
+  }
 }
 
 async function gestisciWalletTessera(codice){

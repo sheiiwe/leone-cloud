@@ -1,9 +1,68 @@
-const { ipcMain, shell } = require('electron')
+const { ipcMain, shell, dialog } = require('electron')
 const nodemailer = require('nodemailer')
 const { execFile } = require('child_process')
 const path = require('path')
 const os = require('os')
 const fs = require('fs')
+const crypto = require('crypto')
+const https = require('https')
+
+const execFileAsync = (file, args, options = {}) => new Promise((resolve, reject) => {
+  execFile(file, args, options, (error, stdout, stderr) => {
+    if (error) {
+      error.message = `${error.message}${stderr ? `\n${stderr}` : ''}`
+      reject(error)
+    } else resolve({ stdout: String(stdout || ''), stderr: String(stderr || '') })
+  })
+})
+
+const walletDir = () => path.join(os.homedir(), 'Documents', 'Leone Consulting', 'Wallet')
+const walletPaths = () => ({
+  dir: walletDir(),
+  key: path.join(walletDir(), 'LeoneWallet.key'),
+  cert: path.join(walletDir(), 'LeoneWallet.cer'),
+  wwdrDer: path.join(walletDir(), 'AppleWWDRCAG4.cer'),
+  wwdrPem: path.join(walletDir(), 'AppleWWDRCAG4.pem'),
+})
+
+async function certToPem(certPath, outputPath){
+  try { await execFileAsync('/usr/bin/openssl', ['x509','-inform','DER','-in',certPath,'-out',outputPath]) }
+  catch (_) { await execFileAsync('/usr/bin/openssl', ['x509','-in',certPath,'-out',outputPath]) }
+}
+
+function downloadFile(url, destination){
+  return new Promise((resolve, reject) => {
+    const get = (current) => https.get(current, { headers:{ 'User-Agent':'Leone Consulting Wallet' } }, res => {
+      if(res.statusCode >= 300 && res.statusCode < 400 && res.headers.location){ res.resume(); get(new URL(res.headers.location,current).toString()); return }
+      if(res.statusCode !== 200){ res.resume(); reject(new Error(`Download certificato Apple: HTTP ${res.statusCode}`)); return }
+      const tmp=destination+'.tmp'; const out=fs.createWriteStream(tmp)
+      res.pipe(out); out.on('finish',()=>out.close(()=>{ fs.renameSync(tmp,destination); resolve(destination) }))
+      out.on('error',reject)
+    }).on('error',reject)
+    get(url)
+  })
+}
+
+async function preparaFirmaApple(){
+  const p=walletPaths(); fs.mkdirSync(p.dir,{recursive:true,mode:0o700})
+  if(!fs.existsSync(p.key)) throw new Error(`Chiave privata non trovata:\n${p.key}`)
+  if(!fs.existsSync(p.cert)){
+    const candidates=[path.join(p.dir,'pass.cer'),path.join(os.homedir(),'Downloads','pass.cer')]
+    const found=candidates.find(x=>fs.existsSync(x))
+    if(found) fs.copyFileSync(found,p.cert)
+  }
+  if(!fs.existsSync(p.cert)) throw new Error('Certificato Wallet non configurato. Premi “Configura certificato Apple” e seleziona pass.cer.')
+  if(!fs.existsSync(p.wwdrDer)) await downloadFile('https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer',p.wwdrDer)
+  if(!fs.existsSync(p.wwdrPem)) await certToPem(p.wwdrDer,p.wwdrPem)
+
+  const certPem=path.join(p.dir,'LeoneWallet.pem'); await certToPem(p.cert,certPem)
+  const subject=(await execFileAsync('/usr/bin/openssl',['x509','-in',certPem,'-noout','-subject'])).stdout
+  if(!subject.includes('pass.it.leoneconsulting.badge')) throw new Error('Il certificato selezionato non appartiene a pass.it.leoneconsulting.badge.')
+  const certPub=(await execFileAsync('/usr/bin/openssl',['x509','-in',certPem,'-pubkey','-noout'])).stdout.replace(/\s/g,'')
+  const keyPub=(await execFileAsync('/usr/bin/openssl',['pkey','-in',p.key,'-pubout'])).stdout.replace(/\s/g,'')
+  if(certPub!==keyPub) throw new Error('Il certificato non corrisponde alla chiave LeoneWallet.key creata su questo Mac.')
+  return {...p,certPem}
+}
 
 // Trasporti email DINAMICI: le credenziali arrivano da Impostazioni (cloud).
 // Fallback sicuro al vecchio email-server.js SOLO se il file esiste ancora.
@@ -27,6 +86,89 @@ ipcMain.handle('set-email-config', (event, cfg) => {
     }
     return { ok: true }
   } catch (e) { return { ok: false, error: e.message } }
+})
+
+// ── APPLE WALLET: la chiave privata rimane esclusivamente sul Mac ───────────
+ipcMain.handle('configura-apple-wallet', async () => {
+  try{
+    const p=walletPaths(); fs.mkdirSync(p.dir,{recursive:true,mode:0o700})
+    const result=await dialog.showOpenDialog({
+      title:'Seleziona il certificato Apple Wallet pass.cer',
+      defaultPath:path.join(os.homedir(),'Downloads'),
+      properties:['openFile'],
+      filters:[{name:'Certificato Apple',extensions:['cer','pem']}]
+    })
+    if(result.canceled||!result.filePaths[0]) return {ok:false,canceled:true}
+    fs.copyFileSync(result.filePaths[0],p.cert)
+    await preparaFirmaApple()
+    return {ok:true,certificato:p.cert,chiave:p.key}
+  }catch(e){ return {ok:false,errore:e.message||String(e)} }
+})
+
+ipcMain.handle('genera-apple-wallet', async (_event, badge) => {
+  let tmpRoot=''
+  try{
+    const code=String(badge?.code||'').trim()
+    const name=String(badge?.name||'').trim()
+    const role=String(badge?.role||'').trim()
+    if(!/^[A-Za-z0-9_-]{3,80}$/.test(code)||!name) throw new Error('Dati del tesserino non validi.')
+    const firma=await preparaFirmaApple()
+    tmpRoot=fs.mkdtempSync(path.join(os.tmpdir(),'leone-wallet-'))
+    const passDir=path.join(tmpRoot,'pass'); fs.mkdirSync(passDir)
+    const verifyUrl=`https://verifica.leoneconsultingitalia.it/${encodeURIComponent(code)}`
+    const expires=badge?.expiresAt ? new Date(`${badge.expiresAt}T23:59:59+02:00`) : null
+    const pass={
+      formatVersion:1,
+      passTypeIdentifier:'pass.it.leoneconsulting.badge',
+      serialNumber:code,
+      teamIdentifier:'2QSB8C5755',
+      organizationName:'Leone Consulting di Leonardo Angelucci',
+      description:'Badge aziendale Leone Consulting',
+      logoText:'Leone Consulting',
+      foregroundColor:'rgb(255, 255, 255)',
+      backgroundColor:'rgb(20, 20, 20)',
+      labelColor:'rgb(242, 32, 21)',
+      barcodes:[{format:'PKBarcodeFormatQR',message:verifyUrl,messageEncoding:'iso-8859-1',altText:code}],
+      generic:{
+        primaryFields:[{key:'name',label:'TITOLARE',value:name}],
+        secondaryFields:[{key:'role',label:'RUOLO',value:role||String(badge?.type||'Collaboratore')}],
+        auxiliaryFields:[
+          {key:'code',label:'N. BADGE',value:code},
+          {key:'expires',label:'VALIDO FINO AL',value:expires?expires.toLocaleDateString('it-IT'):'—'}
+        ],
+        backFields:[
+          {key:'verify',label:'Verifica ufficiale',value:verifyUrl},
+          {key:'issuer',label:'Emittente',value:'Leone Consulting di Leonardo Angelucci'},
+          {key:'contact',label:'Assistenza',value:'amministrazione@leoneconsultingitalia.it'}
+        ]
+      },
+      ...(expires&&!Number.isNaN(expires.getTime())?{expirationDate:expires.toISOString()}:{}),
+      userInfo:{badgeCode:code,verificationUrl:verifyUrl}
+    }
+    fs.writeFileSync(path.join(passDir,'pass.json'),JSON.stringify(pass,null,2))
+    const iconSource=[path.join(__dirname,'assets','icon1024.png'),path.join(__dirname,'assets','icon.png')].find(fs.existsSync)
+    if(!iconSource) throw new Error('Logo dell’app non trovato.')
+    await execFileAsync('/usr/bin/sips',['-z','29','29',iconSource,'--out',path.join(passDir,'icon.png')])
+    await execFileAsync('/usr/bin/sips',['-z','58','58',iconSource,'--out',path.join(passDir,'icon@2x.png')])
+    await execFileAsync('/usr/bin/sips',['-z','87','87',iconSource,'--out',path.join(passDir,'icon@3x.png')])
+
+    const manifest={}
+    for(const file of fs.readdirSync(passDir).sort()){
+      manifest[file]=crypto.createHash('sha1').update(fs.readFileSync(path.join(passDir,file))).digest('hex')
+    }
+    fs.writeFileSync(path.join(passDir,'manifest.json'),JSON.stringify(manifest))
+    await execFileAsync('/usr/bin/openssl',[
+      'smime','-binary','-sign','-signer',firma.certPem,'-inkey',firma.key,
+      '-certfile',firma.wwdrPem,'-in',path.join(passDir,'manifest.json'),
+      '-out',path.join(passDir,'signature'),'-outform','DER'
+    ])
+    const output=path.join(tmpRoot,`Leone-${code}.pkpass`)
+    await execFileAsync('/usr/bin/zip',['-q','-X','-r',output,'.'],{cwd:passDir})
+    const bytes=fs.readFileSync(output)
+    if(bytes.length>2*1024*1024) throw new Error('Il pass supera il limite di 2 MB.')
+    return {ok:true,base64:bytes.toString('base64'),fileName:`Leone-${code}.pkpass`,size:bytes.length}
+  }catch(e){ return {ok:false,errore:e.message||String(e)} }
+  finally{ if(tmpRoot) try{fs.rmSync(tmpRoot,{recursive:true,force:true})}catch(_){} }
 })
 
 const fromAddr = (via) => via === 'pec'
