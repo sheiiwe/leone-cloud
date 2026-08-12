@@ -6,6 +6,14 @@ const os = require('os')
 const fs = require('fs')
 const crypto = require('crypto')
 const https = require('https')
+const {
+  GOOGLE_WALLET_CLASS_ID,
+  validateServiceAccount,
+  buildGoogleWalletObject,
+  buildSaveUrl,
+  upsertGoogleWalletObject,
+  revokeGoogleWalletObject
+} = require('./google-wallet')
 
 const execFileAsync = (file, args, options = {}) => new Promise((resolve, reject) => {
   execFile(file, args, options, (error, stdout, stderr) => {
@@ -23,7 +31,19 @@ const walletPaths = () => ({
   cert: path.join(walletDir(), 'LeoneWallet.cer'),
   wwdrDer: path.join(walletDir(), 'AppleWWDRCAG4.cer'),
   wwdrPem: path.join(walletDir(), 'AppleWWDRCAG4.pem'),
+  googleCredentials: path.join(walletDir(), 'GoogleWalletServiceAccount.json'),
 })
+
+function leggiCredenzialiGoogleWallet(){
+  const p=walletPaths()
+  if(!fs.existsSync(p.googleCredentials)){
+    throw new Error('Account Google Wallet non configurato. Premi “Configura Google Wallet” e seleziona il file JSON scaricato da Google Cloud.')
+  }
+  let credentials
+  try{ credentials=JSON.parse(fs.readFileSync(p.googleCredentials,'utf8')) }
+  catch(_){ throw new Error('Il file locale delle credenziali Google Wallet non è un JSON valido. Configuralo di nuovo.') }
+  return validateServiceAccount(credentials)
+}
 
 async function certToPem(certPath, outputPath){
   try { await execFileAsync('/usr/bin/openssl', ['x509','-inform','DER','-in',certPath,'-out',outputPath]) }
@@ -102,6 +122,59 @@ ipcMain.handle('configura-apple-wallet', async () => {
     fs.copyFileSync(result.filePaths[0],p.cert)
     await preparaFirmaApple()
     return {ok:true,certificato:p.cert,chiave:p.key}
+  }catch(e){ return {ok:false,errore:e.message||String(e)} }
+})
+
+// ── GOOGLE WALLET: il JSON viene copiato in una cartella privata del Mac ───
+ipcMain.handle('configura-google-wallet', async () => {
+  try{
+    const p=walletPaths(); fs.mkdirSync(p.dir,{recursive:true,mode:0o700})
+    const result=await dialog.showOpenDialog({
+      title:'Seleziona la chiave JSON dell’account di servizio Google Wallet',
+      defaultPath:path.join(os.homedir(),'Downloads'),
+      properties:['openFile'],
+      filters:[{name:'Chiave account di servizio Google',extensions:['json']}]
+    })
+    if(result.canceled||!result.filePaths[0]) return {ok:false,canceled:true}
+    let credentials
+    try{ credentials=JSON.parse(fs.readFileSync(result.filePaths[0],'utf8')) }
+    catch(_){ throw new Error('Il file selezionato non è un JSON valido.') }
+    validateServiceAccount(credentials)
+    const source=path.resolve(result.filePaths[0]), destination=path.resolve(p.googleCredentials)
+    if(source!==destination){
+      const tmp=`${p.googleCredentials}.tmp`
+      fs.copyFileSync(source,tmp)
+      fs.chmodSync(tmp,0o600)
+      fs.renameSync(tmp,p.googleCredentials)
+    }else fs.chmodSync(p.googleCredentials,0o600)
+    return {
+      ok:true,
+      email:credentials.client_email,
+      projectId:credentials.project_id,
+      classId:GOOGLE_WALLET_CLASS_ID
+    }
+  }catch(e){ return {ok:false,errore:e.message||String(e)} }
+})
+
+ipcMain.handle('genera-google-wallet', async (_event, badge) => {
+  try{
+    const credentials=leggiCredenzialiGoogleWallet()
+    const object=buildGoogleWalletObject(badge)
+    await upsertGoogleWalletObject(credentials,object)
+    return {
+      ok:true,
+      objectId:object.id,
+      saveUrl:buildSaveUrl(credentials,object),
+      classId:GOOGLE_WALLET_CLASS_ID
+    }
+  }catch(e){ return {ok:false,errore:e.message||String(e)} }
+})
+
+ipcMain.handle('revoca-google-wallet', async (_event, objectId) => {
+  try{
+    const credentials=leggiCredenzialiGoogleWallet()
+    const object=await revokeGoogleWalletObject(credentials,String(objectId||''))
+    return {ok:true,objectId:object.id||String(objectId||'')}
   }catch(e){ return {ok:false,errore:e.message||String(e)} }
 })
 

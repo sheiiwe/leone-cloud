@@ -1,9 +1,10 @@
 {
   "name": "leone-consulting",
-  "version": "1.13.2",
+  "version": "1.14.0",
   "description": "Gestionale — Leone Consulting di Leonardo Angelucci",
   "main": "main.js",
   "scripts": {
+    "test": "node tests/google-wallet.test.js",
     "start": "electron .",
     "build": "electron-builder --mac --universal",
     "build-win": "electron-builder --win --x64",
@@ -44,6 +45,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "google-wallet.js",
       "email-server.js",
       "ipc-handlers.js",
       "compila_pdf.py",
