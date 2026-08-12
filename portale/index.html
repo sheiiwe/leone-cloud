@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>Portale Procacciatori — Leone Consulting</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;background:#f5f5f0;color:#1a1a18;min-height:100vh}
@@ -269,6 +270,8 @@ tr:last-child td{border-bottom:none}
         <div class="tab" id="tab-profilo" onclick="vai('profilo')">👤 Profilo</div>
         <div class="tab" id="tab-doc" onclick="vai('doc')">📄 Documenti</div>
         <div class="tab" id="tab-doccom" onclick="vai('doccom')">📁 Documenti commerciali</div>
+        <div class="tab" id="tab-badge" onclick="vai('badge')">🪪 Il mio badge</div>
+        <div class="tab" id="tab-agevolazioni" onclick="vai('agevolazioni')">🎁 Agevolazioni</div>
       </div>
 
       <!-- HOME -->
@@ -281,6 +284,18 @@ tr:last-child td{border-bottom:none}
       <div id="pane-doccom" style="display:none">
         <div class="card" style="margin-bottom:14px"><div class="notice">Documenti messi a disposizione da Leone Consulting (brochure, listini, modulistica, materiale commerciale). Puoi <strong>visualizzarli online</strong> o scaricarli.</div></div>
         <div id="doccom-lista">Caricamento…</div>
+      </div>
+
+      <!-- BADGE AZIENDALE -->
+      <div id="pane-badge" style="display:none">
+        <div class="card" style="margin-bottom:14px"><div class="notice">🪪 Il badge aziendale è personale. Il QR apre la verifica ufficiale Leone Consulting e mostra in tempo reale se il tesserino è valido, scaduto o revocato.</div></div>
+        <div id="badge-personale"><div class="card"><div class="empty">Caricamento…</div></div></div>
+      </div>
+
+      <!-- AGEVOLAZIONI -->
+      <div id="pane-agevolazioni" style="display:none">
+        <div class="card" style="margin-bottom:14px"><div class="notice">🎁 Servizi riservati al personale Leone Consulting. Ogni attivazione è nominativa: non vengono condivise password aziendali.</div></div>
+        <div id="agevolazioni-personali"><div class="card"><div class="empty">Caricamento…</div></div></div>
       </div>
 
       <!-- VISUALIZZATORE DOCUMENTI -->
@@ -621,6 +636,7 @@ async function avvia(session){
     }catch(e){ renderListinoPortale([]) }
 
     try{ await caricaMieProposte() }catch(e){ renderMieProposte() }
+    await Promise.allSettled([caricaMioBadge(),caricaMieAgevolazioni()])
 
     // Aggiornamento dal vivo: se l'amministrazione aggiunge una vendita/lead, si aggiorna da solo
     try{
@@ -632,6 +648,8 @@ async function avvia(session){
         .on('postgres_changes',{event:'*',schema:'public',table:'bacheca'}, ricaricaBacheca)
         .on('postgres_changes',{event:'*',schema:'public',table:'listino'}, ricaricaListino)
         .on('postgres_changes',{event:'*',schema:'public',table:'proposte'}, caricaMieProposte)
+        .on('postgres_changes',{event:'*',schema:'public',table:'agevolazioni'}, caricaMieAgevolazioni)
+        .on('postgres_changes',{event:'*',schema:'public',table:'agevolazioni_richieste'}, caricaMieAgevolazioni)
         .subscribe()
     }catch(e){ console.error('realtime:', e) }
 
@@ -701,6 +719,8 @@ function vai(t){
   document.getElementById('tab-lead').classList.toggle('active', t==='lead')
   document.getElementById('tab-profilo').classList.toggle('active', t==='profilo')
   document.getElementById('tab-doc').classList.toggle('active', t==='doc')
+  document.getElementById('tab-badge').classList.toggle('active', t==='badge')
+  document.getElementById('tab-agevolazioni').classList.toggle('active', t==='agevolazioni')
   document.getElementById('pane-home').style.display = t==='home' ? 'block' : 'none'
   document.getElementById('pane-prov').style.display = t==='prov' ? 'block' : 'none'
   document.getElementById('pane-bacheca').style.display = t==='bacheca' ? 'block' : 'none'
@@ -712,11 +732,105 @@ function vai(t){
   document.getElementById('pane-lead').style.display = t==='lead' ? 'block' : 'none'
   document.getElementById('pane-profilo').style.display = t==='profilo' ? 'block' : 'none'
   document.getElementById('pane-doc').style.display = t==='doc' ? 'block' : 'none'
+  document.getElementById('pane-badge').style.display = t==='badge' ? 'block' : 'none'
+  document.getElementById('pane-agevolazioni').style.display = t==='agevolazioni' ? 'block' : 'none'
+  if(t==='badge') caricaMioBadge()
+  if(t==='agevolazioni') caricaMieAgevolazioni()
   {const e=document.getElementById('tab-doccom'); if(e) e.classList.toggle('active', t==='doccom')}
   {const e=document.getElementById('pane-doccom'); if(e) e.style.display = t==='doccom' ? 'block' : 'none'}
   if(t==='doccom') caricaDocCommPortale()
   const _pp=document.getElementById('pane-proposta'); if(_pp) _pp.style.display = t==='proposta' ? 'block' : 'none'
   if(t!=='proposta') _schedaPropId=null
+}
+
+// ── BADGE WALLET E AGEVOLAZIONI ──────────────────────────────
+let MIO_BADGE=null, MIE_AGEVOLAZIONI=[], MIE_RICHIESTE_AGE=[]
+async function caricaMioBadge(){
+  const box=document.getElementById('badge-personale'); if(!box) return
+  box.innerHTML='<div class="card"><div class="empty">Caricamento badge…</div></div>'
+  try{
+    const r=await db.rpc('get_my_wallet_badge')
+    if(r.error) throw r.error
+    MIO_BADGE=r.data||{found:false}
+    if(!MIO_BADGE.found){
+      box.innerHTML='<div class="card"><div class="empty"><div style="font-size:38px;margin-bottom:8px">🪪</div>Non hai ancora un badge associato a questo account.<br><span style="font-size:12px">L’amministrazione può crearlo e collegarlo alla tua e-mail.</span></div></div>'
+      return
+    }
+    const b=MIO_BADGE
+    const stato={valido:['Valido','#3B6D11','#EAF3DE'],scaduto:['Scaduto','#854F0B','#FAEEDA'],revocato:['Revocato','#A32D2D','#FCEBEB']}[b.status]||[b.status||'—','#6b6b66','#eee']
+    const foto=b.photo_url?'<img src="'+esc(b.photo_url)+'" alt="" style="width:82px;height:82px;border-radius:16px;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.16)">':'<div style="width:82px;height:82px;border-radius:16px;background:#fff;color:#F22015;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800">LC</div>'
+    const apple=b.apple_pass_url
+      ? '<a href="'+esc(b.apple_pass_url)+'" style="display:flex;align-items:center;justify-content:center;background:#000;color:#fff;text-decoration:none;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700"> Aggiungi a Apple Wallet</a>'
+      : '<button disabled style="padding:12px 16px;border:0;border-radius:10px;background:#e7e7e3;color:#888;font-weight:700"> Apple Wallet · in configurazione</button>'
+    const google=b.google_save_url
+      ? '<a href="'+esc(b.google_save_url)+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;background:#1a73e8;color:#fff;text-decoration:none;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700">G Aggiungi a Google Wallet</a>'
+      : '<button disabled style="padding:12px 16px;border:0;border-radius:10px;background:#e7e7e3;color:#888;font-weight:700">G Google Wallet · in configurazione</button>'
+    box.innerHTML='<div class="card" style="overflow:hidden;padding:0">'
+      +'<div style="background:linear-gradient(135deg,#111 0%,#292929 58%,#F22015 100%);color:#fff;padding:22px">'
+      +'<div style="display:flex;gap:16px;align-items:center">'+foto+'<div style="flex:1"><div style="font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.8px">Leone Consulting</div><div style="font-size:21px;font-weight:800;margin-top:4px">'+esc(b.name||'')+'</div><div style="font-size:13px;opacity:.86;margin-top:3px">'+esc(b.role||b.type||'')+'</div></div>'
+      +'<span style="align-self:flex-start;background:'+stato[2]+';color:'+stato[1]+';font-size:11px;font-weight:800;padding:6px 10px;border-radius:20px">'+stato[0]+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;gap:12px;margin-top:18px;font-size:12px"><div><span style="opacity:.65">N. BADGE</span><br><strong>'+esc(b.code||'')+'</strong></div><div style="text-align:right"><span style="opacity:.65">VALIDO FINO AL</span><br><strong>'+(b.expires_at?new Date(b.expires_at).toLocaleDateString('it-IT'):'—')+'</strong></div></div></div>'
+      +'<div style="padding:18px;display:grid;grid-template-columns:minmax(150px,190px) 1fr;gap:18px;align-items:center"><div style="text-align:center"><canvas id="wallet-qr" width="170" height="170" style="max-width:100%;background:#fff;border-radius:10px"></canvas><div style="font-size:11px;color:#6b6b66;margin-top:6px">Scansiona per verificare</div></div>'
+      +'<div><div style="font-size:13px;color:#6b6b66;line-height:1.5;margin-bottom:12px">Il QR controlla sempre lo stato aggiornato del badge sul sito ufficiale.</div><div style="display:grid;gap:8px">'+apple+google+'<a href="'+esc(b.verify_url)+'" target="_blank" rel="noopener" style="text-align:center;color:#F22015;font-size:13px;font-weight:700;text-decoration:none;padding:8px">Apri verifica ufficiale ↗</a></div></div></div></div>'
+    setTimeout(()=>{ try{ if(window.QRCode) QRCode.toCanvas(document.getElementById('wallet-qr'),b.verify_url,{width:170,margin:1,color:{dark:'#111111',light:'#ffffff'}}) }catch(e){ console.error('qr:',e) } },0)
+  }catch(e){
+    box.innerHTML='<div class="card"><div class="empty">Impossibile caricare il badge: '+esc((e&&e.message)||String(e))+'</div></div>'
+  }
+}
+
+function _ageStato(s){
+  return {richiesta:['Richiesta inviata','#854F0B','#FAEEDA'],in_lavorazione:['In lavorazione','#185FA5','#E6F0FA'],attiva:['Attiva','#3B6D11','#EAF3DE'],rifiutata:['Non approvata','#A32D2D','#FCEBEB'],revocata:['Revocata','#A32D2D','#FCEBEB'],scaduta:['Scaduta','#666','#eee']}[s]||['Disponibile','#6b6b66','#eee']
+}
+async function caricaMieAgevolazioni(){
+  const box=document.getElementById('agevolazioni-personali'); if(!box) return
+  box.innerHTML='<div class="card"><div class="empty">Caricamento agevolazioni…</div></div>'
+  try{
+    const [a,r]=await Promise.all([
+      db.from('agevolazioni').select('*').order('ordinamento').order('nome'),
+      db.from('agevolazioni_richieste').select('*').order('requested_at',{ascending:false})
+    ])
+    if(a.error) throw a.error
+    if(r.error) throw r.error
+    MIE_AGEVOLAZIONI=a.data||[]
+    MIE_RICHIESTE_AGE=r.data||[]
+    renderMieAgevolazioni()
+  }catch(e){ box.innerHTML='<div class="card"><div class="empty">Impossibile caricare le agevolazioni: '+esc((e&&e.message)||String(e))+'</div></div>' }
+}
+function renderMieAgevolazioni(){
+  const box=document.getElementById('agevolazioni-personali'); if(!box) return
+  if(!MIE_AGEVOLAZIONI.length){ box.innerHTML='<div class="card"><div class="empty">Al momento non ci sono agevolazioni disponibili per il tuo profilo.</div></div>'; return }
+  box.innerHTML=MIE_AGEVOLAZIONI.map(a=>{
+    const r=MIE_RICHIESTE_AGE.find(x=>x.agevolazione_id===a.id)
+    const s=_ageStato(r?.stato)
+    let azione='<button onclick="richiediAgevolazionePortale(\''+a.id+'\')" style="background:#F22015;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;font-family:inherit">Richiedi attivazione</button>'
+    if(r&&['richiesta','in_lavorazione'].includes(r.stato)) azione='<button disabled style="background:#e7e7e3;color:#777;border:0;border-radius:8px;padding:10px 14px;font-weight:700">Richiesta già inviata</button>'
+    if(r?.stato==='attiva') azione=(r.access_url?'<a href="'+esc(r.access_url)+'" target="_blank" rel="noopener" style="background:#3B6D11;color:#fff;text-decoration:none;border-radius:8px;padding:10px 14px;font-weight:700">Accedi al servizio ↗</a>':'<button disabled style="background:#EAF3DE;color:#3B6D11;border:0;border-radius:8px;padding:10px 14px;font-weight:700">Attivazione completata</button>')
+    if(r&&['rifiutata','revocata','scaduta'].includes(r.stato)) azione='<button onclick="richiediAgevolazionePortale(\''+a.id+'\')" style="background:#F22015;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;font-family:inherit">Richiedi di nuovo</button>'
+    const account=r?.account_email?'<div style="margin-top:10px;padding:10px 12px;background:#f6f6f3;border-radius:8px;font-size:12.5px"><b>E-mail account:</b> '+esc(r.account_email)+' <button onclick="copiaTesto(\''+String(r.account_email).replace(/'/g,"\\'")+'\')" style="border:0;background:none;color:#F22015;font-weight:700;cursor:pointer">Copia</button></div>':''
+    return '<div class="card"><div style="display:flex;gap:12px;align-items:flex-start">'
+      +(a.logo_url?'<img src="'+esc(a.logo_url)+'" alt="" style="width:54px;height:54px;border-radius:10px;object-fit:contain;background:#fff;border:1px solid #eee">':'<div style="width:54px;height:54px;border-radius:10px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">'+esc((a.fornitore||'LC').slice(0,2).toUpperCase())+'</div>')
+      +'<div style="flex:1;min-width:0"><div style="display:flex;gap:8px;align-items:center;justify-content:space-between"><div><h2 style="font-size:16px;margin:0">'+esc(a.nome||'')+'</h2><div style="font-size:11px;color:#9e9e98;margin-top:2px">'+esc(a.fornitore||'')+'</div></div>'
+      +(r?'<span style="background:'+s[2]+';color:'+s[1]+';font-size:10.5px;font-weight:800;padding:5px 9px;border-radius:20px;white-space:nowrap">'+s[0]+'</span>':'')+'</div>'
+      +'<div style="font-size:13px;color:#6b6b66;line-height:1.5;margin-top:10px">'+esc(a.descrizione||'')+'</div>'
+      +(a.istruzioni?'<div style="font-size:12px;color:#6b6b66;line-height:1.45;margin-top:8px;padding:9px 11px;background:#f6f6f3;border-radius:8px">'+esc(a.istruzioni)+'</div>':'')
+      +(r?.messaggio_utente?'<div style="font-size:12.5px;color:#185FA5;margin-top:9px"><b>Messaggio amministrazione:</b> '+esc(r.messaggio_utente)+'</div>':'')
+      +account+'<div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:13px">'+azione+(a.info_url?'<a href="'+esc(a.info_url)+'" target="_blank" rel="noopener" style="color:#F22015;font-size:12.5px;font-weight:700;text-decoration:none;padding:8px">Informazioni ufficiali ↗</a>':'')+'</div></div></div></div>'
+  }).join('')
+}
+async function richiediAgevolazionePortale(id){
+  const a=MIE_AGEVOLAZIONI.find(x=>x.id===id); if(!a) return
+  const nota=prompt('Vuoi aggiungere una nota alla richiesta per “'+a.nome+'”?\n\nPuoi lasciare il campo vuoto.','')
+  if(nota===null) return
+  try{
+    const r=await db.rpc('richiedi_agevolazione',{p_agevolazione_id:id,p_note:nota||null})
+    if(r.error) throw r.error
+    await caricaMieAgevolazioni()
+    alert('Richiesta inviata. Vedrai qui gli aggiornamenti dell’amministrazione.')
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+async function copiaTesto(t){
+  try{ await navigator.clipboard.writeText(t); alert('Copiato.') }
+  catch(e){ prompt('Copia questo valore:',t) }
 }
 
 // ── RENDER ────────────────────────────────────────────────────

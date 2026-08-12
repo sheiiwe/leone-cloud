@@ -317,6 +317,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('tessere',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.5 16.5c.6-1.6 2-2.4 3.5-2.4s2.9.8 3.5 2.4"/><path d="M14.5 10h5M14.5 13.5h5"/></svg>Tesserini
     </div>
+    <div class="nav-item" onclick="sp('agevolazioni',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12v8H4v-8"/><path d="M2 7h20v5H2z"/><path d="M12 7v13"/><path d="M12 7H7.5a2.5 2.5 0 1 1 2.1-3.85L12 7z"/><path d="M12 7h4.5a2.5 2.5 0 1 0-2.1-3.85L12 7z"/></svg>Agevolazioni
+    </div>
     <div class="nav-item" onclick="sp('certificati',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="5"/><path d="m8.8 12.2-1.3 8 4.5-2.5 4.5 2.5-1.3-8"/><path d="m9.6 8 1.5 1.5L14.6 6"/></svg>Certificati NFT
     </div>
@@ -420,6 +423,9 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="nav-item" onclick="sp('tessere',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.5 16.5c.6-1.6 2-2.4 3.5-2.4s2.9.8 3.5 2.4"/><path d="M14.5 10h5M14.5 13.5h5"/></svg>Tesserini
     </div>
+    <div class="nav-item" onclick="sp('agevolazioni',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12v8H4v-8"/><path d="M2 7h20v5H2z"/><path d="M12 7v13"/><path d="M12 7H7.5a2.5 2.5 0 1 1 2.1-3.85L12 7z"/><path d="M12 7h4.5a2.5 2.5 0 1 0-2.1-3.85L12 7z"/></svg>Agevolazioni
+    </div>
     <div class="nav-item" onclick="sp('certificati',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="5"/><path d="m8.8 12.2-1.3 8 4.5-2.5 4.5 2.5-1.3-8"/><path d="m9.6 8 1.5 1.5L14.6 6"/></svg>Certificati NFT
     </div>
@@ -511,6 +517,9 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
     <div class="nav-item" onclick="sp('tessere',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.5 16.5c.6-1.6 2-2.4 3.5-2.4s2.9.8 3.5 2.4"/><path d="M14.5 10h5M14.5 13.5h5"/></svg>Tesserini
+    </div>
+    <div class="nav-item" onclick="sp('agevolazioni',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12v8H4v-8"/><path d="M2 7h20v5H2z"/><path d="M12 7v13"/><path d="M12 7H7.5a2.5 2.5 0 1 1 2.1-3.85L12 7z"/><path d="M12 7h4.5a2.5 2.5 0 1 0-2.1-3.85L12 7z"/></svg>Agevolazioni
     </div>
     <div class="nav-item" onclick="sp('certificati',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="5"/><path d="m8.8 12.2-1.3 8 4.5-2.5 4.5 2.5-1.3-8"/><path d="m9.6 8 1.5 1.5L14.6 6"/></svg>Certificati NFT
@@ -892,16 +901,44 @@ tbody tr:hover td{background:var(--surface2)}
 
 <!-- TESSERINI -->
 <div class="page" id="page-tessere">
-  <div class="pg-title">Tesserini</div>
-  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Tesserini di riconoscimento verificabili dal QR su <strong>verifica.leoneconsultingitalia.it</strong>. Le modifiche fatte qui si vedono subito nella pagina di verifica.</div>
+  <div class="pg-title">Tesserini e badge Wallet</div>
+  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Badge aziendali verificabili dal QR su <strong>verifica.leoneconsultingitalia.it</strong>. Ogni tesserino può essere associato all'account del portale e pubblicato su Apple Wallet e Google Wallet.</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
     <button class="btn btn-p btn-sm" onclick="apriTessera()">＋ Nuovo tesserino</button>
     <span id="ts-count" style="font-size:13px;color:var(--text2)"></span>
   </div>
   <div class="tbl-wrap"><table>
-    <thead><tr><th style="width:44px"></th><th>Persona</th><th>Ruolo</th><th>Tipo</th><th>N. tessera</th><th>Stato</th><th></th></tr></thead>
-    <tbody id="tbl-tessere"><tr><td colspan="7" class="empty">Caricamento…</td></tr></tbody>
+    <thead><tr><th style="width:44px"></th><th>Persona / account</th><th>Ruolo</th><th>Tipo</th><th>N. tessera</th><th>Stato</th><th>Wallet</th><th></th></tr></thead>
+    <tbody id="tbl-tessere"><tr><td colspan="8" class="empty">Caricamento…</td></tr></tbody>
   </table></div>
+</div>
+
+<!-- AGEVOLAZIONI AZIENDALI -->
+<div class="page" id="page-agevolazioni">
+  <div class="pg-title">Agevolazioni con Leone Consulting</div>
+  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px;max-width:980px">Gestisci i servizi riservati a procacciatori, docenti e dipendenti. Ogni persona usa un account nominativo: qui non vengono mai salvate password condivise.</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+    <button class="btn btn-p btn-sm" onclick="apriAgevolazione()">＋ Nuova agevolazione</button>
+    <button class="btn btn-sm" onclick="caricaAgevolazioniAdmin()">↻ Aggiorna</button>
+    <span id="ag-count" style="font-size:13px;color:var(--text2)"></span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px">
+    <div class="card" style="padding:13px 15px;margin:0"><div style="font-size:11px;color:var(--text3)">RICHIESTE</div><strong id="ag-m-richieste" style="font-size:22px;color:#B8860B">0</strong></div>
+    <div class="card" style="padding:13px 15px;margin:0"><div style="font-size:11px;color:var(--text3)">IN LAVORAZIONE</div><strong id="ag-m-lavorazione" style="font-size:22px;color:#185FA5">0</strong></div>
+    <div class="card" style="padding:13px 15px;margin:0"><div style="font-size:11px;color:var(--text3)">ATTIVE</div><strong id="ag-m-attive" style="font-size:22px;color:#1F8A3F">0</strong></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><h3>Catalogo agevolazioni</h3></div>
+    <div id="ag-catalogo">Caricamento…</div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><h3>Richieste del personale</h3></div>
+    <input id="ag-search" type="text" placeholder="🔍 Cerca persona, e-mail, servizio o stato…" oninput="renderAgevolazioniAdmin()" style="width:100%;padding:9px 12px;margin:2px 0 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Persona</th><th>Agevolazione</th><th>Ruolo</th><th>Richiesta</th><th>Stato</th><th>Account esterno</th><th></th></tr></thead>
+      <tbody id="tbl-ag-richieste"><tr><td colspan="7" class="empty">Caricamento…</td></tr></tbody>
+    </table></div>
+  </div>
 </div>
 
 <!-- CERTIFICATI OPEN BADGE + NFT -->
@@ -2928,7 +2965,7 @@ function syncStatus(state,msg){
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
 // ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
-const _RT_BUILD='1.11.1-certificati-ruoli'
+const _RT_BUILD='1.13.0-wallet-agevolazioni'
 let _rtLastSync=new Date().toISOString()
 let _rtWasSubscribed=false
 const _syncTimers={}
@@ -4119,6 +4156,7 @@ const STANZE = [
   {a:'proc', id:'bacheca',                n:'Bacheca',                g:'Strumenti',   k:'comunicazioni annunci avvisi rete'},
   {a:'proc', id:'proposte',               n:'Proposte',               g:'Strumenti',   k:'preventivi proposta cliente'},
   {a:'proc', id:'bonus',                  n:'Bonus porta cliente',    g:'Strumenti',   k:'premi incentivi segnalazione'},
+  {a:'proc', id:'agevolazioni',           n:'Agevolazioni aziendali', g:'Strumenti',   k:'italo trenitalia metro benefit convenzioni badge wallet'},
   {a:'proc', id:'impostazioni',           n:'Impostazioni',           g:'Sistema',     k:'configurazione iban dati azienda email smtp aggiornamenti accessi portale campi documenti editor coordinate versione partita iva sdi logo'},
 
   // ---- DOCENTI
@@ -5178,27 +5216,57 @@ function renderTessere(){
   const tb=document.getElementById('tbl-tessere'); if(!tb) return
   const c=document.getElementById('ts-count')
   if(c) c.textContent = _TESSERE.length ? (_TESSERE.length+' tesserin'+(_TESSERE.length===1?'o':'i')) : ''
-  if(!_TESSERE.length){ tb.innerHTML='<tr><td colspan="7" class="empty">Nessun tesserino. Creane uno col pulsante qui sopra.</td></tr>'; return }
+  if(!_TESSERE.length){ tb.innerHTML='<tr><td colspan="8" class="empty">Nessun tesserino. Creane uno col pulsante qui sopra.</td></tr>'; return }
   tb.innerHTML=_TESSERE.map(function(t){
     const s=_tsStato(t)
     const foto = t.foto_url ? '<img src="'+t.foto_url+'" style="width:34px;height:34px;border-radius:8px;object-fit:cover">'
                             : '<div style="width:34px;height:34px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:15px">👤</div>'
     return '<tr>'
       +'<td>'+foto+'</td>'
-      +'<td><strong>'+escB(t.nome||'')+'</strong>'+(t.nascita?'<br><span style="font-size:11px;color:var(--text3)">'+_tsData(t.nascita)+(t.luogo_nascita?' · '+escB(t.luogo_nascita):'')+'</span>':'')+'</td>'
+      +'<td><strong>'+escB(t.nome||'')+'</strong>'+(t.owner_email?'<br><span style="font-size:11px;color:var(--text3)">'+escB(t.owner_email)+'</span>':'<br><span style="font-size:11px;color:#B8860B">Account portale da associare</span>')+(t.nascita?'<br><span style="font-size:11px;color:var(--text3)">'+_tsData(t.nascita)+(t.luogo_nascita?' · '+escB(t.luogo_nascita):'')+'</span>':'')+'</td>'
       +'<td style="font-size:12.5px;color:var(--text2)">'+escB(t.ruolo||'—')+'</td>'
       +'<td style="font-size:12px;color:var(--text2)">'+escB(t.tipo||'')+'</td>'
       +'<td class="mono" style="font-size:12.5px">'+escB(t.codice||'')+'</td>'
       +'<td><span style="font-size:11.5px;font-weight:700;color:'+s.col+'">'+s.txt+'</span></td>'
+      +'<td style="font-size:11px;line-height:1.8">'+_tsWalletStato('Apple',t.apple_wallet_status,t.wallet_enabled)+'<br>'+_tsWalletStato('Google',t.google_wallet_status,t.wallet_enabled)+'</td>'
       +'<td class="acts">'
         +'<button class="btn btn-sm" title="Apri verifica" onclick="window.open(\''+_TS_VERIFICA+encodeURIComponent(t.codice)+'\',\'_blank\')">🔗</button>'
         +'<button class="btn btn-sm" title="Stampa tesserino (PDF)" onclick="stampaTessera(\''+t.codice+'\',\'pdf\')">🖨</button>'
         +'<button class="btn btn-sm" title="Immagine per il telefono" onclick="stampaTessera(\''+t.codice+'\',\'png\')">📱</button>'
         +'<button class="btn btn-sm" title="Foto" onclick="cambiaFotoTessera(\''+t.codice+'\')">📷</button>'
+        +'<button class="btn btn-sm" title="Associazione account e Wallet" onclick="gestisciWalletTessera(\''+t.codice+'\')">Wallet</button>'
         +'<button class="btn btn-sm" title="Modifica tesserino" onclick="apriTessera(\''+t.codice+'\')">✏️</button>'
         +'<button class="btn btn-sm btn-r" title="Elimina tesserino" onclick="eliminaTessera(\''+t.codice+'\')">🗑</button>'
       +'</td></tr>'
   }).join('')
+}
+
+function _tsWalletStato(nome,stato,enabled){
+  if(!enabled) return '<span style="color:var(--text3)">'+nome+': disattivato</span>'
+  const m={emesso:['pronto','#1F8A3F'],in_attesa:['in attesa','#B8860B'],revocato:['revocato','#C51E26'],errore:['errore','#C51E26'],non_configurato:['da configurare','var(--text3)']}
+  const x=m[stato]||m.non_configurato
+  return '<span style="font-weight:700;color:'+x[1]+'">'+nome+': '+x[0]+'</span>'
+}
+
+async function gestisciWalletTessera(codice){
+  const t=_TESSERE.find(x=>x.codice===codice); if(!t) return
+  const r=await chiediCampiLunga('Account e Wallet · '+codice,[
+    {id:'owner_email',label:'E-mail dell’account sul portale',valore:t.owner_email||''},
+    {id:'wallet_enabled',tipo:'check',label:'Consenti badge su Apple Wallet e Google Wallet',valore:t.wallet_enabled!==false}
+  ])
+  if(!r) return
+  const email=(r.owner_email||'').trim().toLowerCase()
+  if(email && !email.includes('@')){ alert('Inserisci un indirizzo e-mail valido.'); return }
+  try{
+    const q=await db.from('tessere').update({
+      owner_email:email||null,
+      wallet_enabled:(r.wallet_enabled==='si'||r.wallet_enabled===true),
+      wallet_updated_at:new Date().toISOString()
+    }).eq('codice',codice)
+    if(q.error) throw q.error
+    await caricaTessere()
+    try{ toast('Account Wallet aggiornato') }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
 
 // ridimensiona la foto e la trasforma in testo, come per i procacciatori
@@ -5235,6 +5303,7 @@ async function _tsPersone(tipo){
     return (r.data||[]).map(function(x){
       const d = x.data || {}
       return { id:x.id, nome:(d.nome||d.nominativo||'').trim(),
+               email:(d.email_aziendale||d.email||'').trim().toLowerCase(),
                nascita:(d.nascita||d.data_nascita||''),
                luogo:(d.luogonascita||d.luogo_nascita||d.luogoNascita||d.nato_a||d.comune_nascita||''),
                fine:_tsFineContratto(d) }
@@ -5284,6 +5353,7 @@ async function apriTessera(codice){
       {id:'tipo', tipo:'select', libero:false, label:'Tipo di tesserino', opzioni:_TS_ETICHETTE, valore:''},
       {id:'persona', tipo:'select', libero:false, label:'Persona', opzioni:[], valore:''},
       {id:'nome', label:'Nome e cognome', valore:''},
+      {id:'owner_email', label:'E-mail account portale', valore:''},
       {id:'ruolo', label:'Ruolo (dal tipo di tesserino)', valore:''},
       {id:'nascita', label:'Data di nascita \u2014 gg/mm/aaaa', valore:''},
       {id:'luogo_nascita', label:'Luogo di nascita', valore:''},
@@ -5291,7 +5361,7 @@ async function apriTessera(codice){
       {id:'scade_il', label:'Valido fino al \u2014 fine contratto', valore:''},
       {id:'attiva', tipo:'check', label:'Tesserino valido (togli la spunta per revocarlo)', valore:true}
     ], function(){
-      const giu = ['nome','ruolo','nascita','luogo_nascita','codice','scade_il','attiva']
+      const giu = ['nome','owner_email','ruolo','nascita','luogo_nascita','codice','scade_il','attiva']
       const selT = document.getElementById('mmc-tipo')
       const selP = document.getElementById('mmc-persona')
       const wP   = document.getElementById('mmw-persona')
@@ -5302,6 +5372,7 @@ async function apriTessera(codice){
       const compila = function(p){
         p = p || {}
         val('nome', p.nome||'')
+        val('owner_email', p.email||'')
         val('ruolo', _TS_RUOLI[selT.value] || '')
         val('luogo_nascita', p.luogo||'')
         val('nascita', p.nascita ? _tsData(p.nascita) : '')
@@ -5349,11 +5420,12 @@ async function apriTessera(codice){
     if(!_rUnico.tipo){ alert('Serve il tipo di tesserino.'); return }
     const _lista = _perTipo[_rUnico.tipo] || []
     const _sc = _lista.find(function(x){ return x.nome === (_rUnico.persona||'') }) || null
-    t = { tipo:_rUnico.tipo, rif_id: _sc ? _sc.id : null }
+    t = { tipo:_rUnico.tipo, rif_id: _sc ? _sc.id : null, owner_email:_sc ? _sc.email : ((_rUnico.owner_email||'').trim().toLowerCase()) }
   }
 
   const campi=[
     {id:'nome', label:'Nome e cognome', valore:t.nome||''},
+    {id:'owner_email', label:'E-mail account portale', valore:t.owner_email||''},
     {id:'tipo', tipo:'select', libero:false, label:'Tipo', opzioni:_TS_TIPI, valore:t.tipo||'procacciatore'},
     {id:'ruolo', label:'Ruolo (es. Procacciatore d\u0027affari)', valore:t.ruolo||''},
     {id:'nascita', label:'Data di nascita — gg/mm/aaaa', valore:_tsData(t.nascita)},
@@ -5378,6 +5450,7 @@ async function apriTessera(codice){
 
   const rec={
     codice:cod, tipo:r.tipo||'procacciatore', nome:nome,
+    owner_email:(r.owner_email||'').trim().toLowerCase()||null,
     ruolo:(r.ruolo||'').trim()||null,
     nascita:_tsParseData(r.nascita),
     luogo_nascita:(r.luogo_nascita||'').trim()||null,
@@ -5444,6 +5517,186 @@ async function eliminaTessera(codice){
     if(q.error) throw q.error
     await caricaTessere()
     try{ toast('Tesserino eliminato') }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+// ══════════════════════════════════════════════════════════════
+// AGEVOLAZIONI AZIENDALI
+// ══════════════════════════════════════════════════════════════
+let _AGEVOLAZIONI=[]
+let _AGE_RICHIESTE=[]
+const _AG_STATI=[
+  {v:'richiesta',t:'Richiesta'},
+  {v:'in_lavorazione',t:'In lavorazione'},
+  {v:'attiva',t:'Attiva'},
+  {v:'rifiutata',t:'Rifiutata'},
+  {v:'revocata',t:'Revocata'},
+  {v:'scaduta',t:'Scaduta'}
+]
+const _AG_RUOLI=['procacciatore','docente','dipendente']
+
+async function caricaAgevolazioniAdmin(){
+  const cat=document.getElementById('ag-catalogo'), tb=document.getElementById('tbl-ag-richieste')
+  if(cat) cat.innerHTML='Caricamento…'
+  if(tb) tb.innerHTML='<tr><td colspan="7" class="empty">Caricamento…</td></tr>'
+  try{
+    const [a,r]=await Promise.all([
+      db.from('agevolazioni').select('*').order('ordinamento').order('nome'),
+      db.from('agevolazioni_richieste').select('*,agevolazioni(id,nome,fornitore,slug)').order('requested_at',{ascending:false})
+    ])
+    if(a.error) throw a.error
+    if(r.error) throw r.error
+    _AGEVOLAZIONI=a.data||[]
+    _AGE_RICHIESTE=r.data||[]
+    renderAgevolazioniAdmin()
+  }catch(e){
+    if(cat) cat.innerHTML='<div class="empty">Errore di caricamento: '+escB((e&&e.message)||String(e))+'</div>'
+    if(tb) tb.innerHTML='<tr><td colspan="7" class="empty">Impossibile caricare le richieste.</td></tr>'
+  }
+}
+
+function _agStato(s){
+  return {
+    richiesta:['Richiesta','#B8860B'],
+    in_lavorazione:['In lavorazione','#185FA5'],
+    attiva:['Attiva','#1F8A3F'],
+    rifiutata:['Rifiutata','#C51E26'],
+    revocata:['Revocata','#C51E26'],
+    scaduta:['Scaduta','var(--text3)']
+  }[s]||[s||'—','var(--text3)']
+}
+function _agData(d){
+  if(!d) return '—'
+  try{ return new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(d)) }catch(e){ return String(d) }
+}
+function renderAgevolazioniAdmin(){
+  const cat=document.getElementById('ag-catalogo'), tb=document.getElementById('tbl-ag-richieste')
+  const count=document.getElementById('ag-count')
+  if(count) count.textContent=_AGEVOLAZIONI.length+' servizi · '+_AGE_RICHIESTE.length+' richieste'
+  const mr=document.getElementById('ag-m-richieste'), ml=document.getElementById('ag-m-lavorazione'), ma=document.getElementById('ag-m-attive')
+  if(mr) mr.textContent=_AGE_RICHIESTE.filter(x=>x.stato==='richiesta').length
+  if(ml) ml.textContent=_AGE_RICHIESTE.filter(x=>x.stato==='in_lavorazione').length
+  if(ma) ma.textContent=_AGE_RICHIESTE.filter(x=>x.stato==='attiva').length
+
+  if(cat){
+    if(!_AGEVOLAZIONI.length) cat.innerHTML='<div class="empty">Nessuna agevolazione configurata.</div>'
+    else cat.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px">'+_AGEVOLAZIONI.map(a=>{
+      const ruoli=(a.ruoli||[]).map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(' · ')
+      return '<div style="border:0.5px solid var(--border);border-radius:12px;padding:14px;background:var(--surface2)">'
+        +'<div style="display:flex;gap:10px;align-items:flex-start"><div style="width:42px;height:42px;border-radius:10px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent)">'+escB((a.fornitore||'LC').slice(0,2).toUpperCase())+'</div>'
+        +'<div style="flex:1;min-width:0"><strong>'+escB(a.nome||'')+'</strong><div style="font-size:11px;color:var(--text3);margin-top:2px">'+escB(a.fornitore||'')+' · '+escB(ruoli)+'</div></div>'
+        +'<span style="font-size:11px;font-weight:700;color:'+(a.attiva?'#1F8A3F':'#C51E26')+'">'+(a.attiva?'ATTIVA':'NASCOSTA')+'</span></div>'
+        +(a.descrizione?'<div style="font-size:12.5px;color:var(--text2);line-height:1.45;margin-top:10px">'+escB(a.descrizione)+'</div>':'')
+        +'<div style="display:flex;gap:6px;margin-top:12px"><button class="btn btn-sm" onclick="apriAgevolazione(\''+a.id+'\')">✏️ Modifica</button><button class="btn btn-sm btn-r" onclick="eliminaAgevolazione(\''+a.id+'\')">🗑</button></div></div>'
+    }).join('')+'</div>'
+  }
+
+  if(!tb) return
+  const q=((document.getElementById('ag-search')||{}).value||'').trim().toLowerCase()
+  const rows=_AGE_RICHIESTE.filter(r=>{
+    if(!q) return true
+    const a=r.agevolazioni||{}
+    return [r.nome_utente,r.user_email,r.ruolo,r.stato,r.account_email,a.nome,a.fornitore].join(' ').toLowerCase().includes(q)
+  })
+  if(!rows.length){ tb.innerHTML='<tr><td colspan="7" class="empty">Nessuna richiesta'+(q?' corrispondente alla ricerca':'')+'.</td></tr>'; return }
+  tb.innerHTML=rows.map(r=>{
+    const a=r.agevolazioni||{}, s=_agStato(r.stato)
+    return '<tr>'
+      +'<td><strong>'+escB(r.nome_utente||'—')+'</strong><br><span style="font-size:11px;color:var(--text3)">'+escB(r.user_email||'')+'</span></td>'
+      +'<td><strong>'+escB(a.nome||'—')+'</strong><br><span style="font-size:11px;color:var(--text3)">'+escB(a.fornitore||'')+'</span></td>'
+      +'<td style="font-size:12px">'+escB(r.ruolo||'—')+'</td>'
+      +'<td style="font-size:12px">'+_agData(r.requested_at)+(r.nota_utente?'<br><span style="color:var(--text3)">'+escB(r.nota_utente)+'</span>':'')+'</td>'
+      +'<td><span style="font-size:11.5px;font-weight:700;color:'+s[1]+'">'+s[0]+'</span></td>'
+      +'<td style="font-size:12px">'+(r.account_email?escB(r.account_email):'—')+(r.expires_at?'<br><span style="font-size:11px;color:var(--text3)">fino al '+_agData(r.expires_at)+'</span>':'')+'</td>'
+      +'<td class="acts"><button class="btn btn-sm btn-p" onclick="gestisciRichiestaAgevolazione(\''+r.id+'\')">Gestisci</button></td>'
+      +'</tr>'
+  }).join('')
+}
+
+async function apriAgevolazione(id){
+  const a=id?_AGEVOLAZIONI.find(x=>x.id===id):null
+  const r=await chiediCampiLunga(a?'Modifica agevolazione':'Nuova agevolazione',[
+    {id:'nome',label:'Nome agevolazione',valore:a?.nome||''},
+    {id:'fornitore',label:'Fornitore',valore:a?.fornitore||''},
+    {id:'slug',label:'Codice interno (minuscolo, senza spazi)',valore:a?.slug||''},
+    {id:'descrizione',label:'Descrizione per il personale',valore:a?.descrizione||''},
+    {id:'istruzioni',label:'Istruzioni per richiedere o usare il servizio',valore:a?.istruzioni||''},
+    {id:'info_url',label:'Pagina informativa ufficiale',valore:a?.info_url||''},
+    {id:'logo_url',label:'URL logo (facoltativo)',valore:a?.logo_url||''},
+    {id:'ruoli',label:'Ruoli abilitati, separati da virgola',valore:(a?.ruoli||_AG_RUOLI).join(', ')},
+    {id:'ordinamento',label:'Ordine di visualizzazione',valore:String(a?.ordinamento??100)},
+    {id:'valid_from',label:'Disponibile dal — gg/mm/aaaa',valore:_tsData(a?.valid_from)},
+    {id:'valid_until',label:'Disponibile fino al — gg/mm/aaaa',valore:_tsData(a?.valid_until)},
+    {id:'attiva',tipo:'check',label:'Agevolazione visibile e richiedibile',valore:a?a.attiva!==false:true},
+    {id:'richiede_approvazione',tipo:'check',label:'Richiede approvazione dell’amministrazione',valore:a?a.richiede_approvazione!==false:true}
+  ])
+  if(!r) return
+  const ruoli=(r.ruoli||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean)
+  if(!r.nome?.trim()||!r.fornitore?.trim()){ alert('Nome e fornitore sono obbligatori.'); return }
+  if(!ruoli.length||ruoli.some(x=>!_AG_RUOLI.includes(x))){ alert('Ruoli ammessi: procacciatore, docente, dipendente.'); return }
+  const slug=(r.slug||r.nome||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')
+  const rec={
+    nome:r.nome.trim(),fornitore:r.fornitore.trim(),slug,
+    descrizione:(r.descrizione||'').trim(),istruzioni:(r.istruzioni||'').trim(),
+    info_url:(r.info_url||'').trim()||null,logo_url:(r.logo_url||'').trim()||null,
+    ruoli,ordinamento:parseInt(r.ordinamento||'100',10)||100,
+    valid_from:_tsParseData(r.valid_from),valid_until:_tsParseData(r.valid_until),
+    attiva:(r.attiva==='si'||r.attiva===true),
+    richiede_approvazione:(r.richiede_approvazione==='si'||r.richiede_approvazione===true)
+  }
+  try{
+    const q=a?await db.from('agevolazioni').update(rec).eq('id',a.id):await db.from('agevolazioni').insert(rec)
+    if(q.error) throw q.error
+    await caricaAgevolazioniAdmin()
+    try{ toast('Agevolazione salvata') }catch(e){}
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+async function eliminaAgevolazione(id){
+  const a=_AGEVOLAZIONI.find(x=>x.id===id); if(!a) return
+  if(!confirm('Eliminare “'+a.nome+'”?\n\nVerranno eliminate anche le richieste collegate. Se vuoi conservarle, disattiva invece l’agevolazione.')) return
+  try{
+    const q=await db.from('agevolazioni').delete().eq('id',id)
+    if(q.error) throw q.error
+    await caricaAgevolazioniAdmin()
+  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+async function gestisciRichiestaAgevolazione(id){
+  const x=_AGE_RICHIESTE.find(r=>r.id===id); if(!x) return
+  const a=x.agevolazioni||{}
+  const r=await chiediCampiLunga('Gestisci · '+(a.nome||'Agevolazione'),[
+    {id:'stato',tipo:'select',libero:false,label:'Stato della richiesta',opzioni:_AG_STATI,valore:x.stato||'richiesta'},
+    {id:'account_email',label:'E-mail dell’account esterno (mai la password)',valore:x.account_email||x.user_email||''},
+    {id:'access_url',label:'Link personale o pagina di accesso',valore:x.access_url||''},
+    {id:'external_reference',label:'Codice/riferimento esterno (facoltativo)',valore:x.external_reference||''},
+    {id:'expires_at',label:'Scadenza — gg/mm/aaaa',valore:_tsData(x.expires_at)},
+    {id:'messaggio_utente',label:'Messaggio visibile alla persona',valore:x.messaggio_utente||''},
+    {id:'nota_admin',label:'Nuova nota interna (non visibile alla persona)',valore:''}
+  ])
+  if(!r) return
+  const email=(r.account_email||'').trim().toLowerCase()
+  if(email&&!email.includes('@')){ alert('L’e-mail dell’account esterno non è valida.'); return }
+  const d=_tsParseData(r.expires_at)
+  const rec={
+    stato:r.stato||'richiesta',
+    account_email:email||null,
+    access_url:(r.access_url||'').trim()||null,
+    external_reference:(r.external_reference||'').trim()||null,
+    expires_at:d?(d+'T23:59:59+02:00'):null,
+    messaggio_utente:(r.messaggio_utente||'').trim()||null
+  }
+  if(rec.stato==='attiva'&&!x.activated_at) rec.activated_at=new Date().toISOString()
+  try{
+    const q=await db.from('agevolazioni_richieste').update(rec).eq('id',id)
+    if(q.error) throw q.error
+    const nota=(r.nota_admin||'').trim()
+    if(nota){
+      const n=await db.from('agevolazioni_note_admin').insert({richiesta_id:id,nota})
+      if(n.error) throw n.error
+    }
+    await caricaAgevolazioniAdmin()
+    try{ toast('Richiesta aggiornata') }catch(e){}
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
 
@@ -5744,6 +5997,7 @@ function sp(id,el){
   if(id==='incassi'){ const _d=document.getElementById('nav-dot-incassi'); if(_d) _d.style.display='none' }
   if(id==='ordini'){ const _d=document.getElementById('nav-dot-ordini'); if(_d) _d.style.display='none' }
   const renders={'cand-proc':()=>caricaCandidature(),'cand-doc':()=>caricaCandidature(),'cand-dip':()=>caricaCandidature(),mktmail:renderMktMail,dashboard:()=>{renderDash()},proc:()=>{renderProc()},docenti:()=>{renderDocenti()},studenti:()=>{renderStudenti()},'provv-doc':()=>{ if(!_incassiCache||!_incassiCache.length){ caricaIncassi().then(renderProvvDoc) } else renderProvvDoc() },vendite:()=>{renderVendite()},ordini:caricaOrdini,lead:()=>{renderLead()},provv:()=>{renderProvv()},rete:()=>{renderRete()},listino:()=>{caricaPiattaforme();renderListino()},offerte:caricaOfferte,prodottipag:()=>{caricaPiattaforme();caricaProdottiPag()},corsipagine:()=>{caricaPiattaforme();Promise.all([caricaCategorie(),caricaEnti()]).then(renderCategEnti);caricaCorsiPagine()},tessere:caricaTessere,certificati:caricaCertificati,incassi:()=>{ const _a=(typeof sezioneAttiva!=='undefined'?sezioneAttiva:''); const _s=document.getElementById('inc-f-area'); if(_s&&(_a==='doc'||_a==='dip')) _s.value=_a; caricaIncassi() },avvisi:renderAvvisi,contratti:()=>{renderContratti()},'contratti-firmati-proc':()=>renderCFArea('proc'),'contratti-firmati-doc':()=>renderCFArea('doc'),'fatture-proc':()=>_openFatture('proc'),'fatture-doc':()=>_openFatture('doc'),'contratti-firmati-dip':()=>renderCFArea('dip'),'fatture-dip':()=>_openFatture('dip'),'nc-proc':()=>_openNC('proc'),'nc-doc':()=>_openNC('doc'),'nc-dip':()=>_openNC('dip'),'email-mkt':()=>{},'proposte-docenti':()=>_openProposteDoc(),'dip-dash':renderDipDash,dipendenti:()=>{renderDipendenti()},buste:()=>{renderBusteSel();renderBuste()},'contratti-dip':renderContrattiDip,'contratti-doc':renderContrattiDoc,documenti:()=>{loadDocs()},'invio-doc':()=>{renderInvioDocNav();renderStoricoDocs()},'invio-doc-area':renderInvioDocArea,'calendario':renderCalendarioAdmin,'prenotazioni':caricaPrenotazioni,'impostazioni':initAutoLaunch,'cedolini':renderCedolini,'doc-comm':()=>{caricaDocComm();_setDcAreeDefault()},'portale-link':renderPortaleLink,'bacheca':()=>{caricaBacheca();_setBchAreeDefault()},'proposte':caricaProposte,'cestino':caricaCestino,bonus:()=>{renderBonus();calcolaBonus()},impostazioni:()=>{ Promise.all([caricaPiattaforme(), ((typeof LISTINO!=='undefined'&&LISTINO.length)?Promise.resolve():caricaListino())]).then(renderPiattaforme); const _ip=document.getElementById('page-impostazioni'); if(_ip){ _ip.querySelectorAll('.acc-body.open,.acc-hdr.open').forEach(x=>x.classList.remove('open')) } loadImpostazioni().then(()=>{ applicaCampiCustom(); renderImpostazioni(); caricaAccessiPortale(); caricaEmailConfig(); loadEditorCoordinate().then(()=>{ caricaDocumentiCustom().then(()=>renderMappaFirmaDoc()); renderEditorDocList(); renderEditorCustomFields() }) })}}
+  renders.agevolazioni=caricaAgevolazioniAdmin
   ;(async function(){ try{ await _syncPaginaSeNecessario(id) }catch(e){} if(renders[id]) renders[id]() })()
 }
 
@@ -5755,7 +6009,9 @@ function avviaRealtime(){
   const _RT_LOADERS={
     offerte:{page:'offerte',fn:function(){try{caricaOfferte()}catch(e){}}},
     bacheca:{page:'bacheca',fn:function(){try{caricaBacheca()}catch(e){}}},
-    listino:{page:'listino',fn:function(){try{renderListino()}catch(e){}}}
+    listino:{page:'listino',fn:function(){try{renderListino()}catch(e){}}},
+    agevolazioni:{page:'agevolazioni',fn:function(){try{caricaAgevolazioniAdmin()}catch(e){}}},
+    agevolazioni_richieste:{page:'agevolazioni',fn:function(){try{caricaAgevolazioniAdmin()}catch(e){}}}
   }
   _rtChannel=db.channel('live-gestionale')
   // Core CON Realtime (le no-Realtime NON si sottoscrivono: non emetterebbero eventi)
@@ -6890,173 +7146,9 @@ function _docRenderRinnovi(rinnovi){
   box.innerHTML=rinnovi.map((r,i)=>{
     const dt=r.data||'—'
     const link=r.pdf_path?('<a href="'+SUPA_URL+'/storage/v1/object/public/contratti/'+r.pdf_path+'" target="_blank" style="color:var(--blu);text-decoration:none">📄 PDF</a>'):''
-    const fonte = r.fonte==='auto' ? '<span style="color:var(--green);font-size:11px">🔄 Automatico</span>' : '<span style="color:var(--text2);font-size:11px">📤 Manuale</span>'
-    return '<div style="padding:6px 10px;background:var(--surface2);border-radius:6px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:8px"><div>Rinnovo #'+(i+1)+' · '+escB(dt)+' '+fonte+'</div><div style="display:flex;gap:6px;align-items:center">'+link+'</div></div>'
-  }).join('')
-}
-async function caricaRinnovoDoc(input){
-  const f=input.files&&input.files[0]; if(!f) return
-  const id=document.getElementById('doc-id').value
-  if(!id){ alert('Salva prima il docente, poi carica il rinnovo.'); input.value=''; return }
-  const d=docenti.find(x=>x._id===id); if(!d) return
-  try{
-    const ext=(f.name.split('.').pop()||'pdf').toLowerCase()
-    const path='rinnovi/doc_'+id+'_'+Date.now()+'.'+ext
-    const up=await db.storage.from('contratti').upload(path, f, {upsert:false, contentType:f.type||'application/pdf'})
-    if(up.error) throw up.error
-    const contr=Object.assign({}, d.contratto||{})
-    contr.rinnovi=Array.isArray(contr.rinnovi)?contr.rinnovi:[]
-    contr.rinnovi.push({ data:new Date().toISOString().slice(0,10), pdf_path:path, fonte:'manuale' })
-    contr.fine=_calcFineContratto(contr.inizio, contr.rinnovi)
-    const newData=Object.assign({}, d); delete newData._id; newData.contratto=contr
-    const r=await db.from('docenti').update({data:newData}).eq('id',id); if(r.error) throw r.error
-    toast('✅ Rinnovo caricato')
-    await caricaDocenti(); apriDocente(id)
-  }catch(e){ alert('Errore: '+(e.message||e)) }
-  input.value=''
-}
-function _docContrAlert(c){
-  const box=document.getElementById('doc-contr-alert'); if(!box) return
-  if(!c||!c.fine){ box.style.display='none'; return }
-  const oggi=new Date(); oggi.setHours(0,0,0,0)
-  const fine=new Date(c.fine+'T00:00:00')
-  const giorniMancanti=Math.floor((fine.getTime()-oggi.getTime())/86400000)
-  if(giorniMancanti<0){
-    box.style.display='block'; box.style.background='#fee'; box.style.color='#c0392b'; box.style.border='1px solid #f5c6cb'
-    box.innerHTML='⚠️ <strong>Contratto scaduto</strong> il '+fine.toLocaleDateString('it-IT')+' ('+Math.abs(giorniMancanti)+' giorni fa). Rinnovare o disattivare il docente.'
-  } else if(giorniMancanti<=30){
-    box.style.display='block'; box.style.background='#fff3cd'; box.style.color='#856404'; box.style.border='1px solid #ffeaa7'
-    box.innerHTML='⚠️ <strong>Contratto in scadenza</strong>: mancano '+giorniMancanti+' giorni ('+fine.toLocaleDateString('it-IT')+').'
-  } else {
-    box.style.display='none'
-  }
-}
-function _docRenderStudenti(docId){
-  const box=document.getElementById('doc-studenti-list'); if(!box) return
-  if(!docId){ box.innerHTML='<div style="color:var(--text3);padding:6px 0">Salva prima il docente per vedere gli studenti collegati.</div>'; return }
-  const legami=[]
-  ;(typeof studenti!=='undefined'?studenti:[]).forEach(s=>{
-    ;(s.docenti||[]).forEach(x=>{ if(x&&x.docenteId===docId){ legami.push({stu:s, materia:x.materia||'', oreTot:x.oreTot||0, oreBonus:x.oreBonus||0, oreFatte:x.oreFatte||0}) } })
-  })
-  if(!legami.length){ box.innerHTML='<div style="color:var(--text3);padding:6px 0">Nessuno studente collegato a questo docente.</div>'; return }
-  box.innerHTML='<table class="tbl" style="width:100%;font-size:13px"><thead><tr><th>Studente</th><th>Materia</th><th>Ore tot.</th><th>Svolte</th><th>Residue</th></tr></thead><tbody>'+
-    legami.map(l=>{ const res=Math.max(0,(Number(l.oreTot)||0)+(Number(l.oreBonus)||0)-(Number(l.oreFatte)||0)); const tot=(Number(l.oreTot)||0)+(Number(l.oreBonus)||0); const totLbl=tot?(tot+(l.oreBonus?(' <span style="color:#e65100;font-size:10px">(+'+l.oreBonus+' bonus)</span>'):'')):'\u2014'; return '<tr><td>'+escB(l.stu.nome||'')+'</td><td>'+escB(l.materia)+'</td><td>'+totLbl+'</td><td>'+(l.oreFatte||'\u2014')+'</td><td>'+(res||'\u2014')+'</td></tr>' }).join('')+
-    '</tbody></table>'
-}
-async function salvaDocente(){
-  const nome=(document.getElementById('doc-nome').value||'').trim()
-  if(!nome) return alert('Inserisci cognome e nome.')
-  const livelli=[...document.querySelectorAll('.doc-liv')].filter(c=>c.checked).map(c=>c.value)
-  const g=k=>{ const e=document.getElementById(k); return e?e.value.trim():'' }
-  const pct=parseFloat(document.getElementById('doc-pct').value)
-  const id=document.getElementById('doc-id').value
-  const d0=id?docenti.find(x=>x._id===id):null
-  const contInizio=g('doc-contr-inizio')
-  const existing = d0 ? (d0.contratto||{}) : {}
-  const rinnovi = Array.isArray(existing.rinnovi) ? existing.rinnovi : []
-  const contFine = _calcFineContratto(contInizio, rinnovi)
-  const obj={ nome, nascita:g('doc-nascita'), luogonascita:g('doc-luogonascita'), cf:g('doc-cf').toUpperCase(), tel:g('doc-tel'), email:g('doc-email'), email_aziendale:g('doc-email-az'), indirizzo:g('doc-indirizzo'), citta:g('doc-citta'), cap:g('doc-cap'), prov:(g('doc-prov')||'').toUpperCase(), consensoMkt:g('doc-consenso-mkt'), iban:g('doc-iban'), regime:document.getElementById('doc-regime').value, piva:g('doc-piva'), qualifica:document.getElementById('doc-qualifica').value, pctDocente:isFinite(pct)?pct:null, stato:document.getElementById('doc-stato').value, livelli, materie:_docMaterie, certificati:_docCerti, note:g('doc-note'), contratto:{ inizio:contInizio, fine:contFine, rinnovi:rinnovi } }
-  try{
-    if(id){ const r=await db.from('docenti').update({data:obj}).eq('id',id); if(r.error) throw r.error }
-    else { const r=await db.from('docenti').insert({data:obj}); if(r.error) throw r.error }
-    _tsPersoneCache = null; closeM('m-docente'); await caricaDocenti(); toast('✅ Docente salvato')
-  }catch(e){ alert('Errore: '+(e.message||e)) }
-}
-async function caricaDocenti(){
-  try{ const r=await db.from('docenti').select('*').order('created_at'); docenti=(r.data||[]).map(x=>({_id:x.id,created:x.created_at,...x.data})) }catch(e){}
-  renderDocenti()
-}
-async function eliminaDocente(id){
-  const d=docenti.find(x=>x._id===id); if(!d) return
-  if(!confirm('Eliminare il docente "'+(d.nome||'')+'"?')) return
-  try{ const r=await db.from('docenti').delete().eq('id',id); if(r.error) throw r.error; await caricaDocenti(); toast('Docente eliminato') }catch(e){ alert('Errore: '+(e.message||e)) }
-}
-function renderDocenti(){
-  _docFillMaterieSugg()
-  const box=document.getElementById('docenti-lista'); if(!box) return
-  const q=(document.getElementById('doc-search')?.value||'').trim().toLowerCase()
-  const fm=document.getElementById('doc-f-materia')?.value||''
-  const fl=document.getElementById('doc-f-livello')?.value||''
-  const fq=document.getElementById('doc-f-qualifica')?.value||''
-  const _matNomeR=m=>(typeof m==='string')?m:((m&&m.nome)||'')
-  let list=docenti.slice()
-  if(fm) list=list.filter(d=>(d.materie||[]).map(_matNomeR).includes(fm))
-  if(fl) list=list.filter(d=>(d.livelli||[]).includes(fl))
-  if(fq) list=list.filter(d=>(d.qualifica||'procacciatore')===fq)
-  if(q) list=list.filter(d=>((d.nome||'')+' '+(d.materie||[]).map(_matNomeR).join(' ')+' '+(d.livelli||[]).join(' ')+' '+(d.email||'')).toLowerCase().includes(q))
-  if(!docenti.length){ box.innerHTML='<div class="empty" style="padding:3rem">Nessun docente. Premi "+ Nuovo docente" per iniziare.</div>'; return }
-  if(!list.length){ box.innerHTML='<div class="empty" style="padding:2rem">Nessun docente trovato con questi filtri.</div>'; return }
-  box.innerHTML=list.map(d=>{
-    const mat=(d.materie||[]).map(m=>{
-      const nm=(typeof m==='string')?m:(m&&m.nome)||''
-      const lv=(m&&Array.isArray(m.livelli))?m.livelli.join(''):'EMS'
-      return '<span style="background:var(--surface2);border-radius:10px;padding:2px 8px;font-size:11px">'+escB(nm)+' <small style="opacity:.6">'+lv+'</small></span>'
-    }).join(' ')
-    const liv=(d.livelli||[]).join(', ')
-    const az=(d.pctDocente!=null&&isFinite(d.pctDocente))?(100-d.pctDocente):null
-    const col=d.stato==='Attivo'?'#2a9d5c':(d.stato==='In pausa'?'#888':'#c0392b')
-    const badge='<span onclick="apriPopupStatoDoc(\''+d._id+'\',event)" title="Cambia stato" style="cursor:pointer;background:'+col+';color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">'+escB(d.stato||'Attivo')+'</span>'
-    const ql=(d.qualifica==='assunto')?'<span style="background:#3a5a8c;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">Assunto</span>':'<span style="background:#7a5c2e;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">Autonomo</span>'
-    let contrBadge=''
-    if(d.contratto&&d.contratto.fine){
-      const oggi0=new Date(); oggi0.setHours(0,0,0,0)
-      const fine0=new Date(d.contratto.fine+'T00:00:00')
-      const gg=Math.floor((fine0.getTime()-oggi0.getTime())/86400000)
-      if(gg<0){ contrBadge=' <span title="Contratto scaduto" style="background:#c0392b;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">⚠️ Contratto scaduto</span>' }
-      else if(gg<=30){ contrBadge=' <span title="Contratto in scadenza" style="background:#e67e22;color:#fff;border-radius:10px;padding:2px 8px;font-size:10px;vertical-align:middle">⏳ '+gg+'gg</span>' }
-    }
-    return '<div class="card" style="margin-bottom:10px;cursor:pointer" ondblclick="apriDocente(\''+d._id+'\')"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'+
-      '<div style="flex:1"><div style="font-weight:600;font-size:15px">'+escB(d.nome||'—')+' '+badge+' '+ql+contrBadge+'</div>'+
-      '<div style="font-size:12px;color:var(--text2);margin:3px 0">'+(liv?('📚 '+escB(liv)):'')+(d.pctDocente!=null?('  ·  💶 docente '+d.pctDocente+'% / azienda '+az+'%'):'')+'</div>'+
-      ((d.contratto&&(d.contratto.inizio||d.contratto.fine))?('<div style="font-size:12px;color:var(--text2);margin:3px 0">📝 Contratto: '+(d.contratto.inizio?new Date(d.contratto.inizio+'T00:00:00').toLocaleDateString('it-IT'):'—')+' → '+(d.contratto.fine?new Date(d.contratto.fine+'T00:00:00').toLocaleDateString('it-IT'):'—')+((d.contratto.rinnovi&&d.contratto.rinnovi.length)?('  ·  🔄 '+d.contratto.rinnovi.length+' rinnov'+(d.contratto.rinnovi.length===1?'o':'i')):'')+'</div>'):'')+
-      (mat?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'+mat+'</div>':'')+
-      ((d.certificati||[]).length?'<div style="font-size:11px;color:var(--text2);margin-top:5px">📄 '+(d.certificati||[]).map(escB).join(', ')+'</div>':'')+
-      '<div style="font-size:11px;color:var(--text3);margin-top:5px">'+escB(d.email||'')+(d.tel?(' · '+escB(d.tel)):'')+'</div>'+
-      '</div>'+
-      '<div style="display:flex;gap:6px"><button class="btn btn-sm" title="Modifica docente" onclick="apriDocente(\''+d._id+'\')">✏️</button><button class="btn btn-sm btn-r" title="Elimina docente" onclick="eliminaDocente(\''+d._id+'\')">🗑</button></div>'+
-      '</div></div>'
-  }).join('')
-}
-document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}))
-// Chiudi modal con tasto Esc
-document.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){
-    const open = document.querySelector('.modal-overlay.open')
-    if(open) open.classList.remove('open')
-  }
-})
-
-// ── QUALIFICHE ────────────────────────────────────────────────
-const Qsoglie=[
-  {key:'sp',label:'Senior Partner',prov:12,badge:'ba',min:40001},
-  {key:'am',label:'Area Manager',prov:11,badge:'bp',min:25001},
-  {key:'tl',label:'Team Leader',prov:10,badge:'bt',min:10001},
-  {key:'base',label:'Agente Base',prov:8,badge:'bb',min:0},
-]
-function getQual(p,i,mese){
-  if(p.qualForce&&p.qualForce!=='auto')return Qsoglie.find(q=>q.key===p.qualForce)||Qsoglie[3]
-  const m=mese||curMese()
-  const fat=vendite.filter(v=>v.pidx===i&&v.stato==='Incassato'&&v.data.startsWith(m)).reduce((s,v)=>s+v.val,0)
-  return Qsoglie.find(q=>fat>=q.min)||Qsoglie[3]
-}
-const qualBadge=(q,auto)=>`<span class="badge ${q.badge}">${q.label} <span class="auto-tag">${auto?'auto':'forzata'}</span></span>`
-const regimeBadge=r=>r==='piva'?'<span class="badge bt">P. IVA</span>':'<span class="badge bp">Ritenuta</span>'
-function statoBadge(s){const m={Incassato:'bg','In attesa':'ba',Annullato:'br',Attivo:'bg',Inattivo:'bgr','In pausa':'ba',Scaduto:'br',Terminato:'br','In prova':'ba',Nuovo:'bb',Contattato:'ba',Interessato:'bg','Non interessato':'br',Chiuso:'bgr',Acquisito:'bg',Inviato:'bb',Firmato:'bg','In attesa firma':'ba'};return`<span class="badge ${m[s]||'bgr'}">${s||'—'}</span>`}
-
-// ── LISTINO ───────────────────────────────────────────────────
-const LISTINO=[
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-plenitude-standard-rid","nome":"Plenitude Standard (Rid Bancario)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":35},
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-plenitude-standard-bp","nome":"Plenitude Standard (Bollettino Postale)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":35},
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-plenitude-promo-rid","nome":"Plenitude Promo (Rid Bancario)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":35,"guadagno":25},
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-plenitude-promo-bp","nome":"Plenitude Promo (Bollettino Postale)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":25,"guadagno":15},
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-top-rid","nome":"IREN Top (Rid Bancario)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":70,"guadagno":50},
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-top-bp","nome":"IREN Top (Bollettino Postale)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":60,"guadagno":40},
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-standard-rid","nome":"IREN Standard (Rid Bancario)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":35},
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-standard-bp","nome":"IREN Standard (Bollettino Postale)","piatt":"P.S.","prov":20,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":35},
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-promo-rid","nome":"IREN Promo (Rid Bancario)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":35,"guadagno":25},
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-promo-bp","nome":"IREN Promo (Bollettino Postale)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":25,"guadagno":15},
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-subentri-rid","nome":"IREN Subentri (Rid Bancario)","piatt":"P.S.","prov":25,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":30},
-  {"cat":"Energia & Utenze","pid":"Energia & Utenze-iren-subentri-bp","nome":"IREN Subentri (Bollettino Postale)","piatt":"P.S.","prov":15,"tipo":"fisso","prezzo":null,"costo":null,"margine":55,"guadagno":40},
+    const fonte = r.fonte==='auto' ? '<span style="color:var(--green);font-size:11px">🔄 Automatico</span>' : '<span style="color:var(--text2);font-size:11px
+... 15219 bytes omitted ...
+dagno":40},
   {"cat":"Energia & Utenze","pid":"Energia & Utenze-enel-rid","nome":"ENEL (Rid Bancario)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":45,"guadagno":35},
   {"cat":"Energia & Utenze","pid":"Energia & Utenze-enel-bp","nome":"ENEL (Bollettino Postale)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":45,"guadagno":35},
   {"cat":"Energia & Utenze","pid":"Energia & Utenze-fastweb-energia-rid","nome":"Fastweb Energia (Rid Bancario)","piatt":"P.S.","prov":15,"tipo":"fisso","prezzo":null,"costo":null,"margine":50,"guadagno":35},
