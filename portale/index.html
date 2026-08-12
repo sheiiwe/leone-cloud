@@ -749,7 +749,7 @@ async function caricaMioBadge(){
   const box=document.getElementById('badge-personale'); if(!box) return
   box.innerHTML='<div class="card"><div class="empty">Caricamento badge…</div></div>'
   try{
-    const r=await db.rpc('get_my_wallet_badge')
+    const r=await db.rpc('get_my_wallet_badge_for_portal',{p_tipo:'procacciatore'})
     if(r.error) throw r.error
     MIO_BADGE=r.data||{found:false}
     if(!MIO_BADGE.found){

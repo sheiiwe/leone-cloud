@@ -905,6 +905,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Badge aziendali verificabili dal QR su <strong>verifica.leoneconsultingitalia.it</strong>. Ogni tesserino può essere associato all'account del portale e pubblicato su Apple Wallet e Google Wallet.</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
     <button class="btn btn-p btn-sm" onclick="apriTessera()">＋ Nuovo tesserino</button>
+    <button class="btn btn-sm" onclick="creaTessereMancanti()">⚡ Crea tesserini mancanti</button>
     <span id="ts-count" style="font-size:13px;color:var(--text2)"></span>
   </div>
   <div class="tbl-wrap"><table>
@@ -2965,7 +2966,7 @@ function syncStatus(state,msg){
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
 // ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
-const _RT_BUILD='1.13.0-wallet-agevolazioni'
+const _RT_BUILD='1.13.1-wallet-badge-associazione'
 let _rtLastSync=new Date().toISOString()
 let _rtWasSubscribed=false
 const _syncTimers={}
@@ -5215,7 +5216,8 @@ function _tsParseData(txt){
 function renderTessere(){
   const tb=document.getElementById('tbl-tessere'); if(!tb) return
   const c=document.getElementById('ts-count')
-  if(c) c.textContent = _TESSERE.length ? (_TESSERE.length+' tesserin'+(_TESSERE.length===1?'o':'i')) : ''
+  const daAssociare=_TESSERE.filter(function(t){ return !t.owner_email }).length
+  if(c) c.textContent = _TESSERE.length ? (_TESSERE.length+' tesserin'+(_TESSERE.length===1?'o':'i')+(daAssociare?' · '+daAssociare+' da associare':'')) : ''
   if(!_TESSERE.length){ tb.innerHTML='<tr><td colspan="8" class="empty">Nessun tesserino. Creane uno col pulsante qui sopra.</td></tr>'; return }
   tb.innerHTML=_TESSERE.map(function(t){
     const s=_tsStato(t)
@@ -5234,7 +5236,7 @@ function renderTessere(){
         +'<button class="btn btn-sm" title="Stampa tesserino (PDF)" onclick="stampaTessera(\''+t.codice+'\',\'pdf\')">🖨</button>'
         +'<button class="btn btn-sm" title="Immagine per il telefono" onclick="stampaTessera(\''+t.codice+'\',\'png\')">📱</button>'
         +'<button class="btn btn-sm" title="Foto" onclick="cambiaFotoTessera(\''+t.codice+'\')">📷</button>'
-        +'<button class="btn btn-sm" title="Associazione account e Wallet" onclick="gestisciWalletTessera(\''+t.codice+'\')">Wallet</button>'
+        +'<button class="btn btn-sm" title="Associa il badge all’account del portale" onclick="gestisciWalletTessera(\''+t.codice+'\')">🔗 Associa account</button>'
         +'<button class="btn btn-sm" title="Modifica tesserino" onclick="apriTessera(\''+t.codice+'\')">✏️</button>'
         +'<button class="btn btn-sm btn-r" title="Elimina tesserino" onclick="eliminaTessera(\''+t.codice+'\')">🗑</button>'
       +'</td></tr>'
@@ -5267,6 +5269,59 @@ async function gestisciWalletTessera(codice){
     await caricaTessere()
     try{ toast('Account Wallet aggiornato') }catch(e){}
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+}
+
+function _tsIsoData(value){
+  const v=String(value||'').trim()
+  if(!v) return null
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v
+  return _tsParseData(v)
+}
+function _tsTraTreAnniIso(){
+  const d=new Date(); d.setFullYear(d.getFullYear()+3)
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
+}
+
+async function creaTessereMancanti(){
+  try{
+    await caricaTessere()
+    const tipi=['procacciatore','docente','dipendente']
+    const liste=await Promise.all(tipi.map(function(tp){ return _tsPersone(tp) }))
+    const esistenti=new Set(_TESSERE.filter(function(t){ return t.rif_id }).map(function(t){ return t.tipo+'|'+String(t.rif_id) }))
+    const mancanti=[]
+    tipi.forEach(function(tp,i){
+      ;(liste[i]||[]).forEach(function(p){
+        if(!esistenti.has(tp+'|'+String(p.id))) mancanti.push({tipo:tp,persona:p})
+      })
+    })
+    if(!mancanti.length){ alert('Tutti i collaboratori attivi hanno già un tesserino.'); return }
+    if(!confirm('Creo '+mancanti.length+' tesserin'+(mancanti.length===1?'o':'i')+' mancanti?\n\nSaranno validi ma non ancora associati agli account. L’associazione si farà dal pulsante “Associa account”.')) return
+
+    const sigle={procacciatore:'PRO',docente:'DOC',dipendente:'DIP'}
+    const ruoli={procacciatore:'Procacciatore',docente:'Docente',dipendente:'Dipendente'}
+    const prossimi={}
+    tipi.forEach(function(tp){
+      let max=0, re=new RegExp('^LC-'+sigle[tp]+'-(\\d+)$')
+      _TESSERE.forEach(function(t){ const m=String(t.codice||'').match(re); if(m) max=Math.max(max,parseInt(m[1],10)||0) })
+      prossimi[tp]=max
+    })
+    const records=mancanti.map(function(x){
+      const p=x.persona, tp=x.tipo
+      prossimi[tp]++
+      return {
+        codice:'LC-'+sigle[tp]+'-'+String(prossimi[tp]).padStart(3,'0'),
+        tipo:tp, rif_id:String(p.id), nome:p.nome, ruolo:ruoli[tp],
+        nascita:_tsIsoData(p.nascita), luogo_nascita:p.luogo||null,
+        scade_il:_tsIsoData(p.fine)||_tsTraTreAnniIso(),
+        attiva:true, owner_email:null, wallet_enabled:true
+      }
+    })
+    const q=await db.from('tessere').insert(records)
+    if(q.error) throw q.error
+    _tsPersoneCache=null
+    await caricaTessere()
+    alert('Creati '+records.length+' tesserini. Ora usa “Associa account” sulla riga della persona.')
+  }catch(e){ alert('Errore creazione tesserini: '+((e&&e.message)||e)) }
 }
 
 // ridimensiona la foto e la trasforma in testo, come per i procacciatori
@@ -5304,10 +5359,11 @@ async function _tsPersone(tipo){
       const d = x.data || {}
       return { id:x.id, nome:(d.nome||d.nominativo||'').trim(),
                email:(d.email_aziendale||d.email||'').trim().toLowerCase(),
+               stato:String(d.stato||'attivo').trim().toLowerCase(),
                nascita:(d.nascita||d.data_nascita||''),
                luogo:(d.luogonascita||d.luogo_nascita||d.luogoNascita||d.nato_a||d.comune_nascita||''),
                fine:_tsFineContratto(d) }
-    }).filter(function(p){ return p.nome })
+    }).filter(function(p){ return p.nome && !['terminato','terminata','inattivo','inattiva','chiuso','chiusa','sospeso','sospesa'].includes(p.stato) })
       .sort(function(a,b){ return a.nome.localeCompare(b.nome) })
   }catch(e){ console.error('persone:', e); return [] }
 }
@@ -7103,51 +7159,8 @@ function apriDocente(id){
   document.getElementById('doc-modal-title').textContent=d?'Modifica docente':'Nuovo docente'
   const set=(k,v)=>{ const e=document.getElementById(k); if(e) e.value=v||'' }
   document.getElementById('doc-id').value=d?d._id:''
-  set('doc-nome',d&&d.nome); set('doc-nascita',d&&d.nascita); set('doc-luogonascita',d&&d.luogonascita); set('doc-cf',d&&d.cf); set('doc-tel',d&&d.tel)
-  set('doc-email',d&&d.email); set('doc-email-az',d&&d.email_aziendale); set('doc-indirizzo',d&&d.indirizzo); set('doc-citta',d&&d.citta); set('doc-cap',d&&d.cap); set('doc-prov',d&&d.prov); set('doc-consenso-mkt',d&&d.consensoMkt)
-  set('doc-iban',d&&d.iban); set('doc-piva',d&&d.piva); set('doc-note',d&&d.note)
-  document.getElementById('doc-regime').value=(d&&d.regime)||'ritenuta'
-  document.getElementById('doc-qualifica').value=(d&&d.qualifica)||'procacciatore'
-  document.getElementById('doc-stato').value=(d&&d.stato)||'Attivo'
-  document.getElementById('doc-pct').value=(d&&d.pctDocente!=null)?d.pctDocente:''
-  _docPctEcho()
-  document.querySelectorAll('.doc-liv').forEach(c=>{ c.checked=!!(d&&(d.livelli||[]).includes(c.value)) })
-  _docMaterie=(d&&Array.isArray(d.materie))?[...d.materie]:[]
-  _docCerti=(d&&Array.isArray(d.certificati))?[...d.certificati]:[]
-  _docFillMaterieSugg(); _docRenderChips()
-  _docRenderStudenti(d?d._id:null)
-  // Contratto (semplificato: solo data inizio, fine calcolata, storico rinnovi)
-  const c=(d&&d.contratto)||{}
-  set('doc-contr-inizio', c.inizio||'')
-  set('doc-contr-fine', c.fine||_calcFineContratto(c.inizio, c.rinnovi))
-  _docContrAlert(c)
-  _docRenderRinnovi(c.rinnovi||[])
-  openM('m-docente')
-}
-function _calcFineContratto(inizio, rinnovi){
-  if(!inizio) return ''
-  const base=new Date(inizio+'T00:00:00'); if(isNaN(base.getTime())) return ''
-  // fine = inizio + 12 mesi + (1 anno per ogni rinnovo)
-  const nRinnovi = Array.isArray(rinnovi) ? rinnovi.length : 0
-  base.setFullYear(base.getFullYear() + 1 + nRinnovi)
-  return base.toISOString().slice(0,10)
-}
-function _docCalcFine(){
-  const inizio=document.getElementById('doc-contr-inizio').value
-  const id=document.getElementById('doc-id').value
-  const d=id?docenti.find(x=>x._id===id):null
-  const rinnovi=(d&&d.contratto&&d.contratto.rinnovi)||[]
-  document.getElementById('doc-contr-fine').value = _calcFineContratto(inizio, rinnovi)
-  _docContrAlert({ inizio, fine:document.getElementById('doc-contr-fine').value, rinnovi })
-}
-function _docRenderRinnovi(rinnovi){
-  const box=document.getElementById('doc-rinnovi-list'); if(!box) return
-  if(!rinnovi||!rinnovi.length){ box.innerHTML='<div style="color:var(--text3);font-size:12px;padding:4px 0">Nessun rinnovo ancora. Il contratto scade tra 12 mesi dalla data di inizio.</div>'; return }
-  box.innerHTML=rinnovi.map((r,i)=>{
-    const dt=r.data||'—'
-    const link=r.pdf_path?('<a href="'+SUPA_URL+'/storage/v1/object/public/contratti/'+r.pdf_path+'" target="_blank" style="color:var(--blu);text-decoration:none">📄 PDF</a>'):''
-    const fonte = r.fonte==='auto' ? '<span style="color:var(--green);font-size:11px">🔄 Automatico</span>' : '<span style="color:var(--text2);font-size:11px
-... 15219 bytes omitted ...
+  set('doc-nome',d&&d.nome); set('doc-nascita',d&&d.nascita); 
+... 18071 bytes omitted ...
 dagno":40},
   {"cat":"Energia & Utenze","pid":"Energia & Utenze-enel-rid","nome":"ENEL (Rid Bancario)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":45,"guadagno":35},
   {"cat":"Energia & Utenze","pid":"Energia & Utenze-enel-bp","nome":"ENEL (Bollettino Postale)","piatt":"P.S.","prov":10,"tipo":"fisso","prezzo":null,"costo":null,"margine":45,"guadagno":35},
