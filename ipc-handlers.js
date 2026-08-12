@@ -6,14 +6,121 @@ const os = require('os')
 const fs = require('fs')
 const crypto = require('crypto')
 const https = require('https')
-const {
-  GOOGLE_WALLET_CLASS_ID,
-  validateServiceAccount,
-  buildGoogleWalletObject,
-  buildSaveUrl,
-  upsertGoogleWalletObject,
-  revokeGoogleWalletObject
-} = require('./google-wallet')
+// Tenuto qui (oltre che nel modulo testabile google-wallet.js) per mantenere
+// compatibile l'aggiornamento automatico già installato sui Mac: le versioni
+// precedenti scaricano ipc-handlers.js ma non conoscono ancora il nuovo file.
+const GOOGLE_WALLET_ISSUER_ID = '338000000023187800'
+const GOOGLE_WALLET_CLASS_ID = `${GOOGLE_WALLET_ISSUER_ID}.leone_badge_aziendale_v1`
+const GOOGLE_WALLET_SCOPE = 'https://www.googleapis.com/auth/wallet_object.issuer'
+const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
+const GOOGLE_OBJECTS_URL = 'https://walletobjects.googleapis.com/walletobjects/v1/genericObject'
+const GOOGLE_WALLET_LOGO_URL = 'https://verifica.leoneconsultingitalia.it/assets/google-wallet-logo.png'
+let _googleWalletTokenCache = null
+
+function _gwBase64url(value){
+  return Buffer.from(value).toString('base64').replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_')
+}
+function _gwSignJwt(credentials, claims){
+  const header={alg:'RS256',typ:'JWT'}
+  if(credentials.private_key_id) header.kid=credentials.private_key_id
+  const unsigned=`${_gwBase64url(JSON.stringify(header))}.${_gwBase64url(JSON.stringify(claims))}`
+  return `${unsigned}.${_gwBase64url(crypto.sign('RSA-SHA256',Buffer.from(unsigned),credentials.private_key))}`
+}
+function validateServiceAccount(credentials){
+  if(!credentials || credentials.type!=='service_account') throw new Error('Il file selezionato non è una chiave JSON di un account di servizio Google.')
+  if(!/^[^@\s]+@[^@\s]+[.]iam[.]gserviceaccount[.]com$/.test(String(credentials.client_email||''))) throw new Error('Nel JSON manca una e-mail valida dell’account di servizio Google.')
+  if(!String(credentials.private_key||'').includes('BEGIN PRIVATE KEY')) throw new Error('Nel JSON manca la chiave privata dell’account di servizio Google.')
+  if(!credentials.project_id) throw new Error('Nel JSON manca l’ID del progetto Google Cloud.')
+  return credentials
+}
+function _gwLocalized(value){ return {defaultValue:{language:'it-IT',value:String(value||'')}} }
+function _gwDateIso(value,end){
+  const raw=String(value||'').trim(); if(!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null
+  const d=new Date(`${raw}T${end?'23:59:59':'00:00:00'}+02:00`); return Number.isNaN(d.getTime())?null:d.toISOString()
+}
+function _gwItDate(value){
+  const m=String(value||'').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?`${m[3]}/${m[2]}/${m[1]}`:'—'
+}
+function _gwObjectSuffix(code){
+  const s=String(code||'').trim().replace(/[^A-Za-z0-9._-]/g,'_')
+  if(!/^[A-Za-z0-9._-]{3,80}$/.test(s)) throw new Error('Il codice del tesserino non è valido per Google Wallet.')
+  return s
+}
+function buildGoogleWalletObject(badge){
+  const code=String(badge?.code||'').trim(), name=String(badge?.name||'').trim()
+  const role=String(badge?.role||badge?.type||'Collaboratore').trim()
+  if(!name) throw new Error('Nel tesserino manca il nome della persona.')
+  const object={
+    id:`${GOOGLE_WALLET_ISSUER_ID}.${_gwObjectSuffix(code)}`,
+    classId:GOOGLE_WALLET_CLASS_ID,
+    state:badge?.active===false?'INACTIVE':'ACTIVE',
+    cardTitle:_gwLocalized('Leone Consulting'),subheader:_gwLocalized('BADGE AZIENDALE'),header:_gwLocalized(name),
+    logo:{sourceUri:{uri:GOOGLE_WALLET_LOGO_URL},contentDescription:_gwLocalized('Logo Leone Consulting')},
+    hexBackgroundColor:'#141414',
+    barcode:{type:'QR_CODE',value:`https://verifica.leoneconsultingitalia.it/${encodeURIComponent(code)}`,alternateText:code},
+    textModulesData:[
+      {id:'ruolo',header:'RUOLO',body:role||'Collaboratore'},
+      {id:'numero_badge',header:'N. BADGE',body:code},
+      {id:'validita',header:'VALIDO FINO AL',body:_gwItDate(badge?.expiresAt)},
+      {id:'emittente',header:'EMITTENTE',body:'Leone Consulting di Leonardo Angelucci'}
+    ],
+    linksModuleData:{uris:[{id:'verifica_ufficiale',uri:`https://verifica.leoneconsultingitalia.it/${encodeURIComponent(code)}`,description:'Verifica ufficiale del badge'}]}
+  }
+  const start=_gwDateIso(badge?.issuedAt,false), end=_gwDateIso(badge?.expiresAt,true)
+  if(start||end){ object.validTimeInterval={}; if(start)object.validTimeInterval.start={date:start}; if(end)object.validTimeInterval.end={date:end} }
+  if(end) object.notifications={expiryNotification:{enableNotification:true}}
+  return object
+}
+function buildSaveUrl(credentials,object){
+  const claims={iss:credentials.client_email,aud:'google',origins:['https://portale.leoneconsultingitalia.it'],typ:'savetowallet',iat:Math.floor(Date.now()/1000),payload:{genericObjects:[{id:object.id,classId:object.classId}]}}
+  return `https://pay.google.com/gp/v/save/${_gwSignJwt(credentials,claims)}`
+}
+function _gwRequest(url,options={}){
+  return new Promise((resolve,reject)=>{
+    const parsed=new URL(url), body=options.body==null?null:Buffer.from(typeof options.body==='string'?options.body:JSON.stringify(options.body))
+    const headers={...(options.headers||{})}; if(body&&headers['Content-Length']==null) headers['Content-Length']=String(body.length)
+    const req=https.request({protocol:parsed.protocol,hostname:parsed.hostname,port:parsed.port||undefined,path:`${parsed.pathname}${parsed.search}`,method:options.method||'GET',headers,timeout:30000},res=>{
+      const chunks=[]; res.on('data',c=>chunks.push(c)); res.on('end',()=>{ const text=Buffer.concat(chunks).toString('utf8'); let data=null; if(text){try{data=JSON.parse(text)}catch(_){data=text}} resolve({status:Number(res.statusCode||0),data,headers:res.headers}) })
+    })
+    req.on('timeout',()=>req.destroy(new Error('Google Wallet non ha risposto entro 30 secondi.'))); req.on('error',reject); if(body)req.write(body); req.end()
+  })
+}
+function _gwError(response,fallback){
+  const message=response?.data?.error?.message||response?.data?.error_description||(typeof response?.data==='string'?response.data:'')
+  const code=response?.status?` (HTTP ${response.status})`:''
+  if(response?.status===403&&/api.*not.*enabled|has not been used|disabled/i.test(message)) return new Error('La Google Wallet API non è ancora abilitata nel progetto Google Cloud. Apri “API e servizi”, abilita Google Wallet API e riprova tra qualche minuto.')
+  if(response?.status===403) return new Error(`L’account di servizio non è autorizzato come Developer nell’emittente Google Wallet.${message?`\n${message}`:''}`)
+  if(response?.status===404&&/class/i.test(message)) return new Error(`Google non trova la classe ${GOOGLE_WALLET_CLASS_ID}. Controlla che sia stata creata nello stesso emittente.`)
+  return new Error(`${fallback}${code}${message?`\n${message}`:''}`)
+}
+async function _gwAccessToken(credentials){
+  const now=Date.now(); if(_googleWalletTokenCache&&_googleWalletTokenCache.email===credentials.client_email&&_googleWalletTokenCache.expiresAt>now+60000)return _googleWalletTokenCache.token
+  const iat=Math.floor(now/1000), assertion=_gwSignJwt(credentials,{iss:credentials.client_email,scope:GOOGLE_WALLET_SCOPE,aud:GOOGLE_TOKEN_URL,iat,exp:iat+3600})
+  const form=new URLSearchParams({grant_type:'urn:ietf:params:oauth:grant-type:jwt-bearer',assertion}).toString()
+  const response=await _gwRequest(GOOGLE_TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form})
+  if(response.status<200||response.status>=300||!response.data?.access_token) throw _gwError(response,'Google non ha accettato la chiave dell’account di servizio.')
+  const expiresIn=Math.max(60,Number(response.data.expires_in||3600)); _googleWalletTokenCache={email:credentials.client_email,token:response.data.access_token,expiresAt:now+(expiresIn*1000)}
+  return _googleWalletTokenCache.token
+}
+async function _gwWalletRequest(credentials,url,method,body){
+  const token=await _gwAccessToken(credentials)
+  return _gwRequest(url,{method,headers:{Authorization:`Bearer ${token}`,Accept:'application/json',...(body==null?{}:{'Content-Type':'application/json'})},body})
+}
+async function upsertGoogleWalletObject(credentials,object){
+  const resourceUrl=`${GOOGLE_OBJECTS_URL}/${encodeURIComponent(object.id)}`, existing=await _gwWalletRequest(credentials,resourceUrl,'GET'); let response
+  if(existing.status===404){ response=await _gwWalletRequest(credentials,GOOGLE_OBJECTS_URL,'POST',object); if(response.status===409)response=await _gwWalletRequest(credentials,resourceUrl,'PUT',object) }
+  else if(existing.status>=200&&existing.status<300) response=await _gwWalletRequest(credentials,resourceUrl,'PUT',object)
+  else throw _gwError(existing,'Non è stato possibile controllare il badge su Google Wallet.')
+  if(response.status<200||response.status>=300) throw _gwError(response,'Non è stato possibile creare o aggiornare il badge su Google Wallet.')
+  return response.data
+}
+async function revokeGoogleWalletObject(credentials,objectId){
+  if(!String(objectId||'').startsWith(`${GOOGLE_WALLET_ISSUER_ID}.`)) throw new Error('ID Google Wallet non valido.')
+  const response=await _gwWalletRequest(credentials,`${GOOGLE_OBJECTS_URL}/${encodeURIComponent(objectId)}`,'PATCH',{state:'INACTIVE'})
+  if(response.status===404)return{id:objectId,state:'INACTIVE',alreadyMissing:true}
+  if(response.status<200||response.status>=300)throw _gwError(response,'Non è stato possibile revocare il badge su Google Wallet.')
+  return response.data
+}
 
 const execFileAsync = (file, args, options = {}) => new Promise((resolve, reject) => {
   execFile(file, args, options, (error, stdout, stderr) => {
@@ -543,6 +650,7 @@ ipcMain.handle('aggiorna-e-riavvia', async () => {
     'main.js',
     'preload.js',
     'ipc-handlers.js',
+    'google-wallet.js',
     'package.json',
     'compila_documento.py',
     'compila_pdf.py',
@@ -609,6 +717,7 @@ ipcMain.handle('aggiornamento-rapido', async () => {
     { url: '/sheiiwe/leone-cloud/main/compila_pdf.py', dest: path.join(baseDir, 'compila_pdf.py') },
     { url: '/sheiiwe/leone-cloud/main/fill_pdf_form_with_annotations.py', dest: path.join(baseDir, 'fill_pdf_form_with_annotations.py') },
     { url: '/sheiiwe/leone-cloud/main/ipc-handlers.js', dest: path.join(baseDir, 'ipc-handlers.js') },
+    { url: '/sheiiwe/leone-cloud/main/google-wallet.js', dest: path.join(baseDir, 'google-wallet.js') },
     { url: '/sheiiwe/leone-cloud/main/preload.js', dest: path.join(baseDir, 'preload.js') },
     { url: '/sheiiwe/leone-cloud/main/email-server.js', dest: path.join(baseDir, 'email-server.js') },
     { url: '/sheiiwe/leone-cloud/main/package.json', dest: path.join(baseDir, 'package.json') },
