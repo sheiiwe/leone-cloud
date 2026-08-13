@@ -970,8 +970,11 @@ tbody tr:hover td{background:var(--surface2)}
 <div class="page" id="page-corsipagine">
   <div class="pg-title">Pagine corso</div>
   <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Le pagine pubbliche dei corsi, su <strong>corsi.leoneconsultingitalia.it</strong>. Compila qui i dati: la pagina esce da sola, sempre con la stessa grafica.</div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
     <button class="btn btn-p btn-sm" onclick="apriCorsoPag()">＋ Nuova pagina corso</button>
+    <input id="cp-search" type="search" oninput="renderCorsiPagine()" placeholder="🔍 Cerca corso, ente o piattaforma (es. CLIL)" style="flex:1;min-width:260px;max-width:520px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;background:var(--surface);color:var(--text)">
+    <select id="cp-f-piatt" onchange="renderCorsiPagine()" style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text)"><option value="">Tutte le piattaforme</option></select>
+    <button class="btn btn-sm" onclick="cpApriComparazione()" title="Confronta prezzo cliente, costo partner e guadagno">⚖️ Comparazione</button>
     <span id="cp-count" style="font-size:13px;color:var(--text2)"></span>
   </div>
   <div id="cp-bulkbar" style="display:none;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:10px 12px;background:rgba(0,0,0,.03);border:1px solid var(--line);border-radius:10px">
@@ -991,8 +994,8 @@ tbody tr:hover td{background:var(--surface2)}
     <button class="btn btn-sm" style="margin-left:auto" onclick="cpDeselTutti()">Deseleziona</button>
   </div>
   <div class="tbl-wrap"><table>
-    <thead><tr><th style="width:30px"><input type="checkbox" id="cp-selall" onclick="cpSelAll(this.checked)" title="Seleziona tutte"></th><th>Corso</th><th>Categoria</th><th>Prezzo</th><th>Tipo</th><th>Link</th><th></th></tr></thead>
-    <tbody id="tbl-corsipagine"><tr><td colspan="7" class="empty">Caricamento…</td></tr></tbody>
+    <thead><tr><th style="width:30px"><input type="checkbox" id="cp-selall" onclick="cpSelAll(this.checked)" title="Seleziona i risultati visibili"></th><th>Corso</th><th>Categoria / piattaforma</th><th>Prezzo cliente</th><th>Costo partner</th><th>Guadagno lordo</th><th>Tipo</th><th>Link</th><th></th></tr></thead>
+    <tbody id="tbl-corsipagine"><tr><td colspan="9" class="empty">Caricamento…</td></tr></tbody>
   </table></div>
 
   <div style="margin-top:24px;border-top:1px solid var(--line);padding-top:16px">
@@ -2970,7 +2973,7 @@ function syncStatus(state,msg){
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
 // ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
-const _RT_BUILD='1.14.7-badge-nft-anagrafiche'
+const _RT_BUILD='1.14.8-global-search-course-compare'
 let _rtLastSync=new Date().toISOString()
 let _rtWasSubscribed=false
 const _syncTimers={}
@@ -4151,6 +4154,9 @@ const STANZE = [
   {a:'proc', id:'listino',                n:'Listino prodotti',       g:'Listino',     k:'prezzi catalogo corsi servizi'},
   {a:'proc', id:'offerte',                n:'Offerte luce/gas/telefonia', g:'Listino', k:'energia commodities telco fornitori bollette luce gas'},
   {a:'proc', id:'prodottipag',            n:'Prodotti & pagamenti',   g:'Listino',     k:'prodotto pagamento sumup paypal provvigione prezzo'},
+  {a:'proc', id:'corsipagine',             n:'Pagine corso',          g:'Listino',     k:'corsi sito pubblico prezzi piattaforme comparazione margini guadagno'},
+  {a:'proc', id:'certificati',             n:'Certificati',           g:'Strumenti',   k:'open badge nft attestati risultati credenziali'},
+  {a:'proc', id:'tessere',                 n:'Tessere',               g:'Strumenti',   k:'badge wallet apple google tessera digitale'},
   {a:'proc', id:'avvisi',                 n:'Avvisi',                 g:'Notifiche',   k:'notifiche allerte messaggi'},
   {a:'proc', id:'email-mkt',              n:'Email marketing',        g:'Strumenti',   k:'campagne newsletter brevo invii massivi'},
   {a:'proc', id:'documenti',              n:'Documenti',              g:'Strumenti',   k:'file archivio pdf modelli template caricare'},
@@ -4641,6 +4647,12 @@ function _piattRiempiTendine(){
     const scelto = f.value
     f.innerHTML = '<option value="">Tutte le piattaforme</option>' + voci + '<option value="__none">Senza piattaforma</option>'
     f.value = scelto
+  }
+  const cpf = document.getElementById('cp-f-piatt')
+  if(cpf){
+    const scelto = cpf.value
+    cpf.innerHTML = '<option value="">Tutte le piattaforme</option>' + voci + '<option value="__none">Senza piattaforma</option>'
+    cpf.value = scelto
   }
   const sel = document.getElementById('pp-piattaforma')
   if(sel){
@@ -6169,7 +6181,8 @@ function apriCorsoPag(slug){
       opzioni:(_ENTI||[]).filter(x=>x.attiva!==false).map(x=>x.nome), valore:c.ente||''},
     {id:'piattaforma', tipo:'select', label:'Piattaforma (solo per te, non si vede online)',
       opzioni:[{v:'',t:'— Nessuna —'}].concat((_PIATT||[]).map(x=>({v:x.codice,t:x.codice+' · '+x.nome}))), valore:c.piattaforma||''},
-    {id:'prezzo', label:'Prezzo in € — lascia vuoto per "solo informazioni"', valore:c.prezzo!=null?c.prezzo:''},
+    {id:'prezzo', label:'Prezzo di vendita al cliente (€) — lascia vuoto per "solo informazioni"', valore:c.prezzo!=null?c.prezzo:''},
+    {id:'costo_partner', label:'Costo partner già ivato (€) — solo interno, non appare sul sito', valore:c.costo_partner!=null?c.costo_partner:''},
     {id:'iva', tipo:'check', label:'Il cliente paga + IVA 22%', valore:!!Number(c.iva)},
     {id:'solo_info', tipo:'check', label:'Solo informazioni, niente acquisto (per le lauree universitarie)', valore:!!c.solo_info},
     {id:'prezzo_offerta', label:'\uD83D\uDD25 Prezzo in OFFERTA (€) — vuoto = nessuna offerta', valore:c.prezzo_offerta!=null?c.prezzo_offerta:''},
@@ -6203,6 +6216,9 @@ async function salvaCorsoPag(slugVecchio, r){
     const p = riga.split('?'); return {q:(p[0]||'').trim(), a:p.slice(1).join('?').trim()}
   })
 
+  const costoPartner = r.costo_partner!==''&&r.costo_partner!=null ? Number(r.costo_partner) : null
+  if(costoPartner!=null && (!Number.isFinite(costoPartner)||costoPartner<0)){ alert('Il costo partner deve essere un numero valido maggiore o uguale a zero.'); return }
+
   const rec = {
     slug:s,
     titolo:(r.titolo||'').trim(),
@@ -6231,6 +6247,10 @@ async function salvaCorsoPag(slugVecchio, r){
     if(slugVecchio){ q = await db.from('corsi_pagine').update(rec).eq('slug', slugVecchio) }
     else { q = await db.from('corsi_pagine').insert(rec) }
     if(q.error) throw q.error
+    let qc
+    if(costoPartner==null) qc=await db.from('corsi_costi').delete().eq('slug',s)
+    else qc=await db.from('corsi_costi').upsert({slug:s,costo_partner:costoPartner,aggiornato_il:new Date().toISOString()},{onConflict:'slug'})
+    if(qc.error) throw qc.error
     await _ricordaCategoriaEnte(rec.categoria, rec.ente)
     await caricaCorsiPagine()
     try{ toast('Pagina salvata. Ricordati di ripubblicare per vederla online.') }catch(e){}
@@ -15078,6 +15098,124 @@ function eseguiCalcoloCF(){
 caricaComuni()
 controllaSessione()
 
+// ── RICERCA UNIVERSALE + CONFRONTO CORSI (v1.14.8) ───────────
+function _cpPiattaformaInfo(c){
+  const v=String((c&&c.piattaforma)||'').trim()
+  if(!v)return{codice:'',nome:'Senza piattaforma',testo:'Senza piattaforma'}
+  const n=_grNorm(v),p=(_PIATT||[]).find(function(x){return _grNorm(x.codice)===n||_grNorm(x.nome)===n||_grNorm(x.ente)===n})
+  return p?{codice:p.codice,nome:p.nome,testo:p.codice+' · '+p.nome}:{codice:v,nome:v,testo:v}
+}
+function _cpTestoRicerca(c){const p=_cpPiattaformaInfo(c);return _grNorm([c&&c.titolo,c&&c.sottotitolo,c&&c.categoria,c&&c.ente,c&&c.slug,c&&c.descrizione,c&&c.a_chi,p.codice,p.nome].join(' '))}
+function _cpPerQuery(q){const pp=_grNorm(q).split(' ').filter(Boolean);return!pp.length?(_CORSIPAG||[]).slice():(_CORSIPAG||[]).filter(function(c){const t=_cpTestoRicerca(c);return pp.every(function(p){return t.indexOf(p)>=0})})}
+function _cpCorsiFiltrati(){
+  const q=((document.getElementById('cp-search')||{}).value||''),f=((document.getElementById('cp-f-piatt')||{}).value||'')
+  return _cpPerQuery(q).filter(function(c){if(!f)return true;const x=_cpPiattaformaInfo(c).codice;return f==='__none'?!x:_grNorm(x)===_grNorm(f)})
+}
+function _cpPrezzoCliente(c){const b=_offAttiva(c)?Number(c.prezzo_offerta||0):Number(c.prezzo||0);return Number(c&&c.iva)?b*1.22:b}
+function _cpGuadagno(c){return!c||c.costo_partner==null?null:_cpPrezzoCliente(c)-Number(c.costo_partner||0)}
+async function caricaCorsiPagine(){
+  try{
+    const rr=await Promise.all([db.from('corsi_pagine').select('*').order('ordine'),db.from('corsi_costi').select('slug,costo_partner,aggiornato_il')])
+    if(rr[0].error)throw rr[0].error
+    if(rr[1].error)console.error('corsi_costi:',rr[1].error)
+    const m={};(rr[1].data||[]).forEach(function(x){m[x.slug]=Number(x.costo_partner)})
+    _CORSIPAG=(rr[0].data||[]).map(function(c){return Object.assign({},c,{costo_partner:Object.prototype.hasOwnProperty.call(m,c.slug)?m[c.slug]:null})})
+  }catch(e){_CORSIPAG=[];console.error('corsi_pagine:',e)}
+  renderCorsiPagine()
+}
+function renderCorsiPagine(){
+  const tb=document.getElementById('tbl-corsipagine');if(!tb)return
+  const ris=_cpCorsiFiltrati(),cnt=document.getElementById('cp-count')
+  if(cnt)cnt.textContent=_CORSIPAG.length?(ris.length+' di '+_CORSIPAG.length+' pagine'):''
+  if(!ris.length){const q=((document.getElementById('cp-search')||{}).value||'');tb.innerHTML='<tr><td colspan="9" class="empty">'+(q?'Nessun corso trovato per “'+escB(q)+'”.':'Nessuna pagina corso.')+'</td></tr>';cpBarUpd();return}
+  tb.innerHTML=ris.map(function(c){
+    const url='corsi.leoneconsultingitalia.it/'+c.slug,p=_cpPiattaformaInfo(c),prezzo=_cpPrezzoCliente(c),costo=c.costo_partner==null?null:Number(c.costo_partner),g=_cpGuadagno(c),m=g!=null&&prezzo>0?g/prezzo*100:null
+    return '<tr><td><input type="checkbox" class="cp-chk" '+(_cpSel.has(c.slug)?'checked':'')+' onclick="cpToggle(\''+c.slug+'\',this.checked)"></td>'
+      +'<td><strong>'+escB(c.titolo)+'</strong>'+(c.attiva?'':' <span style="font-size:10px;color:var(--text3)">(nascosta)</span>')+'</td>'
+      +'<td style="font-size:12.5px;color:var(--text2)">'+escB(c.categoria||'—')+'<br><span style="font-size:10.5px;color:var(--accent);font-weight:600">'+escB(p.testo)+'</span></td>'
+      +'<td><strong>'+(prezzo?_eur(prezzo):'—')+'</strong>'+(Number(c.iva)?' <span style="font-size:10px;color:var(--text3)">IVA compresa</span>':'')+(_offAttiva(c)?'<br><span style="font-size:10px;color:#C51E26;font-weight:700">🔥 offerta attiva</span>':'')+'</td>'
+      +'<td>'+(costo==null?'<span style="font-size:11px;color:#B7791F">Da inserire</span>':'<strong>'+_eur(costo)+'</strong><br><span style="font-size:10px;color:var(--text3)">IVA inclusa</span>')+'</td>'
+      +'<td>'+(g==null?'—':'<strong style="color:'+(g>=0?'#117A65':'#C51E26')+'">'+_eur(g)+'</strong><br><span style="font-size:10px;color:var(--text3)">'+m.toFixed(1).replace('.',',')+'%</span>')+'</td>'
+      +'<td style="font-size:12.5px">'+(c.solo_info||!c.prezzo?'<span style="color:var(--text2)">Solo info</span>':'Acquistabile')+'</td>'
+      +'<td><a href="https://'+url+'" target="_blank" style="font-size:11.5px;color:var(--accent)">'+escB(c.slug)+' ↗</a></td>'
+      +'<td class="acts"><button class="btn btn-sm" title="Copia link" onclick="copiaLink(\'https://'+url+'\',this)">🔗</button><button class="btn btn-sm" title="Modifica corso e costo" onclick="apriCorsoPag(\''+c.slug+'\')">✏️</button><button class="btn btn-sm btn-r" onclick="eliminaCorsoPag(\''+c.slug+'\')">🗑</button></td></tr>'
+  }).join('')
+  const s=document.getElementById('cp-selall');if(s)s.checked=ris.length>0&&ris.every(function(c){return _cpSel.has(c.slug)});cpBarUpd()
+}
+function cpToggle(slug,on){if(on)_cpSel.add(slug);else _cpSel.delete(slug);const v=_cpCorsiFiltrati(),s=document.getElementById('cp-selall');if(s)s.checked=v.length>0&&v.every(function(c){return _cpSel.has(c.slug)});cpBarUpd()}
+function cpSelAll(on){_cpCorsiFiltrati().forEach(function(c){if(on)_cpSel.add(c.slug);else _cpSel.delete(c.slug)});renderCorsiPagine()}
+function cpChiudiComparazione(){const d=document.getElementById('cp-compare-modal');if(d)d.remove()}
+function cpApriComparazione(){
+  cpChiudiComparazione();const d=document.createElement('div');d.id='cp-compare-modal';d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.52);backdrop-filter:blur(3px);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:5vh 18px;overflow-y:auto'
+  d.innerHTML='<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:14px;max-width:1080px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,.45);overflow:hidden"><div style="display:flex;gap:10px;align-items:center;padding:15px 18px;border-bottom:0.5px solid var(--border)"><div style="flex:1"><strong style="font-size:16px">⚖️ Comparazione corsi e piattaforme</strong><div style="font-size:11.5px;color:var(--text3)">Confronta prezzo cliente, costo partner e guadagno lordo.</div></div><button class="btn btn-sm" onclick="cpChiudiComparazione()">✕ Chiudi</button></div><div style="padding:16px 18px"><input id="cp-compare-q" type="search" placeholder="Scrivi il corso da confrontare, es. CLIL" oninput="cpRenderComparazione()" style="width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid var(--border);border-radius:9px;font-size:14px;background:var(--surface2);color:var(--text)"><div id="cp-compare-res" style="margin-top:14px"></div></div></div>'
+  d.addEventListener('click',function(e){if(e.target===d)cpChiudiComparazione()});document.body.appendChild(d);const q=document.getElementById('cp-compare-q');q.value=((document.getElementById('cp-search')||{}).value||'');cpRenderComparazione();setTimeout(function(){q.focus();q.select()},40)
+}
+function cpRenderComparazione(){
+  const box=document.getElementById('cp-compare-res'),q=document.getElementById('cp-compare-q');if(!box||!q)return
+  const query=(q.value||'').trim();if(_grNorm(query).length<2){box.innerHTML='<div style="padding:22px;text-align:center;color:var(--text3);font-size:13px">Scrivi almeno due lettere: per esempio <strong>CLIL</strong>, <strong>HACCP</strong> o <strong>DigComp</strong>.</div>';return}
+  const rr=_cpPerQuery(query).map(function(c){return{c:c,p:_cpPiattaformaInfo(c),prezzo:_cpPrezzoCliente(c),costo:c.costo_partner==null?null:Number(c.costo_partner),g:_cpGuadagno(c)}}).sort(function(a,b){if(a.g==null&&b.g!=null)return 1;if(a.g!=null&&b.g==null)return-1;return a.g!==b.g?(b.g||0)-(a.g||0):String(a.c.titolo||'').localeCompare(String(b.c.titolo||''),'it')})
+  if(!rr.length){box.innerHTML='<div style="padding:22px;text-align:center;color:var(--text3);font-size:13px">Nessun corso trovato per “'+escB(query)+'”.</div>';return}
+  const best=rr.find(function(x){return x.g!=null}),bestSlug=best?best.c.slug:'';let h='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span class="pill">'+rr.length+' risultat'+(rr.length===1?'o':'i')+'</span>'+(best?'<span class="pill" style="color:#117A65">Miglior guadagno: '+_eur(best.g)+'</span>':'')+'</div><div class="tbl-wrap"><table><thead><tr><th>Corso</th><th>Piattaforma</th><th>Prezzo cliente</th><th>Costo partner</th><th>Guadagno lordo</th><th>Margine</th><th></th></tr></thead><tbody>'
+  h+=rr.map(function(x){const m=x.g!=null&&x.prezzo>0?x.g/x.prezzo*100:null,hi=x.c.slug===bestSlug;return '<tr style="'+(hi?'background:rgba(17,122,101,.07)':'')+'"><td><strong>'+escB(x.c.titolo||'')+'</strong>'+(hi?'<br><span style="font-size:10px;color:#117A65;font-weight:700">MIGLIOR GUADAGNO</span>':'')+'</td><td><strong>'+escB(x.p.testo)+'</strong><br><span style="font-size:10.5px;color:var(--text3)">'+escB(x.c.ente||'')+'</span></td><td><strong>'+_eur(x.prezzo)+'</strong></td><td>'+(x.costo==null?'<span style="color:#B7791F">Da inserire</span>':'<strong>'+_eur(x.costo)+'</strong>')+'</td><td>'+(x.g==null?'—':'<strong style="color:'+(x.g>=0?'#117A65':'#C51E26')+'">'+_eur(x.g)+'</strong>')+'</td><td>'+(m==null?'—':m.toFixed(1).replace('.',',')+'%')+'</td><td><button class="btn btn-sm" onclick="cpModificaDaComparazione(\''+x.c.slug+'\')">✏️</button></td></tr>'}).join('')
+  box.innerHTML=h+'</tbody></table></div><div style="font-size:11px;color:var(--text3);margin:10px 2px 0">Guadagno lordo = prezzo pagato dal cliente − costo partner IVA inclusa. Non sottrae commissioni, imposte o altri costi.</div>'
+}
+function cpModificaDaComparazione(slug){cpChiudiComparazione();apriCorsoPag(slug)}
+let _grPreparaPromise=null
+function _grFlat(v,out,seen,d){
+  out=out||[];seen=seen||new Set();d=d||0;if(v==null||d>4)return out
+  if(typeof v==='string'||typeof v==='number'||typeof v==='boolean'){out.push(String(v));return out}
+  if(typeof v!=='object'||seen.has(v))return out;seen.add(v)
+  if(Array.isArray(v)){v.slice(0,100).forEach(function(x){_grFlat(x,out,seen,d+1)});return out}
+  Object.keys(v).forEach(function(k){if(!/pass|password|pwd|secret|token|private.?key|firma.?blob/i.test(k))_grFlat(v[k],out,seen,d+1)});return out
+}
+function _grTesto(v,e){return _grFlat(v).join(' ')+' '+(e||'')}
+function _grSotto(){return Array.prototype.slice.call(arguments).filter(Boolean).join(' · ')}
+function grPreparaDati(){
+  if(_grPreparaPromise)return _grPreparaPromise
+  const w=[];try{if(!(_PIATT||[]).length)w.push(caricaPiattaforme())}catch(e){}try{if(!(_CORSIPAG||[]).length)w.push(caricaCorsiPagine())}catch(e){}try{if(!_candCaricato)w.push(caricaCandidature())}catch(e){}try{if(!_prodPagCache.length)w.push(caricaProdottiPag())}catch(e){}try{if(!_incassiCache.length)w.push(caricaIncassi())}catch(e){}try{if(!_CERTIFICATI.length)w.push(caricaCertificati())}catch(e){}try{if(!_TESSERE.length)w.push(caricaTessere())}catch(e){}
+  _grPreparaPromise=Promise.allSettled(w).then(function(){return true});return _grPreparaPromise
+}
+function grCerca(){
+  const inp=document.getElementById('gr-input'),box=document.getElementById('gr-res');if(!inp||!box)return
+  const q=_grNorm(inp.value);if(q.length<2){box.innerHTML='<div style="padding:16px 12px;font-size:12.5px;color:var(--text3)">Scrivi almeno due lettere.</div>';_grVoci=[];_grSel=-1;return}
+  const pp=q.split(' ').filter(Boolean),trova=function(t){t=_grNorm(t);return pp.every(function(p){return t.indexOf(p)>=0})},score=function(n,t){n=_grNorm(n);t=_grNorm(t);let s=n===q?500:(n.indexOf(q)===0?300:(n.indexOf(q)>=0?180:0));pp.forEach(function(p){s+=n.indexOf(p)===0?80:(n.indexOf(p)>=0?50:(t.indexOf(p)>=0?12:0))});return s}
+  const stanze=STANZE.filter(function(x){return trova(x.n+' '+x.k+' '+x.g+' '+_AREA_LAB[x.a])}).map(function(x){return{x:x,s:score(x.n,x.n+' '+x.k+' '+x.g)}}).sort(function(a,b){return b.s-a.s}).slice(0,10).map(function(o){return o.x}),ris=[]
+  const add=function(lista,c){if(!Array.isArray(lista))return;lista.forEach(function(x,i){const e=c.extra?c.extra(x,i):'',t=_grTesto(x,e);if(!trova(t))return;const n=String((c.nome?c.nome(x,i):'')||c.tipo||'Risultato');ris.push({nome:n,sotto:String((c.sotto?c.sotto(x,i):'')||''),tipo:c.tipo,a:typeof c.a==='function'?c.a(x):c.a,id:typeof c.id==='function'?c.id(x):c.id,apri:c.apri||'',chiave:c.chiave?c.chiave(x,i):null,filtroId:c.filtroId||'',filtroValore:inp.value,punti:score(n,t)})})},cont=function(x){return _grSotto(x&&x.email,x&&x.email_aziendale,x&&x.tel)}
+  try{add(procs,{tipo:'Procacciatore',a:'proc',id:'proc',apri:'proc',chiave:function(x){return x._id},nome:function(x){return x.nome},sotto:cont})}catch(e){}
+  try{add(docenti,{tipo:'Docente',a:'doc',id:'docenti',apri:'docente',chiave:function(x){return x._id},nome:function(x){return x.nome},sotto:cont})}catch(e){}
+  try{add(studenti,{tipo:'Studente',a:'doc',id:'studenti',apri:'studente',chiave:function(x){return x._id},nome:function(x){return x.nome},sotto:cont})}catch(e){}
+  try{add(dipendenti,{tipo:'Dipendente',a:'dip',id:'dipendenti',apri:'dipendente',chiave:function(x){return x._id},nome:function(x){return x.nome},sotto:cont})}catch(e){}
+  try{add(leads,{tipo:'Lead',a:'proc',id:'lead',filtroId:'lead-search',nome:function(x){return x.nome||x.az||'Lead'},sotto:function(x){const p=procs[leadProcIdx(x)];return _grSotto(x.email,x.tel,x.az,p&&p.nome)},extra:function(x){const p=procs[leadProcIdx(x)];return p&&p.nome}})}catch(e){}
+  try{add(vendite,{tipo:'Vendita',a:'proc',id:'vendite',filtroId:'vend-search',nome:function(x){return _grSotto(x.prod||x.prodotto,x.cliente||x.nome)||'Vendita'},sotto:function(x){const p=procs[x.pidx];return _grSotto(p&&p.nome,x.data,x.piatt)},extra:function(x){const p=procs[x.pidx];return p&&p.nome}})}catch(e){}
+  try{add(contratti,{tipo:'Contratto',a:function(x){return x.sezione==='doc'?'doc':(x.sezione==='dip'?'dip':'proc')},id:function(x){return x.sezione==='doc'?'contratti-doc':(x.sezione==='dip'?'contratti-dip':'contratti')},nome:function(x){return x.nomeDestinatario||x.nome||'Contratto'},sotto:function(x){return _grSotto(x.emailDestinatario,x.tipoContratto,x.statoFirma)}})}catch(e){}
+  try{add(buste,{tipo:'Busta paga',a:'dip',id:'buste',nome:function(x){return x.nome||x.dipendente||x.mese||'Busta paga'}})}catch(e){}
+  try{add(compensiDoc,{tipo:'Compenso docente',a:'doc',id:'provv-doc',nome:function(x){return x.nome||x.docente||x.mese||'Compenso docente'}})}catch(e){}
+  try{add(accessiPortale,{tipo:'Accesso portale',a:'proc',id:'impostazioni',nome:function(x){return x.nome||x.email||'Accesso portale'},sotto:function(x){return _grSotto(x.email,x.area,x.stato)}})}catch(e){}
+  try{add(_CAND,{tipo:'Candidato',a:function(x){return x.ruolo==='doc'?'doc':(x.ruolo==='dip'?'dip':'proc')},id:function(x){return x.ruolo==='doc'?'cand-doc':(x.ruolo==='dip'?'cand-dip':'cand-proc')},nome:function(x){return x.nome||'Candidato'},sotto:function(x){return _grSotto(x.email,x.tel,x.ruolo,x.stato)}})}catch(e){}
+  try{add(_CORSIPAG,{tipo:'Corso',a:'proc',id:'corsipagine',apri:'corso',chiave:function(x){return x.slug},nome:function(x){return x.titolo||x.slug},sotto:function(x){const p=_cpPiattaformaInfo(x);return _grSotto(p.testo,x.categoria,x.ente,x.prezzo?_eur(_cpPrezzoCliente(x)):'Solo informazioni')},extra:function(x){return _cpTestoRicerca(x)}})}catch(e){}
+  try{add(_prodPagCache,{tipo:'Prodotto',a:'proc',id:'prodottipag',filtroId:'prodpag-search',nome:function(x){return x.nome||x.titolo||x.prodotto||'Prodotto'}})}catch(e){}
+  try{add(_incassiCache,{tipo:'Pagamento',a:'doc',id:'incassi',filtroId:'inc-search',nome:function(x){return x.prodotto_nome||x.prodotto||x.nome||'Pagamento'}})}catch(e){}
+  try{add(_prenCache,{tipo:'Prenotazione',a:'doc',id:'prenotazioni',nome:function(x){return x.materia||x.titolo||'Prenotazione'}})}catch(e){}
+  try{add(_CERTIFICATI,{tipo:'Certificato',a:'proc',id:'certificati',nome:function(x){return x.achievement_name||x.recipient_name||'Certificato'}})}catch(e){}
+  try{add(_TESSERE,{tipo:'Tessera',a:'proc',id:'tessere',nome:function(x){return x.nome||x.intestatario||'Tessera'}})}catch(e){}
+  try{add(OFFERTE,{tipo:'Offerta',a:'proc',id:'offerte',nome:function(x){return x.nome||x.titolo||x.cat||'Offerta'}})}catch(e){}
+  try{add(PROPOSTE,{tipo:'Proposta',a:'proc',id:'proposte',nome:function(x){return x.cliente||x.nome||x.titolo||'Proposta'}})}catch(e){}
+  try{(_PIATT||[]).forEach(function(p){if(!trova(_grTesto(p)))return;const n=(_CORSIPAG||[]).filter(function(c){return _grNorm(_cpPiattaformaInfo(c).codice)===_grNorm(p.codice)}).length;ris.push({nome:p.nome,sotto:p.codice+' · '+n+' cors'+(n===1?'o':'i'),tipo:'Piattaforma',a:'proc',id:'corsipagine',cpPiattaforma:p.codice,punti:score(p.nome,_grTesto(p))+250})})}catch(e){}
+  ris.sort(function(a,b){return b.punti-a.punti||a.nome.localeCompare(b.nome,'it')});const vis=ris.slice(0,70);_grVoci=[];let h=''
+  if(stanze.length){h+='<div style="font-size:9.5px;font-weight:700;color:var(--text3);padding:7px 10px 4px">VAI A…</div>';stanze.forEach(function(x){const i=_grVoci.length;_grVoci.push({tipo:'stanza',a:x.a,id:x.id});h+='<div class="gr-v" data-i="'+i+'" onclick="grApri('+i+')" style="display:flex;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:12.5px"><span>→</span><span style="flex:1"><strong>'+escB(x.n)+'</strong><span style="color:var(--text3);font-size:11px"> · '+escB(x.g)+'</span></span><span style="font-size:9.5px;color:var(--text3)">'+escB(_AREA_LAB[x.a])+'</span></div>'})}
+  if(vis.length){h+='<div style="font-size:9.5px;font-weight:700;color:var(--text3);padding:9px 10px 4px;border-top:0.5px solid var(--border)">RISULTATI · '+ris.length+'</div>';vis.forEach(function(r){const i=_grVoci.length;_grVoci.push(r);h+='<div class="gr-v" data-i="'+i+'" onclick="grApri('+i+')" style="display:flex;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:12.5px"><span>●</span><span style="flex:1;min-width:0"><strong>'+escB(r.nome)+'</strong>'+(r.sotto?'<div style="color:var(--text3);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escB(r.sotto)+'</div>':'')+'</span><span style="font-size:9.5px;font-weight:700;color:var(--accent);background:var(--surface2);padding:2px 7px;border-radius:10px">'+escB(r.tipo)+'</span></div>'})}
+  if(!h)h='<div style="padding:12px 10px;font-size:12.5px;color:var(--text3)">Non trovo nulla per “'+escB(inp.value)+'”</div>';box.innerHTML=h;_grSel=-1
+}
+function grApriFinestra(){
+  const o=document.getElementById('gr-overlay'),i=document.getElementById('gr-input');if(!o)return;o.style.display='flex';const r=document.getElementById('gr-res');if(r)r.innerHTML='<div style="padding:16px 12px;font-size:12.5px;color:var(--text3)">Cerca davvero in tutto: <b>email</b>, persone, corsi, piattaforme, contratti, vendite, pagamenti e altro.</div>';if(i){i.value='';setTimeout(function(){i.focus()},20)}_grSel=-1;_grVoci=[];grPreparaDati().then(function(){if(i&&_grNorm(i.value).length>=2)grCerca()})
+}
+function grApri(i){
+  const v=_grVoci[i];if(!v||!v.id)return;grChiudi()
+  const vai=function(){let el=null;try{el=document.querySelector('#nav-'+v.a+' .nav-item[onclick*="sp(\''+v.id+'\'"]')}catch(e){}try{sp(v.id,el)}catch(e){console.error('ricerca:',e);return}
+    setTimeout(function(){try{if(v.cpPiattaforma){const f=document.getElementById('cp-f-piatt'),q=document.getElementById('cp-search');if(q)q.value='';if(f)f.value=v.cpPiattaforma;renderCorsiPagine()}if(v.filtroId){const f=document.getElementById(v.filtroId);if(f){f.value=v.filtroValore||'';f.dispatchEvent(new Event('input',{bubbles:true}));f.focus()}}if(v.apri==='proc')apriSchedaProc(v.chiave);else if(v.apri==='docente')apriDocente(v.chiave);else if(v.apri==='studente')apriStudente(v.chiave);else if(v.apri==='dipendente'){const n=(dipendenti||[]).findIndex(function(x){return String(x._id)===String(v.chiave)});if(n>=0)editDip(n)}else if(v.apri==='corso')apriCorsoPag(v.chiave)}catch(e){console.error('apertura risultato:',e)}},120)
+  };try{if(v.a&&sezioneAttiva!==v.a){switchSezione(v.a);setTimeout(vai,70)}else vai()}catch(e){vai()}
+}
+
 // Assegna numeri contratto corretti ai procacciatori esistenti
 async function migraNumeriContratto(){
   const mappaNomi = [
@@ -15132,15 +15270,15 @@ async function migraProprietario(){
 <!-- RICERCA GLOBALE (Cmd+K) -->
 <div id="gr-overlay" onclick="if(event.target===this) grChiudi()"
   style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);align-items:flex-start;justify-content:center;padding:14vh 20px 20px">
-  <div style="width:100%;max-width:620px;background:var(--surface);border:0.5px solid var(--border);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.45);overflow:hidden">
+  <div style="width:100%;max-width:760px;background:var(--surface);border:0.5px solid var(--border);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.45);overflow:hidden">
     <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:0.5px solid var(--border)">
       <span style="font-size:17px;opacity:.5">&#128269;</span>
-      <input id="gr-input" type="text" placeholder="Cerca una schermata o una persona&#8230;" autocomplete="off"
+      <input id="gr-input" type="text" placeholder="Cerca in tutto: email, corso, piattaforma, contratto&#8230;" autocomplete="off"
         oninput="grCerca()" onkeydown="grTasti(event)"
         style="flex:1;border:none;background:none;color:var(--text);font-family:inherit;font-size:16px;outline:none;padding:2px 0">
       <span onclick="grChiudi()" style="font-size:10px;font-weight:700;color:var(--text3);background:var(--surface2);border:0.5px solid var(--border);border-radius:5px;padding:3px 6px;cursor:pointer">ESC</span>
     </div>
-    <div id="gr-res" style="max-height:52vh;overflow-y:auto;padding:6px"></div>
+    <div id="gr-res" style="max-height:58vh;overflow-y:auto;padding:6px"></div>
     <div style="display:flex;gap:14px;padding:8px 16px;border-top:0.5px solid var(--border);background:var(--surface2);font-size:10.5px;color:var(--text3)">
       <span>&#8593;&#8595; scorri</span><span>&#8629; apri</span><span style="margin-left:auto">&#8984;K ricerca globale</span>
     </div>

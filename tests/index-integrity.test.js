@@ -25,10 +25,17 @@ for(const name of [
   'mostraStatoGoogleWallet',
   'emettiGoogleWallet',
   'revocaGoogleWallet',
-  'creaBadgeNftDaAnagrafica'
+  'creaBadgeNftDaAnagrafica',
+  'grPreparaDati',
+  'cpApriComparazione',
+  'cpRenderComparazione'
 ]){
   assert.ok(html.includes(`function ${name}`), `funzione mancante: ${name}`)
 }
+
+assert.ok(html.includes("db.from('corsi_costi')"), 'archivio privato costi corso mancante')
+assert.ok(html.includes('id="cp-search"'), 'ricerca Pagine corso mancante')
+assert.ok(html.includes('apriSchedaProc(v.chiave)'), 'apertura scheda dalla ricerca globale mancante')
 
 const preload = fs.readFileSync(path.join(__dirname, '..', 'preload.js'), 'utf8')
 const ipc = fs.readFileSync(path.join(__dirname, '..', 'ipc-handlers.js'), 'utf8')
