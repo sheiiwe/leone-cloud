@@ -36,6 +36,14 @@ for(const name of [
 assert.ok(html.includes("db.from('corsi_costi')"), 'archivio privato costi corso mancante')
 assert.ok(html.includes('id="cp-search"'), 'ricerca Pagine corso mancante')
 assert.ok(html.includes('apriSchedaProc(v.chiave)'), 'apertura scheda dalla ricerca globale mancante')
+assert.ok(html.includes('prezzo<=0||!Number.isFinite(costo)?null'), 'guadagno calcolato anche senza prezzo cliente')
+assert.ok(html.includes("(m==null?'':'<br><span"), 'margine percentuale nullo non gestito nelle Pagine corso')
+
+const cpGuadagnoBody = html.match(/function _cpGuadagno\(c\)\{([\s\S]*?)\n\}/)
+assert.ok(cpGuadagnoBody, 'funzione guadagno Pagine corso non trovata')
+const cpGuadagno = new Function('_cpPrezzoCliente', `return function(c){${cpGuadagnoBody[1]}\n}`)(c => c.prezzo_cliente)
+assert.strictEqual(cpGuadagno({ costo_partner:280.60, prezzo_cliente:0 }), null, 'un corso Solo info non deve produrre un margine percentuale')
+assert.ok(Math.abs(cpGuadagno({ costo_partner:280.60, prezzo_cliente:400 }) - 119.40) < 0.001, 'guadagno corso calcolato in modo errato')
 
 const preload = fs.readFileSync(path.join(__dirname, '..', 'preload.js'), 'utf8')
 const ipc = fs.readFileSync(path.join(__dirname, '..', 'ipc-handlers.js'), 'utf8')

@@ -2973,7 +2973,7 @@ function syncStatus(state,msg){
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
 // ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
-const _RT_BUILD='1.14.8-global-search-course-compare'
+const _RT_BUILD='1.14.9-course-pages-null-margin-fix'
 let _rtLastSync=new Date().toISOString()
 let _rtWasSubscribed=false
 const _syncTimers={}
@@ -15112,7 +15112,11 @@ function _cpCorsiFiltrati(){
   return _cpPerQuery(q).filter(function(c){if(!f)return true;const x=_cpPiattaformaInfo(c).codice;return f==='__none'?!x:_grNorm(x)===_grNorm(f)})
 }
 function _cpPrezzoCliente(c){const b=_offAttiva(c)?Number(c.prezzo_offerta||0):Number(c.prezzo||0);return Number(c&&c.iva)?b*1.22:b}
-function _cpGuadagno(c){return!c||c.costo_partner==null?null:_cpPrezzoCliente(c)-Number(c.costo_partner||0)}
+function _cpGuadagno(c){
+  if(!c||c.costo_partner==null)return null
+  const prezzo=_cpPrezzoCliente(c),costo=Number(c.costo_partner)
+  return !Number.isFinite(prezzo)||prezzo<=0||!Number.isFinite(costo)?null:prezzo-costo
+}
 async function caricaCorsiPagine(){
   try{
     const rr=await Promise.all([db.from('corsi_pagine').select('*').order('ordine'),db.from('corsi_costi').select('slug,costo_partner,aggiornato_il')])
@@ -15135,7 +15139,7 @@ function renderCorsiPagine(){
       +'<td style="font-size:12.5px;color:var(--text2)">'+escB(c.categoria||'—')+'<br><span style="font-size:10.5px;color:var(--accent);font-weight:600">'+escB(p.testo)+'</span></td>'
       +'<td><strong>'+(prezzo?_eur(prezzo):'—')+'</strong>'+(Number(c.iva)?' <span style="font-size:10px;color:var(--text3)">IVA compresa</span>':'')+(_offAttiva(c)?'<br><span style="font-size:10px;color:#C51E26;font-weight:700">🔥 offerta attiva</span>':'')+'</td>'
       +'<td>'+(costo==null?'<span style="font-size:11px;color:#B7791F">Da inserire</span>':'<strong>'+_eur(costo)+'</strong><br><span style="font-size:10px;color:var(--text3)">IVA inclusa</span>')+'</td>'
-      +'<td>'+(g==null?'—':'<strong style="color:'+(g>=0?'#117A65':'#C51E26')+'">'+_eur(g)+'</strong><br><span style="font-size:10px;color:var(--text3)">'+m.toFixed(1).replace('.',',')+'%</span>')+'</td>'
+      +'<td>'+(g==null?'—':'<strong style="color:'+(g>=0?'#117A65':'#C51E26')+'">'+_eur(g)+'</strong>'+(m==null?'':'<br><span style="font-size:10px;color:var(--text3)">'+m.toFixed(1).replace('.',',')+'%</span>'))+'</td>'
       +'<td style="font-size:12.5px">'+(c.solo_info||!c.prezzo?'<span style="color:var(--text2)">Solo info</span>':'Acquistabile')+'</td>'
       +'<td><a href="https://'+url+'" target="_blank" style="font-size:11.5px;color:var(--accent)">'+escB(c.slug)+' ↗</a></td>'
       +'<td class="acts"><button class="btn btn-sm" title="Copia link" onclick="copiaLink(\'https://'+url+'\',this)">🔗</button><button class="btn btn-sm" title="Modifica corso e costo" onclick="apriCorsoPag(\''+c.slug+'\')">✏️</button><button class="btn btn-sm btn-r" onclick="eliminaCorsoPag(\''+c.slug+'\')">🗑</button></td></tr>'
