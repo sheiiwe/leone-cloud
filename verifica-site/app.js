@@ -68,6 +68,7 @@
           ${isRelationship ? detail("Rapporto dal", fmtDate(data.relationship_start, "Non indicato")) : detail("Data di emissione", fmtDate(data.issued_at, "Non disponibile"))}
           ${isRelationship ? detail("Rapporto fino al", fmtDate(data.relationship_end, "In corso")) : detail("Scadenza", fmtDate(data.expires_at))}
           ${isCredential ? detail("Tipo", isRelationship ? "Certificato NFT" : "Open Badge 3.0 + NFT") : detail("Tipo", "Tesserino Leone Consulting")}
+          ${!isCredential && data.credential_code ? detail("Codice prova NFT", data.credential_code) : ""}
           ${detail("Verifica", data.valid ? "Autentico e in corso di validità" : labels[status])}
         </div>
         ${data.description ? `<p class="description">${esc(data.description)}</p>` : ""}
@@ -92,7 +93,23 @@
                 ? `<a class="button secondary" href="${esc(explorerHref)}" target="_blank" rel="noopener noreferrer">Apri transazione</a>`
                 : '<span class="proof-state pending">In emissione</span>'}
             </section>
-          </div>` : ""}
+          </div>` : `
+          <div class="proofs">
+            <section class="proof">
+              <div class="proof-top"><span class="proof-icon">✓</span><h3>Registro tesserino</h3></div>
+              <p>Identità, ruolo e validità sono controllati nel registro ufficiale di Leone Consulting.</p>
+              <span class="proof-state ${data.valid ? "" : "pending"}">${esc(labels[status])}</span>
+            </section>
+            <section class="proof">
+              <div class="proof-top"><span class="proof-icon">N</span><h3>Prova NFT permanente</h3></div>
+              <p>${nftReady
+                ? `NFT non trasferibile #${esc(nft.token_id)} · ${esc(nft.network)}. La sua emissione resta registrata in modo permanente.`
+                : "Il tesserino non è ancora valido: la prova NFT obbligatoria è in emissione."}</p>
+              ${explorerHref
+                ? `<a class="button secondary" href="${esc(explorerHref)}" target="_blank" rel="noopener noreferrer">Apri la prova su Polygon</a>`
+                : '<span class="proof-state pending">In emissione</span>'}
+            </section>
+          </div>`}
       </article>`;
   }
 

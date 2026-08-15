@@ -88,11 +88,17 @@ function buildGoogleWalletObject(badge){
     textModulesData:[
       { id:'ruolo', header:'RUOLO', body:role || 'Collaboratore' },
       { id:'numero_badge', header:'N. BADGE', body:code },
+      { id:'prova_nft', header:'PROVA NFT', body:badge?.nftTokenId ? `Polygon · NFT #${badge.nftTokenId} · non trasferibile` : 'NFT obbligatorio collegato' },
       { id:'validita', header:'VALIDO FINO AL', body:formatItalianDate(badge?.expiresAt) },
       { id:'emittente', header:'EMITTENTE', body:'Leone Consulting di Leonardo Angelucci' }
     ],
     linksModuleData:{
-      uris:[{ id:'verifica_ufficiale', uri:verifyUrl, description:'Verifica ufficiale del badge' }]
+      uris:[
+        { id:'verifica_ufficiale', uri:verifyUrl, description:'Verifica ufficiale del badge e NFT' },
+        ...(/^https:\/\//.test(String(badge?.nftExplorerUrl||''))
+          ? [{id:'prova_nft_polygon',uri:String(badge.nftExplorerUrl),description:'Prova NFT su Polygon'}]
+          : [])
+      ]
     }
   }
 

@@ -62,10 +62,14 @@ function buildGoogleWalletObject(badge){
     textModulesData:[
       {id:'ruolo',header:'RUOLO',body:role||'Collaboratore'},
       {id:'numero_badge',header:'N. BADGE',body:code},
+      {id:'prova_nft',header:'PROVA NFT',body:badge?.nftTokenId?`Polygon · NFT #${badge.nftTokenId} · non trasferibile`:'NFT obbligatorio collegato'},
       {id:'validita',header:'VALIDO FINO AL',body:_gwItDate(badge?.expiresAt)},
       {id:'emittente',header:'EMITTENTE',body:'Leone Consulting di Leonardo Angelucci'}
     ],
-    linksModuleData:{uris:[{id:'verifica_ufficiale',uri:`https://verifica.leoneconsultingitalia.it/${encodeURIComponent(code)}`,description:'Verifica ufficiale del badge'}]}
+    linksModuleData:{uris:[
+      {id:'verifica_ufficiale',uri:`https://verifica.leoneconsultingitalia.it/${encodeURIComponent(code)}`,description:'Verifica ufficiale del badge e NFT'},
+      ...(/^https:\/\//.test(String(badge?.nftExplorerUrl||''))?[{id:'prova_nft_polygon',uri:String(badge.nftExplorerUrl),description:'Prova NFT su Polygon'}]:[])
+    ]}
   }
   const start=_gwDateIso(badge?.issuedAt,false), end=_gwDateIso(badge?.expiresAt,true)
   if(start||end){ object.validTimeInterval={}; if(start)object.validTimeInterval.start={date:start}; if(end)object.validTimeInterval.end={date:end} }
@@ -354,12 +358,15 @@ ipcMain.handle('genera-apple-wallet', async (_event, badge) => {
         ],
         backFields:[
           {key:'verify',label:'Verifica ufficiale',value:verifyUrl},
+          {key:'nft',label:'Prova NFT non trasferibile',value:badge?.nftTokenId?`${badge?.nftNetwork||'polygon'} · NFT #${badge.nftTokenId}`:'NFT obbligatorio collegato'},
+          ...(badge?.credentialCode?[{key:'credential',label:'Codice prova NFT',value:String(badge.credentialCode)}]:[]),
+          ...(/^https:\/\//.test(String(badge?.nftExplorerUrl||''))?[{key:'nftExplorer',label:'Apri prova su Polygon',value:String(badge.nftExplorerUrl)}]:[]),
           {key:'issuer',label:'Emittente',value:'Leone Consulting di Leonardo Angelucci'},
           {key:'contact',label:'Assistenza',value:'amministrazione@leoneconsultingitalia.it'}
         ]
       },
       ...(expires&&!Number.isNaN(expires.getTime())?{expirationDate:expires.toISOString()}:{}),
-      userInfo:{badgeCode:code,verificationUrl:verifyUrl}
+      userInfo:{badgeCode:code,verificationUrl:verifyUrl,credentialCode:badge?.credentialCode||null,nftTokenId:badge?.nftTokenId||null}
     }
     fs.writeFileSync(path.join(passDir,'pass.json'),JSON.stringify(pass,null,2))
     const iconSource=[path.join(__dirname,'assets','icon1024.png'),path.join(__dirname,'assets','icon.png')].find(fs.existsSync)

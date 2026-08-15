@@ -17,7 +17,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:6px;border:2px solid var(--surface2)}
 ::-webkit-scrollbar-thumb:hover{background:var(--text3)}
 ::-webkit-scrollbar-corner{background:var(--surface2)}
-.app{display:flex;height:100vh}
+.app{display:flex;height:100vh;min-width:0}
 #sync-bar{position:fixed;top:0;left:250px;right:0;height:34px;background:var(--surface);border-bottom:0.5px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;gap:10px;z-index:50;font-size:12px;color:var(--text2)}
 #sync-dot{width:8px;height:8px;border-radius:50%;background:#9e9e98;flex-shrink:0;transition:background .3s}
 #sync-dot.ok{background:#3B6D11}
@@ -57,8 +57,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .area-opt:hover{background:var(--surface2);color:var(--text)}
 .area-opt.active{color:var(--text)}
 
-.main{flex:1;overflow-y:auto;padding:2rem;padding-top:calc(2rem + 34px);background:var(--bg)}
-.page{display:none}.page.active{display:block}
+.main{flex:1;min-width:0;overflow:auto;padding:2rem;padding-top:calc(2rem + 34px);background:var(--bg)}
+.page{display:none}.page.active{display:block;min-width:0}
 .pg-title{font-size:22px;font-weight:600;margin-bottom:1.5rem;color:var(--text);letter-spacing:-.3px}
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:1.5rem}
 .metric{background:var(--surface);border-radius:var(--r);padding:1rem 1.1rem;border:0.5px solid var(--border)}
@@ -69,7 +69,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue'
 .card-hdr h3{font-size:14px;font-weight:600;color:var(--text)}
 .info-card{background:var(--surface2);border:0.5px dashed var(--border2);border-radius:var(--r);padding:.85rem 1.1rem;margin-bottom:1rem;font-size:12px;color:var(--text2);line-height:1.6}
 .info-card strong{color:var(--text)}
-.tbl-wrap{overflow-x:auto}
+/* Lo scorrimento orizzontale appartiene a .main: la barra resta sempre
+   al bordo inferiore della finestra, anche con tabelle molto lunghe. */
+.tbl-wrap{overflow-x:visible}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 th{text-align:left;padding:8px 7px;color:var(--text2);font-weight:500;border-bottom:0.5px solid var(--border);white-space:nowrap;font-size:11.5px}
 td{padding:10px 7px;border-bottom:0.5px solid var(--border);color:var(--text);vertical-align:middle}
@@ -903,18 +905,19 @@ tbody tr:hover td{background:var(--surface2)}
 <!-- TESSERINI -->
 <div class="page" id="page-tessere">
   <div class="pg-title">Tesserini e badge Wallet</div>
-  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Badge aziendali verificabili dal QR su <strong>verifica.leoneconsultingitalia.it</strong>. Ogni tesserino può essere associato all'account del portale e pubblicato su Apple Wallet e Google Wallet.</div>
+  <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px">Badge aziendali verificabili dal QR su <strong>verifica.leoneconsultingitalia.it</strong>. Ogni tesserino deve avere la propria prova NFT non trasferibile prima di diventare valido e di poter essere pubblicato su Apple Wallet o Google Wallet.</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
     <button class="btn btn-p btn-sm" onclick="apriTessera()">＋ Nuovo tesserino</button>
     <button class="btn btn-sm" onclick="creaTessereMancanti()">⚡ Crea tesserini mancanti</button>
+    <button class="btn btn-sm" onclick="collegaNftMancanti()">⛓ Collega NFT mancanti</button>
     <button class="btn btn-sm" onclick="configuraCertificatoApple()"> Configura certificato Apple</button>
     <button class="btn btn-sm" onclick="configuraAccountGoogleWallet()">G Configura Google Wallet</button>
     <span id="ts-google-status" onclick="mostraStatoGoogleWallet()" title="Clicca per i dettagli" style="font-size:12px;color:var(--text3);cursor:pointer">Google: controllo…</span>
     <span id="ts-count" style="font-size:13px;color:var(--text2)"></span>
   </div>
   <div class="tbl-wrap"><table>
-    <thead><tr><th style="width:44px"></th><th>Persona / account</th><th>Ruolo</th><th>Tipo</th><th>N. tessera</th><th>Stato</th><th>Wallet</th><th></th></tr></thead>
-    <tbody id="tbl-tessere"><tr><td colspan="8" class="empty">Caricamento…</td></tr></tbody>
+    <thead><tr><th style="width:44px"></th><th>Persona / account</th><th>Ruolo</th><th>Tipo</th><th>N. tessera</th><th>Stato</th><th>NFT</th><th>Wallet</th><th></th></tr></thead>
+    <tbody id="tbl-tessere"><tr><td colspan="9" class="empty">Caricamento…</td></tr></tbody>
   </table></div>
 </div>
 
@@ -4870,6 +4873,7 @@ const _CR_TIPI_CERTIFICATO = [
   {v:'tutor',t:'Tutor'},
   {v:'docente_tutor',t:'Docente / Tutor'},
   {v:'dipendente',t:'Dipendente'},
+  {v:'amministratore',t:'Amministratore'},
   {v:'collaboratore',t:'Collaboratore'},
   {v:'consulente',t:'Consulente'},
   {v:'partner_aziendale',t:'Partner aziendale'},
@@ -4878,6 +4882,7 @@ const _CR_TIPI_CERTIFICATO = [
 const _CR_RUOLI_DEFAULT = {
   procacciatore:"Procacciatore d'affari", docente:'Docente', tutor:'Tutor',
   docente_tutor:'Docente / Tutor', dipendente:'Dipendente',
+  amministratore:'Amministratore',
   collaboratore:'Collaboratore', consulente:'Consulente',
   partner_aziendale:'Partner aziendale'
 }
@@ -4899,6 +4904,7 @@ function _crDescrizioneRapporto(tipo,nome,ruolo,dal,fino){
   const periodo=(dal?' con decorrenza dal '+_crDataRapporto(dal):'')+(fino?' e termine previsto il '+_crDataRapporto(fino):'')
   if(tipo==='procacciatore') return "Leone Consulting attesta che "+nome+" ha sottoscritto un incarico di procacciamento d'affari con Leone Consulting"+periodo+"."
   if(tipo==='dipendente') return "Leone Consulting attesta che "+nome+" ha un rapporto di lavoro con Leone Consulting in qualità di "+ruolo+periodo+"."
+  if(tipo==='amministratore') return "Leone Consulting attesta che "+nome+" opera in qualità di Amministratore"+periodo+"."
   if(tipo==='partner_aziendale') return "Leone Consulting attesta che "+nome+" ha sottoscritto un accordo di collaborazione/partnership con Leone Consulting"+periodo+"."
   return "Leone Consulting attesta che "+nome+" ha sottoscritto un rapporto di collaborazione con Leone Consulting in qualità di "+ruolo+periodo+"."
 }
@@ -5118,20 +5124,24 @@ async function apriCertificato(id){
   }catch(e){ alert('Errore certificato: '+((e&&e.message)||e)) }
 }
 
-async function avviaMintCertificato(id,automatico){
+async function avviaMintCertificato(id,automatico,opzioni){
+  opzioni=opzioni||{}
   const c=_CERTIFICATI.find(x=>x.id===id)
   if(!c&& !automatico) return
   if(!automatico&&!confirm('Emettere ora l’NFT non trasferibile su Polygon Mainnet?\n\nIl credential diventerà valido solo dopo la conferma.')) return
   try{
-    try{ toast('Firma Open Badge e mint NFT in corso…') }catch(e){}
+    if(!opzioni.silenzioso) try{ toast('Firma Open Badge e mint NFT in corso…') }catch(e){}
     const r=await db.functions.invoke('issue-credential-nft',{body:{credential_id:id,action:'mint'}})
     if(r.error) throw r.error
     if(r.data?.error) throw new Error(r.data.error)
     await caricaCertificati()
-    try{ toast('Open Badge firmato · NFT #'+(r.data?.token_id||'')+' emesso') }catch(e){}
+    if(!opzioni.silenzioso) try{ toast('Open Badge firmato · NFT #'+(r.data?.token_id||'')+' emesso') }catch(e){}
+    return {ok:true,data:r.data||{}}
   }catch(e){
     await caricaCertificati()
-    alert('Il certificato resta in attesa e non è ancora valido.\n\n'+((e&&e.message)||e)+'\n\nConfigura o controlla la Edge Function e riprova dal pulsante NFT.')
+    const messaggio=(e&&e.message)||String(e)
+    if(!opzioni.silenzioso) alert('Il certificato resta in attesa e non è ancora valido.\n\n'+messaggio+'\n\nConfigura o controlla la Edge Function e riprova dal pulsante NFT.')
+    return {ok:false,error:messaggio}
   }
 }
 
@@ -5208,18 +5218,40 @@ let _TESSERE = []
 
 async function caricaTessere(){
   try{
-    const r = await db.from('tessere').select('*').order('tipo').order('nome')
+    const [r,c] = await Promise.all([
+      db.from('tessere').select('*').order('tipo').order('nome'),
+      db.from('credentials').select('*').order('issued_at',{ascending:false})
+    ])
     if(r.error) throw r.error
     _TESSERE = r.data || []
+    if(!c.error) _CERTIFICATI=c.data||[]
   }catch(e){ _TESSERE = []; console.error('tessere:', e) }
   renderTessere()
+  try{ renderCertificati() }catch(e){}
   controllaStatoGoogleWallet()
 }
 
+function _tsCredenzialeNft(t){
+  if(!t||!t.id) return null
+  return _CERTIFICATI.find(function(c){ return c.tessera_id&&String(c.tessera_id)===String(t.id) })||null
+}
+
+function _tsNftStato(t){
+  const c=_tsCredenzialeNft(t)
+  if(!c) return '<span style="font-weight:700;color:#B8860B">Da collegare</span>'
+  if(c.nft_status==='minted') return '<span style="font-weight:700;color:#1F8A3F">NFT #'+escB(c.nft_token_id||'')+'</span>'
+  if(c.nft_status==='revoked'||c.status==='revoked') return '<span style="font-weight:700;color:#C51E26">Revocato</span>'
+  if(c.nft_status==='failed') return '<span style="font-weight:700;color:#C51E26">Errore · riprova</span>'
+  return '<span style="font-weight:700;color:#B8860B">In emissione</span>'
+}
+
 function _tsStato(t){
+  const nft=_tsCredenzialeNft(t)
   const scaduta = t.scade_il && new Date(t.scade_il).getTime() < Date.now()
+  if(nft&&(nft.status==='revoked'||nft.nft_status==='revoked')) return {txt:'Revocato', col:'#C51E26'}
   if(!t.attiva) return {txt:'Revocato', col:'#C51E26'}
   if(scaduta) return {txt:'Scaduto', col:'#B8860B'}
+  if(!nft||nft.nft_status!=='minted'||nft.status!=='valid') return {txt:'In emissione', col:'#B8860B'}
   return {txt:'Valido', col:'#1F8A3F'}
 }
 function _tsData(d){ if(!d) return ''; try{ const x=new Date(d); const p=n=>String(n).padStart(2,'0'); return p(x.getDate())+'/'+p(x.getMonth()+1)+'/'+x.getFullYear() }catch(e){ return '' } }
@@ -5235,9 +5267,10 @@ function renderTessere(){
   const c=document.getElementById('ts-count')
   const daAssociare=_TESSERE.filter(function(t){ return !t.owner_email }).length
   if(c) c.textContent = _TESSERE.length ? (_TESSERE.length+' tesserin'+(_TESSERE.length===1?'o':'i')+(daAssociare?' · '+daAssociare+' da associare':'')) : ''
-  if(!_TESSERE.length){ tb.innerHTML='<tr><td colspan="8" class="empty">Nessun tesserino. Creane uno col pulsante qui sopra.</td></tr>'; return }
+  if(!_TESSERE.length){ tb.innerHTML='<tr><td colspan="9" class="empty">Nessun tesserino. Creane uno col pulsante qui sopra.</td></tr>'; return }
   tb.innerHTML=_TESSERE.map(function(t){
     const s=_tsStato(t)
+    const nft=_tsCredenzialeNft(t)
     const foto = t.foto_url ? '<img src="'+t.foto_url+'" style="width:34px;height:34px;border-radius:8px;object-fit:cover">'
                             : '<div style="width:34px;height:34px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:15px">👤</div>'
     return '<tr>'
@@ -5247,6 +5280,7 @@ function renderTessere(){
       +'<td style="font-size:12px;color:var(--text2)">'+escB(t.tipo||'')+'</td>'
       +'<td class="mono" style="font-size:12.5px">'+escB(t.codice||'')+'</td>'
       +'<td><span style="font-size:11.5px;font-weight:700;color:'+s.col+'">'+s.txt+'</span></td>'
+      +'<td style="font-size:11px">'+_tsNftStato(t)+'</td>'
       +'<td style="font-size:11px;line-height:1.8">'+_tsWalletStato('Apple',t.apple_wallet_status,t.wallet_enabled)+'<br>'+_tsWalletStato('Google',t.google_wallet_status,t.wallet_enabled)+'</td>'
       +'<td class="acts">'
         +'<button class="btn btn-sm" title="Apri verifica" onclick="window.open(\''+_TS_VERIFICA+encodeURIComponent(t.codice)+'\',\'_blank\')">🔗</button>'
@@ -5254,9 +5288,13 @@ function renderTessere(){
         +'<button class="btn btn-sm" title="Immagine per il telefono" onclick="stampaTessera(\''+t.codice+'\',\'png\')">📱</button>'
         +'<button class="btn btn-sm" title="Foto" onclick="cambiaFotoTessera(\''+t.codice+'\')">📷</button>'
         +'<button class="btn btn-sm" title="Associa il badge all’account del portale" onclick="gestisciWalletTessera(\''+t.codice+'\')">🔗 Associa account</button>'
-        +(t.owner_email&&t.wallet_enabled!==false?'<button class="btn btn-sm" title="Firma e pubblica il pass Apple Wallet" onclick="emettiAppleWallet(\''+t.codice+'\')"> '+(t.apple_wallet_status==='emesso'?'Rigenera':'Emetti')+'</button>':'')
-        +(t.owner_email&&t.wallet_enabled!==false?'<button class="btn btn-sm" title="Crea o aggiorna il badge Google Wallet" onclick="emettiGoogleWallet(\''+t.codice+'\')">G '+(t.google_wallet_status==='emesso'?'Aggiorna':(t.google_wallet_status==='revocato'?'Riattiva':'Emetti'))+'</button>':'')
-        +(t.google_wallet_status==='emesso'?'<button class="btn btn-sm btn-r" title="Revoca il badge da Google Wallet" onclick="revocaGoogleWallet(\''+t.codice+'\')">G Revoca</button>':'')
+        +(nft&&nft.nft_status==='minted'&&nft.nft_explorer_url?'<button class="btn btn-sm" title="Apri la prova NFT su Polygon" onclick="window.open(\''+escB(nft.nft_explorer_url)+'\',\'_blank\')">⛓ NFT #'+escB(nft.nft_token_id||'')+'</button>':'<button class="btn btn-sm" title="Crea o collega la prova NFT obbligatoria" onclick="collegaNftTessera(\''+t.codice+'\')">⛓ NFT</button>')
+        +(t.owner_email&&t.wallet_enabled!==false?(t.apple_wallet_status==='emesso'
+          ?'<button class="btn btn-sm btn-r" title="Revoca il pass Apple Wallet" onclick="revocaAppleWallet(\''+t.codice+'\')"> Revoca</button>'
+          :'<button class="btn btn-sm" title="Firma e pubblica il pass Apple Wallet" onclick="emettiAppleWallet(\''+t.codice+'\')"> '+(t.apple_wallet_status==='revocato'?'Riattiva':'Emetti')+'</button>'):'')
+        +(t.owner_email&&t.wallet_enabled!==false?(t.google_wallet_status==='emesso'
+          ?'<button class="btn btn-sm btn-r" title="Revoca il badge da Google Wallet" onclick="revocaGoogleWallet(\''+t.codice+'\')">G Revoca</button>'
+          :'<button class="btn btn-sm" title="Crea il badge Google Wallet" onclick="emettiGoogleWallet(\''+t.codice+'\')">G '+(t.google_wallet_status==='revocato'?'Riattiva':'Emetti')+'</button>'):'')
         +'<button class="btn btn-sm" title="Modifica tesserino" onclick="apriTessera(\''+t.codice+'\')">✏️</button>'
         +'<button class="btn btn-sm btn-r" title="Elimina tesserino" onclick="eliminaTessera(\''+t.codice+'\')">🗑</button>'
       +'</td></tr>'
@@ -5287,16 +5325,21 @@ function _base64Bytes(base64){
 
 async function emettiAppleWallet(codice){
   const t=_TESSERE.find(x=>x.codice===codice); if(!t) return
+  const nft=_tsCredenzialeNft(t)
+  if(!nft||nft.nft_status!=='minted'||nft.status!=='valid'){ alert('Prima devi emettere e collegare l’NFT obbligatorio del tesserino.'); return }
   if(!t.owner_email){ alert('Prima associa il tesserino all’account del portale.'); return }
   if(!t.wallet_enabled){ alert('Wallet è disattivato per questo tesserino.'); return }
   if(!t.attiva){ alert('Non puoi emettere un pass per un tesserino revocato.'); return }
-  if(!confirm((t.apple_wallet_status==='emesso'?'Rigenero':'Emetto')+' il pass Apple Wallet per '+(t.nome||codice)+'?')) return
+  const azione=t.apple_wallet_status==='revocato'?'Riattivo':'Emetto'
+  if(!confirm(azione+' il pass Apple Wallet per '+(t.nome||codice)+'?')) return
   try{
     let q=await db.from('tessere').update({apple_wallet_status:'in_attesa',wallet_updated_at:new Date().toISOString()}).eq('codice',codice)
     if(q.error) throw q.error
     await caricaTessere()
     const result=await window.electronAPI?.generaAppleWallet?.({
-      code:t.codice,name:t.nome,role:t.ruolo,type:t.tipo,expiresAt:t.scade_il
+      code:t.codice,name:t.nome,role:t.ruolo,type:t.tipo,expiresAt:t.scade_il,
+      credentialCode:nft.verification_code,nftTokenId:nft.nft_token_id,
+      nftNetwork:nft.blockchain_network,nftExplorerUrl:nft.nft_explorer_url
     })
     if(!result?.ok) throw new Error(result?.errore||'Firma del pass non riuscita')
     const storagePath='apple/'+String(codice).replace(/[^A-Za-z0-9_-]/g,'_')+'.pkpass'
@@ -5315,6 +5358,25 @@ async function emettiAppleWallet(codice){
     try{ await db.from('tessere').update({apple_wallet_status:'errore',wallet_updated_at:new Date().toISOString()}).eq('codice',codice); await caricaTessere() }catch(_){}
     alert('Errore emissione Apple Wallet:\n'+((e&&e.message)||e))
   }
+}
+
+async function revocaAppleWallet(codice){
+  const t=_TESSERE.find(x=>x.codice===codice); if(!t) return
+  if(t.apple_wallet_status!=='emesso'){ alert('Il pass Apple Wallet non risulta emesso.'); return }
+  if(!confirm('Revoco il pass Apple Wallet di '+(t.nome||codice)+'?\n\nNon sarà più disponibile nel portale.')) return
+  try{
+    if(t.apple_storage_path){
+      const rm=await db.storage.from('wallet-passes').remove([t.apple_storage_path])
+      if(rm.error) throw rm.error
+    }
+    const q=await db.from('tessere').update({
+      apple_wallet_status:'revocato',apple_pass_url:null,apple_storage_path:null,
+      wallet_updated_at:new Date().toISOString()
+    }).eq('codice',codice)
+    if(q.error) throw q.error
+    await caricaTessere()
+    alert('✅ Pass Apple Wallet revocato.')
+  }catch(e){ alert('Errore revoca Apple Wallet:\n'+((e&&e.message)||e)) }
 }
 
 async function configuraAccountGoogleWallet(){
@@ -5368,6 +5430,8 @@ function mostraStatoGoogleWallet(){
 
 async function emettiGoogleWallet(codice){
   const t=_TESSERE.find(x=>x.codice===codice); if(!t) return
+  const nft=_tsCredenzialeNft(t)
+  if(!nft||nft.nft_status!=='minted'||nft.status!=='valid'){ alert('Prima devi emettere e collegare l’NFT obbligatorio del tesserino.'); return }
   if(!t.owner_email){ alert('Prima associa il tesserino all’account del portale.'); return }
   if(!t.wallet_enabled){ alert('Wallet è disattivato per questo tesserino.'); return }
   if(!t.attiva){ alert('Non puoi emettere un badge per un tesserino revocato.'); return }
@@ -5379,8 +5443,10 @@ async function emettiGoogleWallet(codice){
     await caricaTessere()
     const result=await window.electronAPI?.generaGoogleWallet?.({
       code:t.codice,name:t.nome,role:t.ruolo,type:t.tipo,
-      issuedAt:t.created_at?String(t.created_at).slice(0,10):null,
-      expiresAt:t.scade_il,active:t.attiva!==false
+      issuedAt:(t.emessa_il||t.creata_il||t.created_at)?String(t.emessa_il||t.creata_il||t.created_at).slice(0,10):null,
+      expiresAt:t.scade_il,active:t.attiva!==false,
+      credentialCode:nft.verification_code,nftTokenId:nft.nft_token_id,
+      nftNetwork:nft.blockchain_network,nftExplorerUrl:nft.nft_explorer_url
     })
     if(!result?.ok) throw new Error(result?.errore||'Emissione Google Wallet non riuscita')
     q=await db.from('tessere').update({
@@ -5469,6 +5535,128 @@ function _badgeProssimoCodice(tipo){
   return 'LC-'+sig+'-'+String(max+1).padStart(3,'0')
 }
 
+function _tsNorm(value){
+  return String(value||'').trim().toLowerCase().replace(/\s+/g,' ')
+}
+function _tsTipoCertificatoNft(t){
+  const tipo=String(t?.tipo||'').toLowerCase(), ruolo=_tsNorm(t?.ruolo)
+  if(tipo==='amministratore') return 'amministratore'
+  if(tipo==='procacciatore'&&ruolo.includes('partner')) return 'partner_aziendale'
+  if(tipo==='docente'){
+    if(ruolo.includes('docente')&&ruolo.includes('tutor')) return 'docente_tutor'
+    if(ruolo.includes('tutor')) return 'tutor'
+    return 'docente'
+  }
+  return tipo||'collaboratore'
+}
+function _tsDataIsoNft(value,fallback){
+  const v=String(value||'').trim()
+  if(/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0,10)
+  return _tsIsoData(v)||fallback||null
+}
+
+async function _tsGarantisciNftTessera(t,opzioni){
+  opzioni=opzioni||{}
+  if(!t||!t.id) throw new Error('Tesserino non salvato o senza identificativo.')
+  const tipo=_tsTipoCertificatoNft(t)
+  const email=_tsNorm(t.owner_email), nome=_tsNorm(t.nome)
+  const oggi=new Date().toISOString().slice(0,10)
+  const dal=_tsDataIsoNft(t.emessa_il||t.creata_il,oggi)
+  const fino=_tsDataIsoNft(t.scade_il,null)
+
+  let r=await db.from('credentials').select('*').order('issued_at',{ascending:false})
+  if(r.error) throw r.error
+  _CERTIFICATI=r.data||[]
+  let certificato=_tsCredenzialeNft(t), collegato=false, creato=false
+
+  // Riusa un credential storico soltanto quando il collegamento è univoco e
+  // coincidono tipo e identità. Così non vengono mai creati NFT duplicati.
+  if(!certificato){
+    const candidati=_CERTIFICATI.filter(function(c){
+      if(c.tessera_id||c.status==='revoked'||c.certificate_type!==tipo) return false
+      const stessaEmail=email&&_tsNorm(c.recipient_email)===email
+      const stessoNome=nome&&_tsNorm(c.recipient_name)===nome
+      return stessaEmail||(!email&&stessoNome)
+    })
+    if(candidati.length===1){
+      r=await db.from('credentials').update({tessera_id:t.id}).eq('id',candidati[0].id).select('*').single()
+      if(r.error) throw r.error
+      certificato=r.data; collegato=true
+    }
+  }
+
+  if(!certificato){
+    const ses=await db.auth.getSession()
+    const ruolo=(t.ruolo||_CR_RUOLI_DEFAULT[tipo]||_TS_RUOLI[t.tipo]||'Collaboratore').trim()
+    const rec={
+      tessera_id:t.id,certificate_type:tipo,subject_type:'persona',role:ruolo,
+      relationship_start:dal,relationship_end:fino,contract_reference:null,
+      recipient_name:(t.nome||'').trim(),recipient_email:email||null,
+      achievement_name:ruolo,description:_crDescrizioneRapporto(tipo,t.nome,ruolo,dal,fino),
+      criteria:'Rapporto contrattuale o di collaborazione risultante dagli atti di Leone Consulting.',
+      skills:[],achievement_type:'Certificate',issuer_mode:'leone',
+      issuer_name:'Leone Consulting di Leonardo Angelucci',partner_name:null,
+      issued_at:dal+'T12:00:00.000Z',expires_at:fino?fino+'T23:59:59.000Z':null,
+      public_name:true,badge_image_url:_CR_BADGE_IMG,evidence_url:null,
+      status:'pending_nft',nft_status:'pending',blockchain_network:'polygon',
+      created_by:ses.data?.session?.user?.id||null
+    }
+    r=await db.from('credentials').insert(rec).select('*').single()
+    if(r.error) throw r.error
+    certificato=r.data; creato=true
+  }
+
+  if(certificato.status==='revoked'||certificato.nft_status==='revoked'){
+    throw new Error('La prova NFT collegata è stata revocata e non può essere riemessa.')
+  }
+  let mintato=false
+  if(certificato.nft_status!=='minted'){
+    const mint=await avviaMintCertificato(certificato.id,true,{silenzioso:true})
+    if(!mint?.ok) throw new Error(mint?.error||'Emissione NFT non confermata.')
+    mintato=true
+  }
+  await caricaTessere()
+  certificato=_tsCredenzialeNft(t)||_CERTIFICATI.find(function(c){ return c.id===certificato.id })||certificato
+  return {credential:certificato,creato,collegato,mintato,giaEmesso:!mintato&&certificato.nft_status==='minted'}
+}
+
+async function collegaNftTessera(codice){
+  const t=_TESSERE.find(function(x){ return x.codice===codice })
+  if(!t) return
+  const esistente=_tsCredenzialeNft(t)
+  if(esistente?.nft_status==='minted'){
+    if(esistente.nft_explorer_url) window.open(esistente.nft_explorer_url,'_blank')
+    return
+  }
+  if(!confirm('Creo e collego al tesserino '+codice+' una prova NFT non trasferibile su Polygon Mainnet?\n\nL\u2019emissione resta registrata in modo permanente e il tesserino diventa valido soltanto dopo la conferma.')) return
+  try{
+    const esito=await _tsGarantisciNftTessera(t,{automatico:false})
+    alert('✅ Tesserino e NFT collegati.\n\nTesserino: '+codice+'\nNFT: #'+(esito.credential?.nft_token_id||'emesso')+'\nCodice prova: '+(esito.credential?.verification_code||''))
+  }catch(e){
+    await caricaTessere()
+    alert('Il tesserino resta salvato, ma non è ancora valido come prova NFT.\n\n'+((e&&e.message)||e))
+  }
+}
+
+async function collegaNftMancanti(){
+  try{
+    await caricaTessere()
+    const mancanti=_TESSERE.filter(function(t){
+      const c=_tsCredenzialeNft(t)
+      return !c||(c.nft_status!=='minted'&&c.nft_status!=='revoked'&&c.status!=='revoked')
+    })
+    if(!mancanti.length){ alert('Tutti i tesserini hanno già la propria prova NFT.'); return }
+    if(!confirm('Collego ed emetto '+mancanti.length+' prov'+(mancanti.length===1?'a NFT mancante':'e NFT mancanti')+'?\n\nOgni NFT sarà non trasferibile su Polygon Mainnet e resterà come prova permanente dell\u2019emissione.')) return
+    let completati=0, errori=[]
+    for(const t of mancanti){
+      try{ await _tsGarantisciNftTessera(t,{automatico:true,silenzioso:true}); completati++ }
+      catch(e){ errori.push((t.codice||t.nome||'Tesserino')+': '+((e&&e.message)||e)) }
+    }
+    await caricaTessere()
+    alert('✅ Collegamento completato: '+completati+'\nErrori: '+errori.length+(errori.length?'\n\n'+errori.slice(0,8).join('\n'):'') )
+  }catch(e){ alert('Errore nel collegamento degli NFT: '+((e&&e.message)||e)) }
+}
+
 async function creaBadgeNftDaAnagrafica(sezione,id){
   const cfg=_badgeNftDatiAnagrafica(sezione,id), p=cfg.persona
   if(!p){ alert('Anagrafica non trovata. Aggiorna la pagina e riprova.'); return }
@@ -5507,6 +5695,14 @@ async function creaBadgeNftDaAnagrafica(sezione,id){
       luogo_nascita:(p.luogonascita||p.luogo_nascita||'').trim()||null,
       scade_il:_tsIsoData(fino)||_tsTraTreAnniIso(),wallet_enabled:(r.wallet_enabled==='si'||r.wallet_enabled===true)
     }
+    const provaEsistente=badge?_tsCredenzialeNft(badge):null
+    if(provaEsistente&&provaEsistente.nft_status==='minted'){
+      const cambiaProva=_tsNorm(badgeData.nome)!==_tsNorm(provaEsistente.recipient_name)
+        ||_tsNorm(badgeData.ruolo)!==_tsNorm(provaEsistente.role)
+        ||tipo!==provaEsistente.certificate_type
+        ||String(badgeData.scade_il||'')!==String(provaEsistente.relationship_end||'')
+      if(cambiaProva) throw new Error('Il tesserino ha già una prova NFT permanente. Nome, ruolo, tipo e scadenza non possono essere sovrascritti: occorre revocare e procedere con una nuova emissione.')
+    }
     let q
     if(badge){
       q=await db.from('tessere').update(badgeData).eq('codice',badge.codice).select('*').single()
@@ -5519,15 +5715,24 @@ async function creaBadgeNftDaAnagrafica(sezione,id){
     await caricaTessere()
 
     await caricaCertificati()
-    certificato=_CERTIFICATI.find(function(c){
-      if(c.status==='revoked'||c.certificate_type!==tipo) return false
-      if(email&&String(c.recipient_email||'').trim().toLowerCase()===email) return true
-      return !email&&String(c.recipient_name||'').trim().toLowerCase()===String(p.nome||'').trim().toLowerCase()
-    })||null
+    certificato=_CERTIFICATI.find(function(c){ return c.tessera_id&&String(c.tessera_id)===String(badge.id) })||null
+    if(!certificato){
+      const candidati=_CERTIFICATI.filter(function(c){
+        if(c.tessera_id||c.status==='revoked'||c.certificate_type!==tipo) return false
+        if(email&&String(c.recipient_email||'').trim().toLowerCase()===email) return true
+        return !email&&String(c.recipient_name||'').trim().toLowerCase()===String(p.nome||'').trim().toLowerCase()
+      })
+      if(candidati.length===1) certificato=candidati[0]
+    }
+    if(certificato&&!certificato.tessera_id){
+      q=await db.from('credentials').update({tessera_id:badge.id}).eq('id',certificato.id).select('*').single()
+      if(q.error) throw q.error
+      certificato=q.data
+    }
     if(!certificato){
       const ses=await db.auth.getSession()
       const rec={
-        certificate_type:tipo,subject_type:'persona',role:ruolo,
+        tessera_id:badge.id,certificate_type:tipo,subject_type:'persona',role:ruolo,
         relationship_start:dal,relationship_end:fino||null,
         contract_reference:(r.contract_reference||'').trim()||null,
         recipient_name:(p.nome||'').trim(),recipient_email:email||null,
@@ -5545,8 +5750,12 @@ async function creaBadgeNftDaAnagrafica(sezione,id){
       certificato=q.data; certificatoCreato=true
       await caricaCertificati()
     }
-    if(certificato.nft_status!=='minted') await avviaMintCertificato(certificato.id,true)
+    if(certificato.nft_status!=='minted'){
+      const mint=await avviaMintCertificato(certificato.id,true,{silenzioso:true})
+      if(!mint?.ok) throw new Error(mint?.error||'Emissione NFT non confermata.')
+    }
     else await caricaCertificati()
+    await caricaTessere()
     const nftOra=_CERTIFICATI.find(x=>x.id===certificato.id)||certificato
     alert('\u2705 Operazione completata.\n\nBadge: '+badge.codice+(badgeCreato?' creato':' già esistente, aggiornato')+'\nNFT: '+(nftOra.nft_status==='minted'?('#'+(nftOra.nft_token_id||'')+' emesso'):(certificatoCreato?'creato, in attesa di conferma':'già esistente, in attesa di conferma'))+(email?'':'\n\nNota: aggiungi un\u2019e-mail al badge per pubblicarlo su Apple/Google Wallet.'))
   }catch(e){
@@ -5578,7 +5787,7 @@ async function creaTessereMancanti(){
       })
     })
     if(!mancanti.length){ alert('Tutti i collaboratori attivi hanno già un tesserino.'); return }
-    if(!confirm('Creo '+mancanti.length+' tesserin'+(mancanti.length===1?'o':'i')+' mancanti?\n\nSaranno validi ma non ancora associati agli account. L’associazione si farà dal pulsante “Associa account”.')) return
+    if(!confirm('Creo '+mancanti.length+' tesserin'+(mancanti.length===1?'o':'i')+' mancanti e le relative prove NFT?\n\nOgni tesserino diventerà valido solo dopo il mint del proprio NFT non trasferibile su Polygon. Gli account potranno essere associati dopo.')) return
 
     const sigle={procacciatore:'PRO',docente:'DOC',dipendente:'DIP'}
     const ruoli={procacciatore:'Procacciatore',docente:'Docente',dipendente:'Dipendente'}
@@ -5599,11 +5808,16 @@ async function creaTessereMancanti(){
         attiva:true, owner_email:null, wallet_enabled:true
       }
     })
-    const q=await db.from('tessere').insert(records)
+    const q=await db.from('tessere').insert(records).select('*')
     if(q.error) throw q.error
+    let nftOk=0, nftErrori=[]
+    for(const t of (q.data||[])){
+      try{ await _tsGarantisciNftTessera(t,{automatico:true,silenzioso:true}); nftOk++ }
+      catch(e){ nftErrori.push((t.codice||t.nome)+': '+((e&&e.message)||e)) }
+    }
     _tsPersoneCache=null
     await caricaTessere()
-    alert('Creati '+records.length+' tesserini. Ora usa “Associa account” sulla riga della persona.')
+    alert('Creati '+records.length+' tesserini.\nNFT emessi e collegati: '+nftOk+'\nNFT ancora in attesa: '+nftErrori.length+(nftErrori.length?'\n\n'+nftErrori.slice(0,8).join('\n'):'')+'\n\nOra puoi usare “Associa account” sulla riga della persona.')
   }catch(e){ alert('Errore creazione tesserini: '+((e&&e.message)||e)) }
 }
 
@@ -5799,12 +6013,30 @@ async function apriTessera(codice){
     foto_url: foto
   }
   try{
+    const nftEsistente=!nuovo?_tsCredenzialeNft(t):null
+    if(nftEsistente&&nftEsistente.nft_status==='minted'){
+      const cambiaProva=_tsNorm(rec.nome)!==_tsNorm(nftEsistente.recipient_name)
+        ||_tsNorm(rec.ruolo)!==_tsNorm(nftEsistente.role)
+        ||_tsTipoCertificatoNft(rec)!==nftEsistente.certificate_type
+        ||String(rec.scade_il||'')!==String(nftEsistente.relationship_end||'')
+      if(cambiaProva){
+        alert('Nome, ruolo, tipo e scadenza non possono essere cambiati dopo l’emissione dell’NFT.\n\nLa prova è permanente: per correggere questi dati occorre revocare il tesserino e procedere con una nuova emissione.')
+        return
+      }
+    }
     const q = codice
-      ? await db.from('tessere').update(rec).eq('codice', codice)
-      : await db.from('tessere').insert(rec)
+      ? await db.from('tessere').update(rec).eq('codice', codice).select('*').single()
+      : await db.from('tessere').insert(rec).select('*').single()
     if(q.error) throw q.error
+    try{
+      await _tsGarantisciNftTessera(q.data,{automatico:true,silenzioso:true})
+    }catch(nftErrore){
+      await caricaTessere()
+      alert('Il tesserino '+cod+' è stato salvato, ma resta in attesa e non è ancora valido perché l’NFT non è stato confermato.\n\n'+((nftErrore&&nftErrore.message)||nftErrore))
+      return
+    }
     await caricaTessere()
-    try{ toast('Tesserino salvato · '+cod) }catch(e){}
+    try{ toast('Tesserino salvato · NFT collegato · '+cod) }catch(e){}
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
   }finally{ _tsAprendo = false }
 }
@@ -5818,7 +6050,10 @@ async function stampaTessera(codice, formato){
   const dati={
     codice:t.codice, nome:t.nome, ruolo:t.ruolo,
     nascita:t.nascita, luogo_nascita:t.luogo_nascita,
-    scade_il:t.scade_il, foto:t.foto_url||''
+    scade_il:t.scade_il, foto:t.foto_url||'',
+    credential_code:_tsCredenzialeNft(t)?.verification_code||'',
+    nft_token_id:_tsCredenzialeNft(t)?.nft_token_id||'',
+    nft_network:_tsCredenzialeNft(t)?.blockchain_network||''
   }
   try{
     try{ toast('Preparo il tesserino…') }catch(e){}
@@ -5850,6 +6085,11 @@ function cambiaFotoTessera(codice){
 
 async function eliminaTessera(codice){
   const t=_TESSERE.find(x=>x.codice===codice); if(!t) return
+  const nft=_tsCredenzialeNft(t)
+  if(nft){
+    alert('Questo tesserino non può essere eliminato perché è collegato alla prova permanente '+(nft.nft_token_id?('NFT #'+nft.nft_token_id):(nft.verification_code||'NFT'))+'.\n\nPer cessarne la validità, modifica il tesserino e togli la spunta da “Tesserino valido”. La traccia storica resterà consultabile.')
+    return
+  }
   if(!confirm('Eliminare il tesserino di '+(t.nome||'')+' ('+codice+')?\n\nSe vuoi solo bloccarlo, conviene revocarlo togliendo la spunta “valido”.')) return
   try{
     const q=await db.from('tessere').delete().eq('codice', codice)

@@ -20,12 +20,16 @@ for(const name of [
   'apriTessera',
   'configuraCertificatoApple',
   'emettiAppleWallet',
+  'revocaAppleWallet',
   'configuraAccountGoogleWallet',
   'controllaStatoGoogleWallet',
   'mostraStatoGoogleWallet',
   'emettiGoogleWallet',
   'revocaGoogleWallet',
   'creaBadgeNftDaAnagrafica',
+  '_tsGarantisciNftTessera',
+  'collegaNftTessera',
+  'collegaNftMancanti',
   'grPreparaDati',
   'cpApriComparazione',
   'cpRenderComparazione'
@@ -34,6 +38,16 @@ for(const name of [
 }
 
 assert.ok(html.includes("db.from('corsi_costi')"), 'archivio privato costi corso mancante')
+assert.ok(html.includes('.main{flex:1;min-width:0;overflow:auto'), 'scorrimento principale ancorato alla finestra mancante')
+assert.ok(html.includes('.tbl-wrap{overflow-x:visible}'), 'le tabelle mantengono ancora la barra orizzontale in fondo al contenuto')
+assert.ok(html.includes("onclick=\"revocaAppleWallet(\\'"), 'pulsante Revoca Apple Wallet mancante')
+assert.ok(html.includes("onclick=\"revocaGoogleWallet(\\'"), 'pulsante Revoca Google Wallet mancante')
+assert.ok(html.includes('?\'<button class="btn btn-sm btn-r" title="Revoca il pass Apple Wallet"'), 'Revoca Apple Wallet non è un pulsante rosso sostitutivo')
+assert.ok(html.includes('?\'<button class="btn btn-sm btn-r" title="Revoca il badge da Google Wallet"'), 'Revoca Google Wallet non è un pulsante rosso sostitutivo')
+assert.ok(html.includes('<th>NFT</th>'), 'colonna NFT dei tesserini mancante')
+assert.ok(html.includes("tessera_id:t.id"), 'collegamento tesserino/credential NFT mancante')
+assert.ok(html.includes("await _tsGarantisciNftTessera(q.data"), 'emissione NFT automatica sul nuovo tesserino mancante')
+assert.ok(html.includes("Prima devi emettere e collegare l’NFT obbligatorio"), 'Wallet non protetto dal requisito NFT')
 assert.ok(html.includes('id="cp-search"'), 'ricerca Pagine corso mancante')
 assert.ok(html.includes('apriSchedaProc(v.chiave)'), 'apertura scheda dalla ricerca globale mancante')
 assert.ok(html.includes('prezzo<=0||!Number.isFinite(costo)?null'), 'guadagno calcolato anche senza prezzo cliente')
@@ -50,6 +64,23 @@ const ipc = fs.readFileSync(path.join(__dirname, '..', 'ipc-handlers.js'), 'utf8
 assert.ok(preload.includes("ipcRenderer.invoke('stato-google-wallet')"), 'bridge stato Google Wallet mancante')
 assert.ok(ipc.includes("ipcMain.handle('stato-google-wallet'"), 'handler stato Google Wallet mancante')
 assert.ok(ipc.includes('ensureGoogleWalletClass'), 'creazione classe Google Wallet mancante')
+
+const nftMigration = fs.readFileSync(path.join(__dirname, '..', 'supabase', 'migrations', '202608150001_link_tessere_credentials_nft.sql'), 'utf8')
+assert.ok(nftMigration.includes('add column if not exists tessera_id uuid'), 'FK NFT/tesserino mancante')
+assert.ok(nftMigration.includes('credentials_tessera_id_uidx'), 'protezione anti-duplicato NFT/tesserino mancante')
+assert.ok(nftMigration.includes("'dipendente','amministratore'"), 'tipo NFT amministratore mancante')
+assert.ok(nftMigration.includes('create or replace function public.verify_leone_asset'), 'verifica QR con NFT mancante')
+assert.ok(nftMigration.includes('create or replace function public.get_my_wallet_badge_for_portal'), 'vincolo NFT nei portali mancante')
+assert.ok(nftMigration.includes("and v_status = 'valido'"), 'Wallet ancora disponibile senza NFT valido')
+
+const verifyApp = fs.readFileSync(path.join(__dirname, '..', 'verifica-site', 'app.js'), 'utf8')
+assert.ok(verifyApp.includes('Prova NFT permanente'), 'prova NFT non visibile nella verifica del tesserino')
+const portal = fs.readFileSync(path.join(__dirname, '..', 'portale', 'index.html'), 'utf8')
+assert.ok(portal.includes('NFT obbligatorio in emissione'), 'stato NFT non visibile nei portali')
+for(const [, attrs, source] of portal.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){
+  if(/\bsrc\s*=/.test(attrs)) continue
+  assert.doesNotThrow(() => new Function(source), 'JavaScript inline del portale non valido')
+}
 
 const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
 assert.ok(scripts.length >= 8, 'blocchi script mancanti')

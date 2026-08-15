@@ -764,21 +764,25 @@ async function caricaMioBadge(tipo='procacciatore',boxId='badge-personale'){
     }
     const b=MIO_BADGE
     const qrId=boxId==='badge-personale-admin'?'wallet-qr-admin':'wallet-qr'
-    const stato={valido:['Valido','#3B6D11','#EAF3DE'],scaduto:['Scaduto','#854F0B','#FAEEDA'],revocato:['Revocato','#A32D2D','#FCEBEB']}[b.status]||[b.status||'—','#6b6b66','#eee']
+    const stato={valido:['Valido','#3B6D11','#EAF3DE'],in_emissione:['NFT in emissione','#854F0B','#FAEEDA'],scaduto:['Scaduto','#854F0B','#FAEEDA'],revocato:['Revocato','#A32D2D','#FCEBEB']}[b.status]||[b.status||'—','#6b6b66','#eee']
     const foto=b.photo_url?'<img src="'+esc(b.photo_url)+'" alt="" style="width:82px;height:82px;border-radius:16px;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.16)">':'<div style="width:82px;height:82px;border-radius:16px;background:#fff;color:#F22015;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800">LC</div>'
+    const walletAttesa=b.status==='in_emissione'?'NFT obbligatorio in emissione':'in configurazione'
     const apple=b.apple_pass_url
       ? '<a href="'+esc(b.apple_pass_url)+'" style="display:flex;align-items:center;justify-content:center;background:#000;color:#fff;text-decoration:none;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700"> Aggiungi a Apple Wallet</a>'
-      : '<button disabled style="padding:12px 16px;border:0;border-radius:10px;background:#e7e7e3;color:#888;font-weight:700"> Apple Wallet · in configurazione</button>'
+      : '<button disabled style="padding:12px 16px;border:0;border-radius:10px;background:#e7e7e3;color:#888;font-weight:700"> Apple Wallet · '+walletAttesa+'</button>'
     const google=b.google_save_url
       ? '<a href="'+esc(b.google_save_url)+'" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;background:#1a73e8;color:#fff;text-decoration:none;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700">G Aggiungi a Google Wallet</a>'
-      : '<button disabled style="padding:12px 16px;border:0;border-radius:10px;background:#e7e7e3;color:#888;font-weight:700">G Google Wallet · in configurazione</button>'
+      : '<button disabled style="padding:12px 16px;border:0;border-radius:10px;background:#e7e7e3;color:#888;font-weight:700">G Google Wallet · '+walletAttesa+'</button>'
+    const provaNft=b.nft_status==='minted'
+      ? '<div style="margin-bottom:12px;padding:10px 12px;background:#EAF3DE;color:#3B6D11;border-radius:9px;font-size:12px;font-weight:700">⛓ NFT non trasferibile #'+esc(b.nft_token_id||'')+(b.nft_explorer_url?' · <a href="'+esc(b.nft_explorer_url)+'" target="_blank" rel="noopener" style="color:inherit">Apri prova su Polygon ↗</a>':'')+'</div>'
+      : '<div style="margin-bottom:12px;padding:10px 12px;background:#FAEEDA;color:#854F0B;border-radius:9px;font-size:12px;font-weight:700">⛓ Prova NFT obbligatoria in emissione</div>'
     box.innerHTML='<div class="card" style="overflow:hidden;padding:0">'
       +'<div style="background:linear-gradient(135deg,#111 0%,#292929 58%,#F22015 100%);color:#fff;padding:22px">'
       +'<div style="display:flex;gap:16px;align-items:center">'+foto+'<div style="flex:1"><div style="font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.8px">Leone Consulting</div><div style="font-size:21px;font-weight:800;margin-top:4px">'+esc(b.name||'')+'</div><div style="font-size:13px;opacity:.86;margin-top:3px">'+esc(b.role||b.type||'')+'</div></div>'
       +'<span style="align-self:flex-start;background:'+stato[2]+';color:'+stato[1]+';font-size:11px;font-weight:800;padding:6px 10px;border-radius:20px">'+stato[0]+'</span></div>'
       +'<div style="display:flex;justify-content:space-between;gap:12px;margin-top:18px;font-size:12px"><div><span style="opacity:.65">N. BADGE</span><br><strong>'+esc(b.code||'')+'</strong></div><div style="text-align:right"><span style="opacity:.65">VALIDO FINO AL</span><br><strong>'+(b.expires_at?new Date(b.expires_at).toLocaleDateString('it-IT'):'—')+'</strong></div></div></div>'
       +'<div style="padding:18px;display:grid;grid-template-columns:minmax(150px,190px) 1fr;gap:18px;align-items:center"><div style="text-align:center"><canvas id="'+qrId+'" width="170" height="170" style="max-width:100%;background:#fff;border-radius:10px"></canvas><div style="font-size:11px;color:#6b6b66;margin-top:6px">Scansiona per verificare</div></div>'
-      +'<div><div style="font-size:13px;color:#6b6b66;line-height:1.5;margin-bottom:12px">Il QR controlla sempre lo stato aggiornato del badge sul sito ufficiale.</div><div style="display:grid;gap:8px">'+apple+google+'<a href="'+esc(b.verify_url)+'" target="_blank" rel="noopener" style="text-align:center;color:#F22015;font-size:13px;font-weight:700;text-decoration:none;padding:8px">Apri verifica ufficiale ↗</a></div></div></div></div>'
+      +'<div><div style="font-size:13px;color:#6b6b66;line-height:1.5;margin-bottom:12px">Il QR controlla sempre lo stato aggiornato del badge e della prova NFT sul sito ufficiale.</div>'+provaNft+'<div style="display:grid;gap:8px">'+apple+google+'<a href="'+esc(b.verify_url)+'" target="_blank" rel="noopener" style="text-align:center;color:#F22015;font-size:13px;font-weight:700;text-decoration:none;padding:8px">Apri verifica ufficiale ↗</a></div></div></div></div>'
     setTimeout(()=>{ try{ if(window.QRCode) QRCode.toCanvas(document.getElementById(qrId),b.verify_url,{width:170,margin:1,color:{dark:'#111111',light:'#ffffff'}}) }catch(e){ console.error('qr:',e) } },0)
   }catch(e){
     box.innerHTML='<div class="card"><div class="empty">Impossibile caricare il badge: '+esc((e&&e.message)||String(e))+'</div></div>'

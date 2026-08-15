@@ -23,12 +23,16 @@ const object = wallet.buildGoogleWalletObject({
   role:'Amministratore',
   issuedAt:'2026-08-12',
   expiresAt:'2029-07-19',
+  nftTokenId:'42',
+  nftExplorerUrl:'https://polygonscan.com/tx/0xabc',
   active:true
 })
 assert.equal(object.id,'338000000023187800.LC-ADM-001')
 assert.equal(object.classId,wallet.GOOGLE_WALLET_CLASS_ID)
 assert.equal(object.barcode.value,'https://verifica.leoneconsultingitalia.it/LC-ADM-001')
 assert.equal(object.state,'ACTIVE')
+assert.equal(object.textModulesData.find(x=>x.id==='prova_nft').body,'Polygon · NFT #42 · non trasferibile')
+assert.equal(object.linksModuleData.uris.find(x=>x.id==='prova_nft_polygon').uri,'https://polygonscan.com/tx/0xabc')
 
 const saveUrl = wallet.buildSaveUrl(credentials,object)
 assert.ok(saveUrl.startsWith('https://pay.google.com/gp/v/save/'))
