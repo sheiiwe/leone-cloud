@@ -927,6 +927,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div style="color:var(--text2);font-size:13px;margin:-6px 0 14px;max-width:980px">Gestisci i servizi riservati a procacciatori, docenti e dipendenti. Ogni persona usa un account nominativo: qui non vengono mai salvate password condivise.</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
     <button class="btn btn-p btn-sm" onclick="apriAgevolazione()">＋ Nuova agevolazione</button>
+    <button class="btn btn-sm" onclick="collegaAgevolazioneAttiva()">🔗 Collega già attiva</button>
     <button class="btn btn-sm" onclick="caricaAgevolazioniAdmin()">↻ Aggiorna</button>
     <span id="ag-count" style="font-size:13px;color:var(--text2)"></span>
   </div>
@@ -940,7 +941,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div id="ag-catalogo">Caricamento…</div>
   </div>
   <div class="card">
-    <div class="card-hdr"><h3>Richieste del personale</h3></div>
+    <div class="card-hdr"><h3>Persone collegate e richieste</h3></div>
     <input id="ag-search" type="text" placeholder="🔍 Cerca persona, e-mail, servizio o stato…" oninput="renderAgevolazioniAdmin()" style="width:100%;padding:9px 12px;margin:2px 0 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px">
     <div class="tbl-wrap"><table>
       <thead><tr><th>Persona</th><th>Agevolazione</th><th>Ruolo</th><th>Richiesta</th><th>Stato</th><th>Account esterno</th><th></th></tr></thead>
@@ -2976,7 +2977,7 @@ function syncStatus(state,msg){
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
 // ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
-const _RT_BUILD='1.15.1-nft-auth-fix'
+const _RT_BUILD='1.16.0-agevolazioni-loghi-collegamenti'
 let _rtLastSync=new Date().toISOString()
 let _rtWasSubscribed=false
 const _syncTimers={}
@@ -6155,6 +6156,7 @@ async function eliminaTessera(codice){
 // ══════════════════════════════════════════════════════════════
 let _AGEVOLAZIONI=[]
 let _AGE_RICHIESTE=[]
+let _AGE_ACCOUNT=[]
 const _AG_STATI=[
   {v:'richiesta',t:'Richiesta'},
   {v:'in_lavorazione',t:'In lavorazione'},
@@ -6170,14 +6172,17 @@ async function caricaAgevolazioniAdmin(){
   if(cat) cat.innerHTML='Caricamento…'
   if(tb) tb.innerHTML='<tr><td colspan="7" class="empty">Caricamento…</td></tr>'
   try{
-    const [a,r]=await Promise.all([
+    const [a,r,u]=await Promise.all([
       db.from('agevolazioni').select('*').order('ordinamento').order('nome'),
-      db.from('agevolazioni_richieste').select('*,agevolazioni(id,nome,fornitore,slug)').order('requested_at',{ascending:false})
+      db.from('agevolazioni_richieste').select('*,agevolazioni(id,nome,fornitore,slug)').order('requested_at',{ascending:false}),
+      db.from('portale_accessi').select('id,email,nome,area,aree,approvato').eq('approvato',true).order('nome')
     ])
     if(a.error) throw a.error
     if(r.error) throw r.error
+    if(u.error) throw u.error
     _AGEVOLAZIONI=a.data||[]
     _AGE_RICHIESTE=r.data||[]
+    _AGE_ACCOUNT=(u.data||[]).filter(x=>x.email&&_agRuoloAccount(x))
     renderAgevolazioniAdmin()
   }catch(e){
     if(cat) cat.innerHTML='<div class="empty">Errore di caricamento: '+escB((e&&e.message)||String(e))+'</div>'
@@ -6202,7 +6207,7 @@ function _agData(d){
 function renderAgevolazioniAdmin(){
   const cat=document.getElementById('ag-catalogo'), tb=document.getElementById('tbl-ag-richieste')
   const count=document.getElementById('ag-count')
-  if(count) count.textContent=_AGEVOLAZIONI.length+' servizi · '+_AGE_RICHIESTE.length+' richieste'
+  if(count) count.textContent=_AGEVOLAZIONI.length+' servizi · '+_AGE_RICHIESTE.length+' persone/richieste'
   const mr=document.getElementById('ag-m-richieste'), ml=document.getElementById('ag-m-lavorazione'), ma=document.getElementById('ag-m-attive')
   if(mr) mr.textContent=_AGE_RICHIESTE.filter(x=>x.stato==='richiesta').length
   if(ml) ml.textContent=_AGE_RICHIESTE.filter(x=>x.stato==='in_lavorazione').length
@@ -6212,12 +6217,17 @@ function renderAgevolazioniAdmin(){
     if(!_AGEVOLAZIONI.length) cat.innerHTML='<div class="empty">Nessuna agevolazione configurata.</div>'
     else cat.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px">'+_AGEVOLAZIONI.map(a=>{
       const ruoli=(a.ruoli||[]).map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(' · ')
+      const attive=_AGE_RICHIESTE.filter(x=>x.agevolazione_id===a.id&&x.stato==='attiva').length
+      const logo=a.logo_url
+        ? '<img src="'+_contAttr(a.logo_url)+'" alt="Logo '+_contAttr(a.fornitore||a.nome||'')+'" style="width:42px;height:42px;border-radius:10px;object-fit:contain;background:#fff;border:0.5px solid var(--border);padding:3px" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div style="display:none;width:42px;height:42px;border-radius:10px;background:var(--surface);align-items:center;justify-content:center;font-weight:800;color:var(--accent)">'+escB((a.fornitore||'LC').slice(0,2).toUpperCase())+'</div>'
+        : '<div style="width:42px;height:42px;border-radius:10px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent)">'+escB((a.fornitore||'LC').slice(0,2).toUpperCase())+'</div>'
       return '<div style="border:0.5px solid var(--border);border-radius:12px;padding:14px;background:var(--surface2)">'
-        +'<div style="display:flex;gap:10px;align-items:flex-start"><div style="width:42px;height:42px;border-radius:10px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent)">'+escB((a.fornitore||'LC').slice(0,2).toUpperCase())+'</div>'
+        +'<div style="display:flex;gap:10px;align-items:flex-start">'+logo
         +'<div style="flex:1;min-width:0"><strong>'+escB(a.nome||'')+'</strong><div style="font-size:11px;color:var(--text3);margin-top:2px">'+escB(a.fornitore||'')+' · '+escB(ruoli)+'</div></div>'
         +'<span style="font-size:11px;font-weight:700;color:'+(a.attiva?'#1F8A3F':'#C51E26')+'">'+(a.attiva?'ATTIVA':'NASCOSTA')+'</span></div>'
         +(a.descrizione?'<div style="font-size:12.5px;color:var(--text2);line-height:1.45;margin-top:10px">'+escB(a.descrizione)+'</div>':'')
-        +'<div style="display:flex;gap:6px;margin-top:12px"><button class="btn btn-sm" onclick="apriAgevolazione(\''+a.id+'\')">✏️ Modifica</button><button class="btn btn-sm btn-r" onclick="eliminaAgevolazione(\''+a.id+'\')">🗑</button></div></div>'
+        +'<div style="font-size:11.5px;color:var(--text3);margin-top:10px">👥 '+attive+' attivazion'+(attive===1?'e':'i')+' collegat'+(attive===1?'a':'e')+'</div>'
+        +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px"><button class="btn btn-sm" onclick="apriAgevolazione(\''+a.id+'\')">✏️ Modifica</button><button class="btn btn-sm" onclick="collegaAgevolazioneAttiva(\''+a.id+'\')">🔗 Collega persona</button><button class="btn btn-sm btn-r" onclick="eliminaAgevolazione(\''+a.id+'\')">🗑</button></div></div>'
     }).join('')+'</div>'
   }
 
@@ -6252,7 +6262,9 @@ async function apriAgevolazione(id){
     {id:'descrizione',label:'Descrizione per il personale',valore:a?.descrizione||''},
     {id:'istruzioni',label:'Istruzioni per richiedere o usare il servizio',valore:a?.istruzioni||''},
     {id:'info_url',label:'Pagina informativa ufficiale',valore:a?.info_url||''},
-    {id:'logo_url',label:'URL logo (facoltativo)',valore:a?.logo_url||''},
+    {id:'logo_file',tipo:'file',accept:'image/png,image/jpeg,image/webp',label:'Logo azienda — PNG, JPG o WebP (max 5 MB)',anteprima:a?.logo_url||''},
+    {id:'logo_url',label:'URL logo (facoltativo; il file caricato ha la precedenza)',valore:a?.logo_url||''},
+    {id:'rimuovi_logo',tipo:'check',label:'Rimuovi il logo attuale',valore:false},
     {id:'ruoli',label:'Ruoli abilitati, separati da virgola',valore:(a?.ruoli||_AG_RUOLI).join(', ')},
     {id:'ordinamento',label:'Ordine di visualizzazione',valore:String(a?.ordinamento??100)},
     {id:'valid_from',label:'Disponibile dal — gg/mm/aaaa',valore:_tsData(a?.valid_from)},
@@ -6265,10 +6277,21 @@ async function apriAgevolazione(id){
   if(!r.nome?.trim()||!r.fornitore?.trim()){ alert('Nome e fornitore sono obbligatori.'); return }
   if(!ruoli.length||ruoli.some(x=>!_AG_RUOLI.includes(x))){ alert('Ruoli ammessi: procacciatore, docente, dipendente.'); return }
   const slug=(r.slug||r.nome||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')
+  if(!slug){ alert('Il codice interno non è valido.'); return }
+  let nuovoLogoPath=null
+  let logoUrl=(r.rimuovi_logo==='si')?null:((r.logo_url||'').trim()||null)
+  const vecchioLogo=a?.logo_url||null
+  if(r.logo_file){
+    try{
+      const caricato=await _agCaricaLogo(r.logo_file,slug)
+      logoUrl=caricato.url
+      nuovoLogoPath=caricato.path
+    }catch(e){ alert('Logo non caricato: '+((e&&e.message)||e)); return }
+  }
   const rec={
     nome:r.nome.trim(),fornitore:r.fornitore.trim(),slug,
     descrizione:(r.descrizione||'').trim(),istruzioni:(r.istruzioni||'').trim(),
-    info_url:(r.info_url||'').trim()||null,logo_url:(r.logo_url||'').trim()||null,
+    info_url:(r.info_url||'').trim()||null,logo_url:logoUrl,
     ruoli,ordinamento:parseInt(r.ordinamento||'100',10)||100,
     valid_from:_tsParseData(r.valid_from),valid_until:_tsParseData(r.valid_until),
     attiva:(r.attiva==='si'||r.attiva===true),
@@ -6277,9 +6300,78 @@ async function apriAgevolazione(id){
   try{
     const q=a?await db.from('agevolazioni').update(rec).eq('id',a.id):await db.from('agevolazioni').insert(rec)
     if(q.error) throw q.error
+    if(vecchioLogo&&vecchioLogo!==logoUrl){
+      const vecchioPath=_agPathLogo(vecchioLogo)
+      if(vecchioPath){ try{ await db.storage.from('app-media').remove([vecchioPath]) }catch(e){} }
+    }
     await caricaAgevolazioniAdmin()
-    try{ toast('Agevolazione salvata') }catch(e){}
-  }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
+    try{ toast('Agevolazione salvata e sincronizzata sui portali') }catch(e){}
+  }catch(e){
+    if(nuovoLogoPath){ try{ await db.storage.from('app-media').remove([nuovoLogoPath]) }catch(x){} }
+    alert('Errore: '+((e&&e.message)||e))
+  }
+}
+
+function _agPathLogo(url){
+  const marker='/storage/v1/object/public/app-media/'
+  const i=String(url||'').indexOf(marker)
+  if(i<0) return null
+  try{ return decodeURIComponent(String(url).slice(i+marker.length).split('?')[0]) }catch(e){ return null }
+}
+
+async function _agCaricaLogo(file,slug){
+  const tipi=['image/png','image/jpeg','image/webp']
+  if(!tipi.includes(file.type)) throw new Error('usa un file PNG, JPG o WebP.')
+  if(file.size>5*1024*1024) throw new Error('il file supera 5 MB.')
+  const ext=file.type==='image/png'?'png':(file.type==='image/webp'?'webp':'jpg')
+  const path='agevolazioni/'+slug+'-'+Date.now()+'.'+ext
+  const up=await db.storage.from('app-media').upload(path,file,{upsert:false,contentType:file.type,cacheControl:'31536000'})
+  if(up.error) throw up.error
+  const pub=db.storage.from('app-media').getPublicUrl(path)
+  const url=pub&&pub.data&&pub.data.publicUrl
+  if(!url){ try{ await db.storage.from('app-media').remove([path]) }catch(e){}; throw new Error('URL pubblico del logo non disponibile.') }
+  return {path,url}
+}
+
+function _agRuoloAccount(u){
+  const aree=[...(Array.isArray(u?.aree)?u.aree:[]),u?.area].filter(Boolean)
+  return ['dipendente','docente','procacciatore'].find(x=>aree.includes(x))||''
+}
+
+async function collegaAgevolazioneAttiva(agevolazioneId){
+  if(!_AGEVOLAZIONI.length){ alert('Prima crea almeno un’agevolazione.'); return }
+  if(!_AGE_ACCOUNT.length){ alert('Non ci sono account portale approvati da collegare.'); return }
+  const oggi=new Date().toLocaleDateString('it-IT')
+  const r=await chiediCampiLunga('Collega un’agevolazione già attiva',[
+    {id:'agevolazione_id',tipo:'select',libero:false,label:'Agevolazione',opzioni:_AGEVOLAZIONI.map(a=>({v:a.id,t:(a.nome||'')+' · '+(a.fornitore||'')})),valore:agevolazioneId||_AGEVOLAZIONI[0].id},
+    {id:'user_email',tipo:'select',libero:false,label:'Account già esistente',opzioni:_AGE_ACCOUNT.map(u=>({v:String(u.email||'').toLowerCase(),t:(u.nome||'Senza nome')+' · '+u.email+' · '+(_agRuoloAccount(u)||'ruolo da verificare')})),valore:String(_AGE_ACCOUNT[0].email||'').toLowerCase()},
+    {id:'activated_at',label:'Attiva dal — gg/mm/aaaa',valore:oggi},
+    {id:'account_email',label:'E-mail usata presso il fornitore (facoltativa)',valore:''},
+    {id:'access_url',label:'Link personale o pagina di accesso (facoltativo)',valore:''},
+    {id:'external_reference',label:'Codice/riferimento esterno (facoltativo)',valore:''},
+    {id:'expires_at',label:'Scadenza — gg/mm/aaaa (facoltativa)',valore:''},
+    {id:'messaggio_utente',label:'Messaggio visibile alla persona (facoltativo)',valore:''}
+  ])
+  if(!r) return
+  const dataAttiva=_tsParseData(r.activated_at)
+  const dataScadenza=_tsParseData(r.expires_at)
+  if(!dataAttiva){ alert('Indica una data di attivazione valida.'); return }
+  if(dataScadenza&&dataScadenza<dataAttiva){ alert('La scadenza non può precedere l’attivazione.'); return }
+  try{
+    const q=await db.rpc('collega_agevolazione_attiva',{
+      p_agevolazione_id:r.agevolazione_id,
+      p_user_email:String(r.user_email||'').trim().toLowerCase(),
+      p_activated_at:dataAttiva+'T12:00:00+02:00',
+      p_account_email:String(r.account_email||'').trim().toLowerCase()||null,
+      p_access_url:String(r.access_url||'').trim()||null,
+      p_external_reference:String(r.external_reference||'').trim()||null,
+      p_expires_at:dataScadenza?(dataScadenza+'T23:59:59+02:00'):null,
+      p_messaggio_utente:String(r.messaggio_utente||'').trim()||null
+    })
+    if(q.error) throw q.error
+    await caricaAgevolazioniAdmin()
+    try{ toast('Attivazione collegata all’account e visibile nel portale') }catch(e){}
+  }catch(e){ alert('Collegamento non riuscito: '+((e&&e.message)||e)) }
 }
 
 async function eliminaAgevolazione(id){
@@ -6288,6 +6380,8 @@ async function eliminaAgevolazione(id){
   try{
     const q=await db.from('agevolazioni').delete().eq('id',id)
     if(q.error) throw q.error
+    const logoPath=_agPathLogo(a.logo_url)
+    if(logoPath){ try{ await db.storage.from('app-media').remove([logoPath]) }catch(e){} }
     await caricaAgevolazioniAdmin()
   }catch(e){ alert('Errore: '+((e&&e.message)||e)) }
 }
@@ -6577,6 +6671,14 @@ function chiediCampiLunga(titolo, campi, pronto){
           +'<input type="checkbox" id="mmc-'+c.id+'" '+(on?'checked':'')+' style="width:18px;height:18px;flex:0 0 auto;accent-color:var(--accent)">'
           +'<span style="font-size:13px;color:var(--text)">'+escB(c.label)+'</span></label>'
       }
+      // FILE IMMAGINE con anteprima immediata
+      if(c.tipo==='file'){
+        const prev=c.anteprima
+          ? '<img id="mmc-'+c.id+'-preview" src="'+_contAttr(c.anteprima)+'" alt="Anteprima" style="display:block;max-width:180px;max-height:92px;object-fit:contain;background:#fff;border:1px solid var(--border);border-radius:9px;padding:5px;margin-bottom:8px">'
+          : '<img id="mmc-'+c.id+'-preview" alt="Anteprima" style="display:none;max-width:180px;max-height:92px;object-fit:contain;background:#fff;border:1px solid var(--border);border-radius:9px;padding:5px;margin-bottom:8px">'
+        return '<div id="mmw-'+c.id+'" style="margin-bottom:11px"><label style="display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:4px">'+escB(c.label)+'</label>'+prev
+          +'<input type="file" id="mmc-'+c.id+'" accept="'+_contAttr(c.accept||'')+'" style="'+inputStyle+'" onchange="{var f=this.files&&this.files[0],p=document.getElementById(\'mmc-'+c.id+'-preview\');if(f&&p){p.src=URL.createObjectURL(f);p.style.display=\'block\'}}"></div>'
+      }
       // MENU a tendina
       if(c.tipo==='select'){
         const listaV=(c.opzioni||[]).map(o=>(typeof o==='object')?o.v:o)
@@ -6613,6 +6715,7 @@ function chiediCampiLunga(titolo, campi, pronto){
         const el=document.getElementById('mmc-'+c.id)
         if(!el){ out[c.id]=''; return }
         if(c.tipo==='check'){ out[c.id]= el.checked ? 'si' : 'no'; return }
+        if(c.tipo==='file'){ out[c.id]=(el.files&&el.files[0])||null; return }
         if(c.tipo==='select' && el.value==='__altro__'){
           const x=document.getElementById('mmc-'+c.id+'-x')
           out[c.id]= x ? String(x.value||'').trim() : ''

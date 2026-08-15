@@ -31,6 +31,8 @@ for(const name of [
   '_tsGarantisciNftTessera',
   'collegaNftTessera',
   'collegaNftMancanti',
+  'collegaAgevolazioneAttiva',
+  '_agCaricaLogo',
   'grPreparaDati',
   'cpApriComparazione',
   'cpRenderComparazione'
@@ -50,6 +52,9 @@ assert.ok(html.includes("tessera_id:t.id"), 'collegamento tesserino/credential N
 assert.ok(html.includes("Authorization:'Bearer '+sessione.access_token"), 'JWT utente non inviato esplicitamente alla Edge Function NFT')
 assert.ok(html.includes("apikey:SUPA_KEY"), 'apikey pubblica non inviata alla Edge Function NFT')
 assert.ok(html.includes("if(risposta.res.status===401)"), 'rinnovo sessione e retry su 401 mancanti')
+assert.ok(html.includes("db.storage.from('app-media').upload(path,file"), 'caricamento logo agevolazione mancante')
+assert.ok(html.includes("db.rpc('collega_agevolazione_attiva'"), 'collegamento agevolazione pregressa mancante')
+assert.ok(html.includes("tipo:'file',accept:'image/png,image/jpeg,image/webp'"), 'selettore file logo agevolazione mancante')
 assert.ok(!html.includes("const motivo=prompt("), 'prompt() non supportato ancora usato per sospensione/revoca NFT')
 assert.ok(html.includes("await _tsGarantisciNftTessera(q.data"), 'emissione NFT automatica sul nuovo tesserino mancante')
 assert.ok(html.includes("Prima devi emettere e collegare l’NFT obbligatorio"), 'Wallet non protetto dal requisito NFT')
@@ -77,6 +82,11 @@ assert.ok(nftMigration.includes("'dipendente','amministratore'"), 'tipo NFT ammi
 assert.ok(nftMigration.includes('create or replace function public.verify_leone_asset'), 'verifica QR con NFT mancante')
 assert.ok(nftMigration.includes('create or replace function public.get_my_wallet_badge_for_portal'), 'vincolo NFT nei portali mancante')
 assert.ok(nftMigration.includes("and v_status = 'valido'"), 'Wallet ancora disponibile senza NFT valido')
+
+const ageMigration = fs.readFileSync(path.join(__dirname, '..', 'supabase', 'migrations', '202608150002_link_existing_agevolazioni.sql'), 'utf8')
+assert.ok(ageMigration.includes('create or replace function public.collega_agevolazione_attiva'), 'RPC collegamento agevolazione pregressa mancante')
+assert.ok(ageMigration.includes('not public.is_admin()'), 'RPC agevolazioni non protetta dall’amministratore')
+assert.ok(ageMigration.includes('from auth.users'), 'ricollegamento all’account Auth mancante')
 
 const verifyApp = fs.readFileSync(path.join(__dirname, '..', 'verifica-site', 'app.js'), 'utf8')
 assert.ok(verifyApp.includes('Prova NFT permanente'), 'prova NFT non visibile nella verifica del tesserino')
