@@ -2976,7 +2976,7 @@ function syncStatus(state,msg){
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
 // ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
-const _RT_BUILD='1.14.9-course-pages-null-margin-fix'
+const _RT_BUILD='1.15.1-nft-auth-fix'
 let _rtLastSync=new Date().toISOString()
 let _rtWasSubscribed=false
 const _syncTimers={}
@@ -5124,6 +5124,55 @@ async function apriCertificato(id){
   }catch(e){ alert('Errore certificato: '+((e&&e.message)||e)) }
 }
 
+async function _leggiRispostaFunzione(res){
+  const testo=await res.text()
+  if(!testo) return {}
+  try{ return JSON.parse(testo) }catch(e){ return {error:testo} }
+}
+
+async function _sessioneFunzione(forzaRinnovo){
+  const esito=forzaRinnovo ? await db.auth.refreshSession() : await db.auth.getSession()
+  if(esito.error) throw esito.error
+  const sessione=esito.data?.session
+  if(!sessione?.access_token){
+    throw new Error('Sessione amministrativa scaduta. Esci dall’app ed effettua nuovamente l’accesso.')
+  }
+  const scade=Number(sessione.expires_at||0)*1000
+  if(!forzaRinnovo&&scade&&scade<Date.now()+60000) return _sessioneFunzione(true)
+  return sessione
+}
+
+async function invocaFunzioneAutenticata(nome,corpo){
+  async function esegui(sessione){
+    const res=await fetch(SUPA_URL+'/functions/v1/'+encodeURIComponent(nome),{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        apikey:SUPA_KEY,
+        Authorization:'Bearer '+sessione.access_token
+      },
+      body:JSON.stringify(corpo||{})
+    })
+    return {res,dati:await _leggiRispostaFunzione(res)}
+  }
+
+  let sessione=await _sessioneFunzione(false)
+  let risposta=await esegui(sessione)
+  if(risposta.res.status===401){
+    sessione=await _sessioneFunzione(true)
+    risposta=await esegui(sessione)
+  }
+  if(!risposta.res.ok){
+    const dettaglio=risposta.dati?.error||risposta.dati?.message||('Errore HTTP '+risposta.res.status)
+    if(risposta.res.status===401){
+      throw new Error('Sessione amministrativa non autorizzata. Esci dall’app, accedi nuovamente e riprova. ('+dettaglio+')')
+    }
+    throw new Error(dettaglio+' (HTTP '+risposta.res.status+')')
+  }
+  if(risposta.dati?.error) throw new Error(risposta.dati.error)
+  return risposta.dati||{}
+}
+
 async function avviaMintCertificato(id,automatico,opzioni){
   opzioni=opzioni||{}
   const c=_CERTIFICATI.find(x=>x.id===id)
@@ -5131,16 +5180,14 @@ async function avviaMintCertificato(id,automatico,opzioni){
   if(!automatico&&!confirm('Emettere ora l’NFT non trasferibile su Polygon Mainnet?\n\nIl credential diventerà valido solo dopo la conferma.')) return
   try{
     if(!opzioni.silenzioso) try{ toast('Firma Open Badge e mint NFT in corso…') }catch(e){}
-    const r=await db.functions.invoke('issue-credential-nft',{body:{credential_id:id,action:'mint'}})
-    if(r.error) throw r.error
-    if(r.data?.error) throw new Error(r.data.error)
+    const dati=await invocaFunzioneAutenticata('issue-credential-nft',{credential_id:id,action:'mint'})
     await caricaCertificati()
-    if(!opzioni.silenzioso) try{ toast('Open Badge firmato · NFT #'+(r.data?.token_id||'')+' emesso') }catch(e){}
-    return {ok:true,data:r.data||{}}
+    if(!opzioni.silenzioso) try{ toast('Open Badge firmato · NFT #'+(dati?.token_id||'')+' emesso') }catch(e){}
+    return {ok:true,data:dati||{}}
   }catch(e){
     await caricaCertificati()
     const messaggio=(e&&e.message)||String(e)
-    if(!opzioni.silenzioso) alert('Il certificato resta in attesa e non è ancora valido.\n\n'+messaggio+'\n\nConfigura o controlla la Edge Function e riprova dal pulsante NFT.')
+    if(!opzioni.silenzioso) alert('Il certificato resta in attesa e non è ancora valido.\n\n'+messaggio+'\n\nPuoi riprovare dal pulsante NFT senza creare duplicati.')
     return {ok:false,error:messaggio}
   }
 }
@@ -5174,8 +5221,11 @@ async function stampaCertificato(id){
 
 async function sospendiCertificato(id){
   const c=_CERTIFICATI.find(x=>x.id===id); if(!c) return
-  const motivo=prompt('Motivo della sospensione:','Verifica amministrativa in corso')
-  if(motivo===null) return
+  const risposta=await chiediCampi('Sospendi '+(c.verification_code||'certificato'),[
+    {id:'motivo',label:'Motivo della sospensione',valore:'Verifica amministrativa in corso',multi:true}
+  ])
+  if(!risposta) return
+  const motivo=String(risposta.motivo||'').trim()
   const r=await db.from('credentials').update({status:'suspended',status_reason:motivo||null}).eq('id',id)
   if(r.error) alert(r.error.message); else await caricaCertificati()
 }
@@ -5187,14 +5237,15 @@ async function riattivaCertificato(id){
 }
 async function revocaCertificato(id){
   const c=_CERTIFICATI.find(x=>x.id===id); if(!c) return
-  const motivo=prompt('Motivo della revoca definitiva:','')
-  if(motivo===null) return
-  if(!motivo.trim()){ alert('Indica il motivo della revoca.'); return }
+  const risposta=await chiediCampi('Revoca definitiva '+(c.verification_code||'certificato'),[
+    {id:'motivo',label:'Motivo obbligatorio della revoca',valore:'',multi:true}
+  ])
+  if(!risposta) return
+  const motivo=String(risposta.motivo||'').trim()
+  if(!motivo){ alert('Indica il motivo della revoca.'); return }
   if(!confirm('Revocare definitivamente '+(c.verification_code||'questo certificato')+'?\n\nLa revoca resterà visibile nella verifica pubblica.')) return
   try{
-    const r=await db.functions.invoke('issue-credential-nft',{body:{credential_id:id,action:'revoke',reason:motivo.trim()}})
-    if(r.error) throw r.error
-    if(r.data?.error) throw new Error(r.data.error)
+    await invocaFunzioneAutenticata('issue-credential-nft',{credential_id:id,action:'revoke',reason:motivo})
     await caricaCertificati()
     try{ toast('Certificato revocato') }catch(e){}
   }catch(e){ alert('Revoca non completata: '+((e&&e.message)||e)) }

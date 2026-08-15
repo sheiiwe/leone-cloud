@@ -27,6 +27,7 @@ for(const name of [
   'emettiGoogleWallet',
   'revocaGoogleWallet',
   'creaBadgeNftDaAnagrafica',
+  'invocaFunzioneAutenticata',
   '_tsGarantisciNftTessera',
   'collegaNftTessera',
   'collegaNftMancanti',
@@ -46,6 +47,10 @@ assert.ok(html.includes('?\'<button class="btn btn-sm btn-r" title="Revoca il pa
 assert.ok(html.includes('?\'<button class="btn btn-sm btn-r" title="Revoca il badge da Google Wallet"'), 'Revoca Google Wallet non è un pulsante rosso sostitutivo')
 assert.ok(html.includes('<th>NFT</th>'), 'colonna NFT dei tesserini mancante')
 assert.ok(html.includes("tessera_id:t.id"), 'collegamento tesserino/credential NFT mancante')
+assert.ok(html.includes("Authorization:'Bearer '+sessione.access_token"), 'JWT utente non inviato esplicitamente alla Edge Function NFT')
+assert.ok(html.includes("apikey:SUPA_KEY"), 'apikey pubblica non inviata alla Edge Function NFT')
+assert.ok(html.includes("if(risposta.res.status===401)"), 'rinnovo sessione e retry su 401 mancanti')
+assert.ok(!html.includes("const motivo=prompt("), 'prompt() non supportato ancora usato per sospensione/revoca NFT')
 assert.ok(html.includes("await _tsGarantisciNftTessera(q.data"), 'emissione NFT automatica sul nuovo tesserino mancante')
 assert.ok(html.includes("Prima devi emettere e collegare l’NFT obbligatorio"), 'Wallet non protetto dal requisito NFT')
 assert.ok(html.includes('id="cp-search"'), 'ricerca Pagine corso mancante')
