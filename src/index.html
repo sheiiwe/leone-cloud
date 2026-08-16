@@ -4,8 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Leone Consulting — Gestionale</title>
-<!-- Copia locale: l'avvio dell'app non dipende dalla disponibilità del CDN. -->
+<!-- Copia locale inclusa nell'app. Il fallback immutabile ripara anche vecchie installazioni
+     aggiornate quando assets/supabase.js non faceva ancora parte dell'aggiornamento rapido. -->
 <script src="../assets/supabase.js"></script>
+<script>
+if(!window.supabase){
+  document.write('<script src="https://cdn.jsdelivr.net/gh/sheiiwe/leone-cloud@8dd2057da43a3a22f4e00d362c1054ceecf9da71/assets/supabase.js"><\/script>')
+}
+</script>
 <style>
 :root{--bg:#f5f5f0;--surface:#fff;--surface2:#f0efe9;--border:rgba(0,0,0,.10);--border2:rgba(0,0,0,.18);--text:#1a1a18;--text2:#6b6b66;--text3:#9e9e98;--accent:#185FA5;--accent-h:#0C447C;--red:#A32D2D;--green:#3B6D11;--amber:#854F0B;--r:10px;--rsm:6px}
 @media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--surface:#2a2a28;--surface2:#222220;--border:rgba(255,255,255,.10);--border2:rgba(255,255,255,.18);--text:#f0efe9;--text2:#a8a8a0;--text3:#6b6b66}}
@@ -2960,7 +2966,7 @@ tbody tr:hover td{background:var(--surface2)}
 // ── SUPABASE ──────────────────────────────────────────────────
 const SUPA_URL='https://uljdbdbkiulbcquuhfwd.supabase.co'
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsamRiZGJraXVsYmNxdXVoZndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1Nzk3NjcsImV4cCI6MjA5NjE1NTc2N30.TsTSIwUqawsT6M_pwUXjRutCSHToJdVfGF3FxqG3TUA'
-const {createClient}=supabase
+const {createClient}=window.supabase
 // Storage che rispetta "Ricordami": localStorage se attivo, altrimenti sessionStorage (si cancella alla chiusura dell'app)
 const _leoneAuthStorage={
   getItem:(k)=>{ try{ return localStorage.getItem(k) ?? sessionStorage.getItem(k) }catch(e){ return null } },
@@ -2977,7 +2983,7 @@ function syncStatus(state,msg){
 // ── STATO ────────────────────────────────────────────────────
 let procs=[],vendite=[],leads=[],dipendenti=[],buste=[],contratti=[],tempNet=[],docenti=[],studenti=[],compensiDoc=[]
 // ── SINCRONIZZAZIONE GRANULARE PER TABELLA (v1.9.269-r6) ──────────
-const _RT_BUILD='1.16.0-agevolazioni-loghi-collegamenti'
+const _RT_BUILD='1.16.1-ripristino-supabase-mac'
 let _rtLastSync=new Date().toISOString()
 let _rtWasSubscribed=false
 const _syncTimers={}

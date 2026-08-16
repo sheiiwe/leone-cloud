@@ -41,16 +41,19 @@ fi
 # Ricompila
 npm run build 2>/dev/null
 
-# Installa nuova app
-rm -rf "/Applications/Leone Consulting.app" 2>/dev/null
 APP=$(find dist -name "*.app" 2>/dev/null | head -1)
-if [ -n "$APP" ]; then
+SUPABASE_BUNDLE="$APP/Contents/Resources/app/assets/supabase.js"
+if [ -n "$APP" ] && [ -s "$SUPABASE_BUNDLE" ]; then
+  # Sostituisci l'app soltanto dopo avere verificato che la nuova build sia completa.
+  rm -rf "/Applications/Leone Consulting.app" 2>/dev/null
   cp -r "$APP" /Applications/
   echo "✅ Leone Consulting aggiornato!"
   open "/Applications/Leone Consulting.app"
 else
-  echo "⚡ Avvio diretto..."
+  echo "❌ Aggiornamento annullato: build mancante o priva di assets/supabase.js."
+  echo "   La versione già installata non è stata sostituita."
   open "/Applications/Leone Consulting.app"
+  exit 1
 fi
 
 echo "   Puoi chiudere il terminale."

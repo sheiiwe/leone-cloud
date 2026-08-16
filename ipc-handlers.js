@@ -690,6 +690,7 @@ ipcMain.handle('aggiorna-e-riavvia', async () => {
 
   const FILES = [
     'src/index.html',
+    'assets/supabase.js',
     'main.js',
     'preload.js',
     'ipc-handlers.js',
@@ -756,6 +757,7 @@ ipcMain.handle('aggiornamento-rapido', async () => {
   const baseDir = path.join(os.homedir(), 'Downloads', 'leone-cloud')
   const fileDaAggiornare = [
     { url: '/sheiiwe/leone-cloud/main/src/index.html', dest: path.join(baseDir, 'src', 'index.html') },
+    { url: '/sheiiwe/leone-cloud/main/assets/supabase.js', dest: path.join(baseDir, 'assets', 'supabase.js') },
     { url: '/sheiiwe/leone-cloud/main/compila_documento.py', dest: path.join(baseDir, 'compila_documento.py') },
     { url: '/sheiiwe/leone-cloud/main/compila_pdf.py', dest: path.join(baseDir, 'compila_pdf.py') },
     { url: '/sheiiwe/leone-cloud/main/fill_pdf_form_with_annotations.py', dest: path.join(baseDir, 'fill_pdf_form_with_annotations.py') },
@@ -777,6 +779,7 @@ ipcMain.handle('aggiornamento-rapido', async () => {
       let data = ''
       res.on('data', chunk => data += chunk)
       res.on('end', () => {
+        fs.mkdirSync(path.dirname(dest), { recursive: true })
         fs.writeFileSync(dest, data, 'utf8')
         resolve()
       })

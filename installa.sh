@@ -35,6 +35,12 @@ do
 done
 
 if [ -n "$APP_BUILT" ]; then
+  SUPABASE_BUNDLE="$APP_BUILT/Contents/Resources/app/assets/supabase.js"
+  if [ ! -s "$SUPABASE_BUNDLE" ]; then
+    echo "❌ Installazione annullata: la build non contiene assets/supabase.js."
+    echo "   L'app già presente in Applicazioni non è stata modificata."
+    exit 1
+  fi
   echo "✅ Build completata: $APP_BUILT"
 
   # Rimuovi vecchia versione
